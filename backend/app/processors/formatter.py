@@ -206,6 +206,87 @@ class MessageFormatter:
         return re.findall(url_pattern, text)
     
     @staticmethod
+    def format_quote(quote: Dict, platform: str) -> str:
+        """
+        格式化引用消息
+        
+        Args:
+            quote: 引用信息字典
+            platform: 目标平台
+            
+        Returns:
+            格式化后的引用文本
+        """
+        if not quote:
+            return ""
+        
+        author = quote.get('author', '未知用户')
+        content = quote.get('content', '')
+        
+        if platform == "discord":
+            # Discord使用 > 引用格式
+            return f"> **{author}**: {content}\n"
+        elif platform == "telegram":
+            # Telegram使用HTML格式
+            return f"<blockquote><b>{author}</b>: {content}</blockquote>\n"
+        elif platform == "feishu":
+            # 飞书使用文本格式
+            return f"「回复 {author}」: {content}\n"
+        else:
+            return f"「回复 {author}」: {content}\n"
+    
+    @staticmethod
+    def format_mentions(mentions: list, content: str, platform: str) -> str:
+        """
+        格式化@提及
+        
+        Args:
+            mentions: 提及列表
+            content: 原始内容
+            platform: 目标平台
+            
+        Returns:
+            格式化后的内容
+        """
+        if not mentions:
+            return content
+        
+        # 处理@全体成员
+        for mention in mentions:
+            if mention.get('type') == 'all':
+                if platform == "discord":
+                    content = content.replace('@all', '@everyone')
+                    content = content.replace('@所有人', '@everyone')
+                elif platform == "telegram":
+                    # Telegram没有@所有人功能，用文本代替
+                    content = content.replace('@all', '【@所有人】')
+                    content = content.replace('@所有人', '【@所有人】')
+                elif platform == "feishu":
+                    content = content.replace('@all', '@所有人')
+        
+        return content
+    
+    @staticmethod
+    def format_reaction(reaction: Dict) -> str:
+        """
+        格式化表情反应为文本
+        
+        Args:
+            reaction: 表情反应信息
+            
+        Returns:
+            格式化文本
+        """
+        emoji = reaction.get('emoji', '❤️')
+        user_id = reaction.get('user_id', '')
+        action = reaction.get('action', 'add')
+        
+        if action == 'add':
+            return f"{emoji} 用户{user_id}"
+        else:
+            return f"取消 {emoji} 用户{user_id}"
+    
+    @staticmethod
     def create_embed_content(title: str, content: str, 
                            author: str = None, 
                            image_url: str = None,

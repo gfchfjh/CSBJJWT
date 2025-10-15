@@ -184,6 +184,15 @@ class MessageWorker:
             message_type = message.get('message_type', 'text')
             image_urls = message.get('image_urls', [])
             
+            # 提取引用和提及
+            quote = message.get('quote')
+            mentions = message.get('mentions', [])
+            
+            # 处理表情反应消息
+            if message_type == 'reaction' or message.get('type') == 'reaction':
+                reaction_text = formatter.format_reaction(message)
+                content = f"💬 表情反应: {reaction_text}"
+            
             # 处理图片（如果有）
             processed_images = []
             if image_urls:
@@ -192,8 +201,15 @@ class MessageWorker:
             
             # 格式转换
             if platform == 'discord':
+                # 格式化引用
+                quote_text = formatter.format_quote(quote, 'discord') if quote else ""
+                
+                # 格式化提及
                 formatted_content = formatter.kmarkdown_to_discord(content)
-                formatted_content = f"**{sender_name}**: {formatted_content}"
+                formatted_content = formatter.format_mentions(mentions, formatted_content, 'discord')
+                
+                # 组合最终内容
+                formatted_content = f"{quote_text}**{sender_name}**: {formatted_content}"
                 
                 webhook_url = bot_config['config'].get('webhook_url')
                 
@@ -234,8 +250,15 @@ class MessageWorker:
                     )
                 
             elif platform == 'telegram':
+                # 格式化引用
+                quote_text = formatter.format_quote(quote, 'telegram') if quote else ""
+                
+                # 格式化提及
                 formatted_content = formatter.kmarkdown_to_telegram_html(content)
-                formatted_content = f"<b>{sender_name}</b>: {formatted_content}"
+                formatted_content = formatter.format_mentions(mentions, formatted_content, 'telegram')
+                
+                # 组合最终内容
+                formatted_content = f"{quote_text}<b>{sender_name}</b>: {formatted_content}"
                 
                 token = bot_config['config'].get('token')
                 
@@ -271,8 +294,15 @@ class MessageWorker:
                     )
                 
             elif platform == 'feishu':
+                # 格式化引用
+                quote_text = formatter.format_quote(quote, 'feishu') if quote else ""
+                
+                # 格式化提及
                 formatted_content = formatter.kmarkdown_to_feishu_text(content)
-                formatted_content = f"{sender_name}: {formatted_content}"
+                formatted_content = formatter.format_mentions(mentions, formatted_content, 'feishu')
+                
+                # 组合最终内容
+                formatted_content = f"{quote_text}{sender_name}: {formatted_content}"
                 
                 app_id = bot_config['config'].get('app_id')
                 app_secret = bot_config['config'].get('app_secret')
