@@ -3,11 +3,12 @@
 """
 import asyncio
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from ..utils.logger import logger
 from ..database import db
 from ..processors.filter import message_filter
 from ..processors.formatter import formatter
+from ..processors.image import image_processor
 from ..forwarders.discord import discord_forwarder
 from ..forwarders.telegram import telegram_forwarder
 from ..forwarders.feishu import feishu_forwarder
@@ -110,6 +111,51 @@ class MessageWorker:
                 error_message=str(e)
             )
     
+    async def process_images(self, image_urls: List[str], 
+                            message: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        处理消息中的图片
+        
+        Args:
+            image_urls: 图片URL列表
+            message: 原始消息数据（用于获取Cookie等）
+            
+        Returns:
+            处理后的图片信息列表
+        """
+        processed_images = []
+        
+        for url in image_urls:
+            try:
+                logger.info(f"处理图片: {url}")
+                
+                # 使用智能策略处理图片
+                result = await image_processor.process_image(
+                    url=url,
+                    strategy='smart',  # 智能模式：优先直传，失败用图床
+                    cookies=None,  # TODO: 从消息中获取Cookie
+                    referer='https://www.kookapp.cn'
+                )
+                
+                if result:
+                    if isinstance(result, dict):
+                        # 智能模式返回dict
+                        processed_images.append(result)
+                    else:
+                        # 其他模式返回URL字符串
+                        processed_images.append({
+                            'original': url,
+                            'local': result,
+                            'filepath': None
+                        })
+                else:
+                    logger.error(f"图片处理失败: {url}")
+                    
+            except Exception as e:
+                logger.error(f"处理图片异常: {url}, 错误: {str(e)}")
+        
+        return processed_images
+    
     async def forward_to_target(self, message: Dict[str, Any], 
                                mapping: Dict[str, Any]):
         """
@@ -136,6 +182,13 @@ class MessageWorker:
             content = message.get('content', '')
             sender_name = message.get('sender_name', '未知用户')
             message_type = message.get('message_type', 'text')
+            image_urls = message.get('image_urls', [])
+            
+            # 处理图片（如果有）
+            processed_images = []
+            if image_urls:
+                logger.info(f"检测到 {len(image_urls)} 张图片")
+                processed_images = await self.process_images(image_urls, message)
             
             # 格式转换
             if platform == 'discord':
@@ -143,22 +196,79 @@ class MessageWorker:
                 formatted_content = f"**{sender_name}**: {formatted_content}"
                 
                 webhook_url = bot_config['config'].get('webhook_url')
-                success = await discord_forwarder.send_message(
-                    webhook_url=webhook_url,
-                    content=formatted_content,
-                    username=sender_name
-                )
+                
+                # 如果有图片，尝试上传
+                if processed_images:
+                    # Discord支持Embed方式显示图片
+                    for img_info in processed_images:
+                        # 优先使用原始URL
+                        image_url = img_info.get('original') or img_info.get('local')
+                        
+                        # 使用Embed显示图片
+                        success = await discord_forwarder.send_message(
+                            webhook_url=webhook_url,
+                            content=formatted_content,
+                            username=sender_name,
+                            embeds=[{
+                                'image': {'url': image_url}
+                            }]
+                        )
+                        
+                        if not success and img_info.get('local'):
+                            # 原始URL失败，尝试本地图床URL
+                            logger.info(f"尝试使用本地图床URL: {img_info['local']}")
+                            success = await discord_forwarder.send_message(
+                                webhook_url=webhook_url,
+                                content=formatted_content,
+                                username=sender_name,
+                                embeds=[{
+                                    'image': {'url': img_info['local']}
+                                }]
+                            )
+                else:
+                    # 纯文本消息
+                    success = await discord_forwarder.send_message(
+                        webhook_url=webhook_url,
+                        content=formatted_content,
+                        username=sender_name
+                    )
                 
             elif platform == 'telegram':
                 formatted_content = formatter.kmarkdown_to_telegram_html(content)
                 formatted_content = f"<b>{sender_name}</b>: {formatted_content}"
                 
                 token = bot_config['config'].get('token')
-                success = await telegram_forwarder.send_message(
-                    token=token,
-                    chat_id=target_channel,
-                    content=formatted_content
-                )
+                
+                # 如果有图片，发送图片消息
+                if processed_images:
+                    for img_info in processed_images:
+                        # 优先使用原始URL
+                        image_url = img_info.get('original') or img_info.get('local')
+                        
+                        # Telegram发送图片
+                        success = await telegram_forwarder.send_photo(
+                            token=token,
+                            chat_id=target_channel,
+                            photo_url=image_url,
+                            caption=formatted_content
+                        )
+                        
+                        if not success and img_info.get('local'):
+                            # 原始URL失败，尝试本地图床URL
+                            logger.info(f"尝试使用本地图床URL: {img_info['local']}")
+                            success = await telegram_forwarder.send_photo(
+                                token=token,
+                                chat_id=target_channel,
+                                photo_url=img_info['local'],
+                                caption=formatted_content
+                            )
+                else:
+                    # 纯文本消息
+                    success = await telegram_forwarder.send_message(
+                        token=token,
+                        chat_id=target_channel,
+                        content=formatted_content
+                    )
                 
             elif platform == 'feishu':
                 formatted_content = formatter.kmarkdown_to_feishu_text(content)
@@ -166,12 +276,40 @@ class MessageWorker:
                 
                 app_id = bot_config['config'].get('app_id')
                 app_secret = bot_config['config'].get('app_secret')
-                success = await feishu_forwarder.send_message(
-                    app_id=app_id,
-                    app_secret=app_secret,
-                    chat_id=target_channel,
-                    content=formatted_content
-                )
+                
+                # 如果有图片，发送图片消息
+                if processed_images:
+                    # 飞书可以在富文本中显示图片
+                    for img_info in processed_images:
+                        image_url = img_info.get('original') or img_info.get('local')
+                        
+                        # 飞书发送图片（使用消息卡片）
+                        success = await feishu_forwarder.send_image(
+                            app_id=app_id,
+                            app_secret=app_secret,
+                            chat_id=target_channel,
+                            image_url=image_url,
+                            caption=formatted_content
+                        )
+                        
+                        if not success and img_info.get('local'):
+                            # 原始URL失败，尝试本地图床
+                            logger.info(f"尝试使用本地图床URL: {img_info['local']}")
+                            success = await feishu_forwarder.send_image(
+                                app_id=app_id,
+                                app_secret=app_secret,
+                                chat_id=target_channel,
+                                image_url=img_info['local'],
+                                caption=formatted_content
+                            )
+                else:
+                    # 纯文本消息
+                    success = await feishu_forwarder.send_message(
+                        app_id=app_id,
+                        app_secret=app_secret,
+                        chat_id=target_channel,
+                        content=formatted_content
+                    )
                 
             else:
                 logger.error(f"不支持的平台: {platform}")

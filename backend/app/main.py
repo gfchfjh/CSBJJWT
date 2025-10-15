@@ -20,14 +20,24 @@ async def lifespan(app: FastAPI):
     logger.info(f"启动 {settings.app_name} v{settings.app_version}")
     logger.info("=" * 50)
     
+    # 存储后台任务
+    background_tasks = []
+    
     try:
         # 连接Redis
         await redis_queue.connect()
         logger.info("✅ Redis连接成功")
         
         # 启动Worker
-        asyncio.create_task(message_worker.start())
+        worker_task = asyncio.create_task(message_worker.start())
+        background_tasks.append(worker_task)
         logger.info("✅ 消息处理Worker已启动")
+        
+        # 启动图床服务器
+        from .image_server import start_image_server
+        image_server_task = asyncio.create_task(start_image_server())
+        background_tasks.append(image_server_task)
+        logger.info(f"✅ 图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
         
     except Exception as e:
         logger.error(f"❌ 启动失败: {str(e)}")
@@ -41,6 +51,15 @@ async def lifespan(app: FastAPI):
         # 停止Worker
         await message_worker.stop()
         logger.info("✅ 消息处理Worker已停止")
+        
+        # 取消所有后台任务
+        for task in background_tasks:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        logger.info("✅ 后台任务已停止")
         
         # 断开Redis
         await redis_queue.disconnect()

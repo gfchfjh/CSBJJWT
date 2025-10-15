@@ -286,6 +286,25 @@ class Database:
             cursor.execute("SELECT value FROM system_config WHERE key = ?", (key,))
             row = cursor.fetchone()
             return row[0] if row else None
+    
+    def delete_config(self, key: str):
+        """删除配置"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM system_config WHERE key = ?", (key,))
+    
+    # 别名方法（兼容scraper.py中的调用）
+    def set_system_config(self, key: str, value: str):
+        """设置系统配置（别名）"""
+        return self.set_config(key, value)
+    
+    def get_system_config(self, key: str) -> Optional[str]:
+        """获取系统配置（别名）"""
+        return self.get_config(key)
+    
+    def delete_system_config(self, key: str):
+        """删除系统配置（别名）"""
+        return self.delete_config(key)
 
 
 # 创建全局数据库实例
