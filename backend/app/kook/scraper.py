@@ -150,6 +150,7 @@ class KookScraper:
                 # 提取消息信息
                 message_type = message_data.get('type', 'text')
                 attachments = message_data.get('attachments', [])
+                content = message_data.get('content', '')
                 
                 # 提取图片URL
                 image_urls = []
@@ -158,11 +159,39 @@ class KookScraper:
                         if attachment.get('type') == 'image':
                             image_urls.append(attachment.get('url'))
                 
+                # 提取@提及
+                mentions = []
+                mention_all = False
+                if message_data.get('mention_info'):
+                    mention_info = message_data['mention_info']
+                    # 提取@用户
+                    for user_id in mention_info.get('mention_part', []):
+                        mentions.append({
+                            'type': 'user',
+                            'id': user_id
+                        })
+                    # 检查是否@全体成员
+                    if mention_info.get('mention_all'):
+                        mention_all = True
+                        mentions.append({
+                            'type': 'all'
+                        })
+                
+                # 提取引用消息
+                quote = None
+                if message_data.get('quote'):
+                    quote_data = message_data['quote']
+                    quote = {
+                        'message_id': quote_data.get('id'),
+                        'author': quote_data.get('author', {}).get('username'),
+                        'content': quote_data.get('content')
+                    }
+                
                 message = {
                     'message_id': message_data.get('id'),
                     'channel_id': message_data.get('channel_id'),
                     'server_id': message_data.get('guild_id'),
-                    'content': message_data.get('content'),
+                    'content': content,
                     'message_type': message_data.get('type', 'text'),
                     'sender_id': message_data.get('author', {}).get('id'),
                     'sender_name': message_data.get('author', {}).get('username'),
@@ -170,6 +199,9 @@ class KookScraper:
                     'timestamp': message_data.get('timestamp'),
                     'attachments': message_data.get('attachments', []),
                     'image_urls': image_urls,
+                    'mentions': mentions,
+                    'mention_all': mention_all,
+                    'quote': quote,
                 }
                 
                 logger.debug(f"收到新消息: {message['message_id']}")
@@ -177,6 +209,26 @@ class KookScraper:
                 # 调用回调函数
                 if self.message_callback:
                     await self.message_callback(message)
+            
+            # 处理表情反应事件
+            elif data.get('type') in ['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE']:
+                reaction_data = data.get('data', {})
+                
+                reaction = {
+                    'type': 'reaction',
+                    'action': 'add' if data['type'] == 'MESSAGE_REACTION_ADD' else 'remove',
+                    'message_id': reaction_data.get('msg_id'),
+                    'channel_id': reaction_data.get('channel_id'),
+                    'user_id': reaction_data.get('user_id'),
+                    'emoji': reaction_data.get('emoji', {}).get('name', ''),
+                    'timestamp': reaction_data.get('timestamp')
+                }
+                
+                logger.debug(f"收到表情反应: {reaction['emoji']}")
+                
+                # 如果有回调函数，也发送表情反应事件
+                if self.message_callback:
+                    await self.message_callback(reaction)
                     
         except json.JSONDecodeError:
             pass  # 非JSON消息，忽略
@@ -423,20 +475,131 @@ class KookScraper:
             logger.error(f"重新连接异常: {str(e)}")
     
     async def get_servers(self) -> list:
-        """获取服务器列表"""
+        """
+        获取服务器列表
+        
+        Returns:
+            服务器列表 [{"id": "server_id", "name": "server_name", "icon": "icon_url"}]
+        """
         try:
-            # TODO: 实现获取服务器列表的逻辑
-            # 这需要根据KOOK的实际页面结构来实现
-            return []
+            if not self.page or self.page.is_closed():
+                logger.error("页面未初始化或已关闭")
+                return []
+            
+            logger.info("开始获取服务器列表...")
+            
+            # 等待服务器列表加载
+            await self.page.wait_for_selector('.guild-list', timeout=10000)
+            
+            # 执行JavaScript获取服务器列表
+            servers = await self.page.evaluate("""
+                () => {
+                    const servers = [];
+                    // 查找所有服务器元素（根据KOOK实际DOM结构调整选择器）
+                    const guildElements = document.querySelectorAll('.guild-item, [class*="guild"]');
+                    
+                    guildElements.forEach(element => {
+                        // 提取服务器ID（通常在data属性或id中）
+                        const serverId = element.getAttribute('data-guild-id') || 
+                                        element.getAttribute('data-id') ||
+                                        element.id;
+                        
+                        // 提取服务器名称
+                        const nameElement = element.querySelector('.guild-name, [class*="name"]');
+                        const serverName = nameElement ? nameElement.textContent.trim() : '';
+                        
+                        // 提取图标
+                        const iconElement = element.querySelector('img, .guild-icon');
+                        const iconUrl = iconElement ? iconElement.src : '';
+                        
+                        if (serverId && serverName) {
+                            servers.push({
+                                id: serverId,
+                                name: serverName,
+                                icon: iconUrl
+                            });
+                        }
+                    });
+                    
+                    return servers;
+                }
+            """)
+            
+            logger.info(f"成功获取 {len(servers)} 个服务器")
+            return servers
+            
         except Exception as e:
             logger.error(f"获取服务器列表失败: {str(e)}")
             return []
     
     async def get_channels(self, server_id: str) -> list:
-        """获取频道列表"""
+        """
+        获取指定服务器的频道列表
+        
+        Args:
+            server_id: 服务器ID
+            
+        Returns:
+            频道列表 [{"id": "channel_id", "name": "channel_name", "type": "text/voice"}]
+        """
         try:
-            # TODO: 实现获取频道列表的逻辑
-            return []
+            if not self.page or self.page.is_closed():
+                logger.error("页面未初始化或已关闭")
+                return []
+            
+            logger.info(f"开始获取服务器 {server_id} 的频道列表...")
+            
+            # 点击服务器以显示频道列表
+            try:
+                await self.page.click(f'[data-guild-id="{server_id}"], #{server_id}')
+                await asyncio.sleep(1)  # 等待频道列表加载
+            except:
+                logger.warning(f"无法点击服务器 {server_id}，尝试直接获取频道")
+            
+            # 执行JavaScript获取频道列表
+            channels = await self.page.evaluate("""
+                (serverId) => {
+                    const channels = [];
+                    
+                    // 查找频道列表容器
+                    const channelList = document.querySelector('.channel-list, [class*="channel"]');
+                    if (!channelList) return channels;
+                    
+                    // 查找所有频道元素
+                    const channelElements = channelList.querySelectorAll('.channel-item, [class*="channel-"]');
+                    
+                    channelElements.forEach(element => {
+                        // 提取频道ID
+                        const channelId = element.getAttribute('data-channel-id') || 
+                                         element.getAttribute('data-id') ||
+                                         element.id;
+                        
+                        // 提取频道名称
+                        const nameElement = element.querySelector('.channel-name, [class*="name"]');
+                        const channelName = nameElement ? nameElement.textContent.trim() : '';
+                        
+                        // 提取频道类型（文本/语音）
+                        const isVoice = element.classList.contains('voice-channel') ||
+                                       element.querySelector('[class*="voice"]') !== null;
+                        const channelType = isVoice ? 'voice' : 'text';
+                        
+                        if (channelId && channelName) {
+                            channels.push({
+                                id: channelId,
+                                name: channelName,
+                                type: channelType,
+                                server_id: serverId
+                            });
+                        }
+                    });
+                    
+                    return channels;
+                }
+            """, server_id)
+            
+            logger.info(f"成功获取 {len(channels)} 个频道")
+            return channels
+            
         except Exception as e:
             logger.error(f"获取频道列表失败: {str(e)}")
             return []

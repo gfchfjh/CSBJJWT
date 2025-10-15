@@ -1,12 +1,34 @@
 /**
  * Electron主进程
  */
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
+const AutoLaunch = require('auto-launch')
 
 let mainWindow = null
 let backendProcess = null
+let tray = null
+
+// 配置开机自启
+const autoLauncher = new AutoLaunch({
+  name: 'KOOK消息转发系统',
+  path: app.getPath('exe'),
+})
+
+// 检查并设置开机自启
+async function setupAutoLaunch() {
+  const isEnabled = await autoLauncher.isEnabled()
+  
+  // 可以通过配置文件控制
+  const shouldEnable = app.getLoginItemSettings().openAtLogin
+  
+  if (shouldEnable && !isEnabled) {
+    await autoLauncher.enable()
+  } else if (!shouldEnable && isEnabled) {
+    await autoLauncher.disable()
+  }
+}
 
 // 启动后端服务
 function startBackend() {
@@ -32,6 +54,66 @@ function startBackend() {
   })
 }
 
+// 创建系统托盘
+function createTray() {
+  const iconPath = path.join(__dirname, '../public/icon.png')
+  tray = new Tray(iconPath)
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示主窗口',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        } else {
+          createWindow()
+        }
+      }
+    },
+    {
+      label: '系统状态',
+      click: () => {
+        // 显示系统状态
+        if (mainWindow) {
+          mainWindow.webContents.send('show-status')
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '开机自启',
+      type: 'checkbox',
+      checked: app.getLoginItemSettings().openAtLogin,
+      click: (menuItem) => {
+        app.setLoginItemSettings({
+          openAtLogin: menuItem.checked
+        })
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+  
+  tray.setToolTip('KOOK消息转发系统')
+  tray.setContextMenu(contextMenu)
+  
+  // 双击托盘图标显示窗口
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+    } else {
+      createWindow()
+    }
+  })
+}
+
 // 创建主窗口
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -42,10 +124,12 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      webSecurity: false  // 允许加载本地资源
     },
     title: 'KOOK消息转发系统',
-    icon: path.join(__dirname, '../public/icon.png')
+    icon: path.join(__dirname, '../public/icon.png'),
+    show: false  // 初始隐藏，等待加载完成
   })
 
   // 开发环境加载开发服务器
@@ -57,20 +141,64 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
+  // 窗口加载完成后显示
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  })
+
+  // 关闭窗口时最小化到托盘
+  mainWindow.on('close', (event) => {
+    if (!app.isQuiting) {
+      event.preventDefault()
+      mainWindow.hide()
+      
+      // 首次最小化时提示
+      if (!app.hasShownTrayTip) {
+        tray.displayBalloon({
+          title: 'KOOK消息转发系统',
+          content: '程序已最小化到系统托盘，双击图标可恢复窗口'
+        })
+        app.hasShownTrayTip = true
+      }
+    }
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
 }
 
 // 应用启动
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // 设置开机自启
+  await setupAutoLaunch()
+  
+  // 创建系统托盘
+  createTray()
+  
   // 启动后端服务
   startBackend()
   
-  // 等待后端启动
-  setTimeout(() => {
-    createWindow()
-  }, 3000)
+  // 等待后端启动（检测后端是否ready）
+  let retries = 0
+  const maxRetries = 30
+  
+  const checkBackend = setInterval(async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:9527/health')
+      if (response.ok) {
+        clearInterval(checkBackend)
+        createWindow()
+      }
+    } catch (error) {
+      retries++
+      if (retries >= maxRetries) {
+        clearInterval(checkBackend)
+        dialog.showErrorBox('启动失败', '后端服务启动超时，请检查Python环境')
+        app.quit()
+      }
+    }
+  }, 1000)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -82,19 +210,34 @@ app.whenReady().then(() => {
 // 所有窗口关闭
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit()
+    // 不退出，最小化到托盘
+    // app.quit()
   }
+})
+
+// 应用退出前
+app.on('before-quit', () => {
+  app.isQuiting = true
 })
 
 // 应用退出
 app.on('quit', () => {
   // 停止后端服务
   if (backendProcess) {
-    backendProcess.kill()
+    backendProcess.kill('SIGTERM')
+    
+    // 强制结束（5秒后）
+    setTimeout(() => {
+      if (backendProcess) {
+        backendProcess.kill('SIGKILL')
+      }
+    }, 5000)
   }
 })
 
-// IPC通信
+// ========== IPC通信 ==========
+
+// 窗口控制
 ipcMain.on('minimize-window', () => {
   if (mainWindow) {
     mainWindow.minimize()
@@ -114,5 +257,57 @@ ipcMain.on('maximize-window', () => {
 ipcMain.on('close-window', () => {
   if (mainWindow) {
     mainWindow.close()
+  }
+})
+
+// 开机自启设置
+ipcMain.handle('get-auto-launch', async () => {
+  return app.getLoginItemSettings().openAtLogin
+})
+
+ipcMain.handle('set-auto-launch', async (event, enabled) => {
+  app.setLoginItemSettings({
+    openAtLogin: enabled
+  })
+  return true
+})
+
+// 打开文件夹
+ipcMain.handle('open-folder', async (event, folderPath) => {
+  const { shell } = require('electron')
+  shell.openPath(folderPath)
+})
+
+// 选择文件夹
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory']
+  })
+  
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0]
+  }
+  return null
+})
+
+// 显示通知
+ipcMain.on('show-notification', (event, { title, body }) => {
+  const { Notification } = require('electron')
+  
+  if (Notification.isSupported()) {
+    new Notification({
+      title,
+      body,
+      icon: path.join(__dirname, '../public/icon.png')
+    }).show()
+  }
+})
+
+// 获取应用信息
+ipcMain.handle('get-app-info', () => {
+  return {
+    version: app.getVersion(),
+    name: app.getName(),
+    path: app.getPath('userData')
   }
 })

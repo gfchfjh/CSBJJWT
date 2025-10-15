@@ -153,3 +153,33 @@ async def submit_captcha(account_id: int, captcha: CaptchaInput):
     )
     
     return {"message": "验证码已提交"}
+
+
+@router.get("/{account_id}/servers")
+async def get_servers(account_id: int):
+    """获取账号的服务器列表"""
+    # 获取抓取器实例
+    scraper = scraper_manager.scrapers.get(account_id)
+    
+    if not scraper:
+        raise HTTPException(status_code=404, detail="账号未启动或不存在")
+    
+    # 获取服务器列表
+    servers = await scraper.get_servers()
+    
+    return {"servers": servers}
+
+
+@router.get("/{account_id}/servers/{server_id}/channels")
+async def get_channels(account_id: int, server_id: str):
+    """获取指定服务器的频道列表"""
+    # 获取抓取器实例
+    scraper = scraper_manager.scrapers.get(account_id)
+    
+    if not scraper:
+        raise HTTPException(status_code=404, detail="账号未启动或不存在")
+    
+    # 获取频道列表
+    channels = await scraper.get_channels(server_id)
+    
+    return {"channels": channels}

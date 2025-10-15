@@ -53,11 +53,59 @@ async def get_image(filename: str, token: str = Query(...)):
 async def health_check():
     """健康检查"""
     storage_size_gb = image_processor.get_storage_size()
+    
+    # 统计图片数量
+    image_count = len(list(image_processor.storage_path.glob("*.jpg")))
+    
     return {
         "status": "ok",
         "storage_size_gb": round(storage_size_gb, 2),
-        "storage_path": str(image_processor.storage_path)
+        "storage_path": str(image_processor.storage_path),
+        "image_count": image_count,
+        "max_size_gb": settings.image_max_size_gb
     }
+
+
+@image_app.post("/cleanup")
+async def cleanup_old_images(days: int = Query(default=7, ge=1, le=30)):
+    """
+    清理旧图片
+    
+    Args:
+        days: 清理多少天前的图片
+    """
+    try:
+        await image_processor.cleanup_old_images(days)
+        return {"status": "success", "message": f"已清理{days}天前的图片"}
+    except Exception as e:
+        logger.error(f"清理图片失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@image_app.get("/stats")
+async def get_stats():
+    """获取图床统计信息"""
+    try:
+        storage_path = image_processor.storage_path
+        
+        # 统计各类信息
+        total_images = 0
+        total_size_bytes = 0
+        
+        for filepath in storage_path.glob("*.jpg"):
+            total_images += 1
+            total_size_bytes += filepath.stat().st_size
+        
+        return {
+            "total_images": total_images,
+            "total_size_mb": round(total_size_bytes / (1024 * 1024), 2),
+            "total_size_gb": round(total_size_bytes / (1024 ** 3), 2),
+            "storage_path": str(storage_path),
+            "active_tokens": len(image_processor.url_tokens)
+        }
+    except Exception as e:
+        logger.error(f"获取统计信息失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def start_image_server():

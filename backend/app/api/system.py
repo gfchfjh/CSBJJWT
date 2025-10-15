@@ -101,3 +101,75 @@ async def save_filter_rules(rules: FilterRules):
             raise HTTPException(status_code=500, detail="保存失败")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stats")
+async def get_stats():
+    """获取统计信息"""
+    from ..database import db
+    from datetime import datetime, timedelta
+    
+    # 获取今日消息统计
+    logs = db.get_message_logs(limit=1000)
+    
+    today = datetime.now().date()
+    today_logs = [log for log in logs if datetime.fromisoformat(log['created_at']).date() == today]
+    
+    total = len(today_logs)
+    success = len([log for log in today_logs if log['status'] == 'success'])
+    failed = len([log for log in today_logs if log['status'] == 'failed'])
+    
+    # 计算平均延迟
+    latencies = [log['latency_ms'] for log in today_logs if log.get('latency_ms')]
+    avg_latency = sum(latencies) / len(latencies) if latencies else 0
+    
+    # 计算成功率
+    success_rate = (success / total * 100) if total > 0 else 0
+    
+    return {
+        "total": total,
+        "success": success,
+        "failed": failed,
+        "success_rate": round(success_rate, 1),
+        "avg_latency": round(avg_latency, 0)
+    }
+
+
+@router.post("/restart")
+async def restart_service():
+    """重启服务"""
+    await message_worker.stop()
+    await asyncio.sleep(1)
+    asyncio.create_task(message_worker.start())
+    
+    return {"message": "服务正在重启"}
+
+
+@router.get("/health")
+async def health_check():
+    """健康检查"""
+    try:
+        # 检查Redis连接
+        redis_ok = await redis_queue.ping() if hasattr(redis_queue, 'ping') else True
+        
+        # 检查Worker状态
+        worker_ok = message_worker.is_running
+        
+        # 检查抓取器状态
+        scrapers_count = len(scraper_manager.scrapers)
+        
+        status = "healthy" if (redis_ok and worker_ok) else "unhealthy"
+        
+        return {
+            "status": status,
+            "redis": "connected" if redis_ok else "disconnected",
+            "worker": "running" if worker_ok else "stopped",
+            "scrapers": scrapers_count,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
