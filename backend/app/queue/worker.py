@@ -347,7 +347,7 @@ class MessageWorker:
             
             # 记录日志
             status = 'success' if success else 'failed'
-            db.add_message_log(
+            log_id = db.add_message_log(
                 kook_message_id=message['message_id'],
                 kook_channel_id=message['channel_id'],
                 content=content,
@@ -362,6 +362,17 @@ class MessageWorker:
                 logger.info(f"消息转发成功: {platform} - {target_channel}")
             else:
                 logger.error(f"消息转发失败: {platform} - {target_channel}")
+                
+                # 添加到失败消息队列，等待重试
+                with db.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO failed_messages (message_log_id, retry_count)
+                        VALUES (?, 0)
+                    """, (log_id,))
+                    conn.commit()
+                
+                logger.info(f"消息已添加到重试队列: log_id={log_id}")
                 
         except Exception as e:
             logger.error(f"转发消息异常: {str(e)}")

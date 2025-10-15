@@ -108,6 +108,11 @@
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
+
+    <!-- 数据可视化图表 -->
+    <div style="margin-top: 20px">
+      <Charts />
+    </div>
   </div>
 </template>
 
@@ -115,6 +120,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSystemStore } from '../store/system'
 import api from '../api'
+import Charts from '../components/Charts.vue'
 
 const systemStore = useSystemStore()
 

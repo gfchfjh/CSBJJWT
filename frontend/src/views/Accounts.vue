@@ -76,6 +76,15 @@
       </div>
     </el-card>
     
+    <!-- 验证码输入对话框 -->
+    <CaptchaDialog
+      v-model:visible="showCaptchaDialog"
+      :account-id="captchaData.accountId"
+      :image-url="captchaData.imageUrl"
+      :timestamp="captchaData.timestamp"
+      @submit="handleCaptchaSubmit"
+    />
+
     <!-- 添加账号对话框 -->
     <el-dialog
       v-model="showAddDialog"
@@ -122,18 +131,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAccountsStore } from '../store/accounts'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import CaptchaDialog from '../components/CaptchaDialog.vue'
+import { getCaptchaWS } from '../utils/websocket'
 
 const accountsStore = useAccountsStore()
 
 const showAddDialog = ref(false)
+const showCaptchaDialog = ref(false)
+
 const accountForm = ref({
   email: '',
   loginType: 'cookie',
   password: '',
   cookie: ''
+})
+
+const captchaData = ref({
+  accountId: 0,
+  imageUrl: '',
+  timestamp: 0
 })
 
 const addAccount = async () => {
@@ -199,8 +218,37 @@ const deleteAccount = async (accountId) => {
   }
 }
 
+const handleCaptchaSubmit = (code) => {
+  console.log('验证码已提交:', code)
+  ElMessage.success('验证码已提交，请等待登录完成')
+}
+
+// WebSocket连接
+let captchaWS = null
+
 onMounted(() => {
   accountsStore.fetchAccounts()
+  
+  // 连接验证码WebSocket
+  captchaWS = getCaptchaWS()
+  
+  // 监听验证码请求
+  captchaWS.on('captcha_required', (data) => {
+    console.log('收到验证码请求:', data)
+    captchaData.value = {
+      accountId: data.account_id,
+      imageUrl: data.image_url,
+      timestamp: data.timestamp
+    }
+    showCaptchaDialog.value = true
+  })
+})
+
+onUnmounted(() => {
+  // 清理WebSocket监听
+  if (captchaWS) {
+    captchaWS.off('captcha_required')
+  }
 })
 </script>
 

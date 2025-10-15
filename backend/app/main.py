@@ -4,9 +4,10 @@ FastAPI主应用
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system
+from .api import accounts, bots, mappings, logs, system, websocket, backup
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
+from .queue.retry_worker import retry_worker
 from .utils.logger import logger
 from .config import settings
 import asyncio
@@ -33,6 +34,11 @@ async def lifespan(app: FastAPI):
         background_tasks.append(worker_task)
         logger.info("✅ 消息处理Worker已启动")
         
+        # 启动重试Worker
+        retry_task = asyncio.create_task(retry_worker.start())
+        background_tasks.append(retry_task)
+        logger.info("✅ 失败消息重试Worker已启动")
+        
         # 启动图床服务器
         from .image_server import start_image_server
         image_server_task = asyncio.create_task(start_image_server())
@@ -51,6 +57,10 @@ async def lifespan(app: FastAPI):
         # 停止Worker
         await message_worker.stop()
         logger.info("✅ 消息处理Worker已停止")
+        
+        # 停止重试Worker
+        await retry_worker.stop()
+        logger.info("✅ 重试Worker已停止")
         
         # 取消所有后台任务
         for task in background_tasks:
@@ -94,6 +104,8 @@ app.include_router(bots.router)
 app.include_router(mappings.router)
 app.include_router(logs.router)
 app.include_router(system.router)
+app.include_router(websocket.router)
+app.include_router(backup.router)
 
 
 @app.get("/")
