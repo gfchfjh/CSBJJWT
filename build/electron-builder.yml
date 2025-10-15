@@ -1,0 +1,102 @@
+# Electron Builder配置文件
+# 用于打包桌面应用
+
+appId: com.kook.forwarder
+productName: KOOK消息转发系统
+copyright: Copyright © 2025
+electronVersion: 28.0.0
+
+# 目录配置
+directories:
+  output: dist
+  buildResources: build
+
+# 文件包含/排除
+files:
+  - "**/*"
+  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
+  - "!.editorconfig"
+  - "!**/._*"
+  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}"
+  - "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}"
+  - "!**/{appveyor.yml,.travis.yml,circle.yml}"
+  - "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+
+# Windows配置
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: ${productName}_v${version}_Windows_${arch}.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: ${productName}
+  license: ../LICENSE
+
+# macOS配置
+mac:
+  target:
+    - dmg
+  icon: build/icon.icns
+  category: public.app-category.utilities
+  artifactName: ${productName}_v${version}_macOS.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+
+dmg:
+  title: ${productName} ${version}
+  icon: build/icon.icns
+  background: build/dmg-background.png
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 144
+      y: 188
+      type: file
+    - x: 396
+      y: 188
+      type: link
+      path: /Applications
+
+# Linux配置
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icons
+  category: Utility
+  artifactName: ${productName}_v${version}_Linux_${arch}.${ext}
+  maintainer: your.email@example.com
+  vendor: KOOK Forwarder Team
+
+appImage:
+  license: ../LICENSE
+
+# 发布配置
+publish:
+  provider: github
+  owner: yourusername
+  repo: kook-forwarder
+
+# 压缩配置
+compression: maximum
+
+# 额外资源
+extraResources:
+  - from: ../backend/dist
+    to: backend
+  - from: ../redis
+    to: redis
+  - from: ../docs
+    to: docs
