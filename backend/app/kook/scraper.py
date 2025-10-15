@@ -477,6 +477,7 @@ class KookScraper:
     async def get_servers(self) -> list:
         """
         获取服务器列表
+        支持多种可能的DOM结构，提高兼容性
         
         Returns:
             服务器列表 [{"id": "server_id", "name": "server_name", "icon": "icon_url"}]
@@ -488,29 +489,102 @@ class KookScraper:
             
             logger.info("开始获取服务器列表...")
             
-            # 等待服务器列表加载
-            await self.page.wait_for_selector('.guild-list', timeout=10000)
+            # 尝试多个可能的选择器，提高兼容性
+            selectors = [
+                '.guild-list',
+                '[class*="guild-list"]',
+                '[class*="server-list"]',
+                '[class*="GuildList"]',
+                'nav[class*="guild"]',
+                'aside[class*="guild"]',
+            ]
             
-            # 执行JavaScript获取服务器列表
+            container_found = False
+            for selector in selectors:
+                try:
+                    await self.page.wait_for_selector(selector, timeout=3000)
+                    logger.info(f"找到服务器列表容器: {selector}")
+                    container_found = True
+                    break
+                except:
+                    continue
+            
+            if not container_found:
+                logger.warning("未找到服务器列表容器，尝试保存页面截图用于调试")
+                await self.page.screenshot(path='debug_servers_page.png')
+                logger.info("截图已保存到: debug_servers_page.png")
+            
+            # 执行JavaScript获取服务器列表（使用更通用的方法）
             servers = await self.page.evaluate("""
                 () => {
                     const servers = [];
-                    // 查找所有服务器元素（根据KOOK实际DOM结构调整选择器）
-                    const guildElements = document.querySelectorAll('.guild-item, [class*="guild"]');
+                    
+                    // 定义多种可能的选择器组合
+                    const possibleSelectors = [
+                        '.guild-item',
+                        '[class*="guild-item"]',
+                        '[class*="GuildItem"]',
+                        '[class*="server-item"]',
+                        '[data-guild-id]',
+                        '[data-server-id]',
+                        'a[href*="/guild/"]',
+                        'div[class*="guild"][class*="item"]',
+                    ];
+                    
+                    let guildElements = [];
+                    for (const selector of possibleSelectors) {
+                        guildElements = document.querySelectorAll(selector);
+                        if (guildElements.length > 0) {
+                            console.log(`找到 ${guildElements.length} 个服务器，使用选择器: ${selector}`);
+                            break;
+                        }
+                    }
                     
                     guildElements.forEach(element => {
-                        // 提取服务器ID（通常在data属性或id中）
-                        const serverId = element.getAttribute('data-guild-id') || 
-                                        element.getAttribute('data-id') ||
-                                        element.id;
+                        // 尝试多种方式提取服务器ID
+                        const serverId = 
+                            element.getAttribute('data-guild-id') || 
+                            element.getAttribute('data-id') ||
+                            element.getAttribute('data-server-id') ||
+                            element.id ||
+                            (element.href && element.href.match(/guild\/(\w+)/)?.[1]);
                         
-                        // 提取服务器名称
-                        const nameElement = element.querySelector('.guild-name, [class*="name"]');
-                        const serverName = nameElement ? nameElement.textContent.trim() : '';
+                        // 尝试多种方式提取服务器名称
+                        let serverName = '';
+                        const nameSelectors = [
+                            '.guild-name',
+                            '[class*="guild-name"]',
+                            '[class*="GuildName"]',
+                            '[class*="name"]',
+                            '.server-name',
+                            'span',
+                            'div',
+                        ];
                         
-                        // 提取图标
-                        const iconElement = element.querySelector('img, .guild-icon');
-                        const iconUrl = iconElement ? iconElement.src : '';
+                        for (const sel of nameSelectors) {
+                            const nameEl = element.querySelector(sel);
+                            if (nameEl && nameEl.textContent.trim()) {
+                                serverName = nameEl.textContent.trim();
+                                break;
+                            }
+                        }
+                        
+                        // 如果找不到名称元素，尝试直接获取元素文本
+                        if (!serverName) {
+                            serverName = element.textContent.trim().split('\n')[0];
+                        }
+                        
+                        // 提取图标（尝试多种方式）
+                        let iconUrl = '';
+                        const imgElement = element.querySelector('img');
+                        if (imgElement) {
+                            iconUrl = imgElement.src || imgElement.getAttribute('data-src') || '';
+                        }
+                        
+                        // 获取title属性作为备选名称
+                        if (!serverName && element.title) {
+                            serverName = element.title;
+                        }
                         
                         if (serverId && serverName) {
                             servers.push({
@@ -525,16 +599,25 @@ class KookScraper:
                 }
             """)
             
-            logger.info(f"成功获取 {len(servers)} 个服务器")
+            if len(servers) > 0:
+                logger.info(f"✅ 成功获取 {len(servers)} 个服务器")
+                logger.debug(f"服务器列表: {servers[:3]}...")  # 打印前3个用于调试
+            else:
+                logger.warning("⚠️ 未获取到任何服务器，可能需要调整选择器")
+                logger.info("提示: 请查看 debug_servers_page.png 截图来确定正确的DOM结构")
+            
             return servers
             
         except Exception as e:
-            logger.error(f"获取服务器列表失败: {str(e)}")
+            logger.error(f"❌ 获取服务器列表失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return []
     
     async def get_channels(self, server_id: str) -> list:
         """
         获取指定服务器的频道列表
+        支持多种可能的DOM结构，提高兼容性
         
         Args:
             server_id: 服务器ID
@@ -549,39 +632,133 @@ class KookScraper:
             
             logger.info(f"开始获取服务器 {server_id} 的频道列表...")
             
-            # 点击服务器以显示频道列表
-            try:
-                await self.page.click(f'[data-guild-id="{server_id}"], #{server_id}')
-                await asyncio.sleep(1)  # 等待频道列表加载
-            except:
-                logger.warning(f"无法点击服务器 {server_id}，尝试直接获取频道")
+            # 尝试多种方式点击服务器
+            click_selectors = [
+                f'[data-guild-id="{server_id}"]',
+                f'[data-server-id="{server_id}"]',
+                f'#{server_id}',
+                f'a[href*="{server_id}"]',
+            ]
             
-            # 执行JavaScript获取频道列表
+            clicked = False
+            for selector in click_selectors:
+                try:
+                    await self.page.click(selector, timeout=2000)
+                    logger.info(f"成功点击服务器: {selector}")
+                    clicked = True
+                    break
+                except:
+                    continue
+            
+            if not clicked:
+                logger.warning(f"无法点击服务器 {server_id}，尝试直接获取频道")
+            else:
+                # 等待频道列表加载
+                await asyncio.sleep(1.5)
+            
+            # 保存调试截图
+            await self.page.screenshot(path=f'debug_channels_{server_id}.png')
+            logger.debug(f"频道列表截图已保存: debug_channels_{server_id}.png")
+            
+            # 执行JavaScript获取频道列表（使用更通用的方法）
             channels = await self.page.evaluate("""
                 (serverId) => {
                     const channels = [];
                     
-                    // 查找频道列表容器
-                    const channelList = document.querySelector('.channel-list, [class*="channel"]');
-                    if (!channelList) return channels;
+                    // 尝试多种可能的频道列表容器选择器
+                    const containerSelectors = [
+                        '.channel-list',
+                        '[class*="channel-list"]',
+                        '[class*="ChannelList"]',
+                        '[class*="channels"]',
+                        'nav[class*="channel"]',
+                        'div[class*="sidebar"]',
+                    ];
                     
-                    // 查找所有频道元素
-                    const channelElements = channelList.querySelectorAll('.channel-item, [class*="channel-"]');
+                    let channelList = null;
+                    for (const selector of containerSelectors) {
+                        channelList = document.querySelector(selector);
+                        if (channelList) {
+                            console.log(`找到频道列表容器: ${selector}`);
+                            break;
+                        }
+                    }
+                    
+                    if (!channelList) {
+                        console.warn('未找到频道列表容器');
+                        return channels;
+                    }
+                    
+                    // 尝试多种可能的频道项选择器
+                    const itemSelectors = [
+                        '.channel-item',
+                        '[class*="channel-item"]',
+                        '[class*="ChannelItem"]',
+                        '[data-channel-id]',
+                        'a[href*="/channel/"]',
+                        'div[class*="channel"][class*="item"]',
+                    ];
+                    
+                    let channelElements = [];
+                    for (const selector of itemSelectors) {
+                        channelElements = channelList.querySelectorAll(selector);
+                        if (channelElements.length > 0) {
+                            console.log(`找到 ${channelElements.length} 个频道，使用选择器: ${selector}`);
+                            break;
+                        }
+                    }
                     
                     channelElements.forEach(element => {
-                        // 提取频道ID
-                        const channelId = element.getAttribute('data-channel-id') || 
-                                         element.getAttribute('data-id') ||
-                                         element.id;
+                        // 尝试多种方式提取频道ID
+                        const channelId = 
+                            element.getAttribute('data-channel-id') || 
+                            element.getAttribute('data-id') ||
+                            element.id ||
+                            (element.href && element.href.match(/channel\/(\w+)/)?.[1]);
                         
-                        // 提取频道名称
-                        const nameElement = element.querySelector('.channel-name, [class*="name"]');
-                        const channelName = nameElement ? nameElement.textContent.trim() : '';
+                        // 尝试多种方式提取频道名称
+                        let channelName = '';
+                        const nameSelectors = [
+                            '.channel-name',
+                            '[class*="channel-name"]',
+                            '[class*="ChannelName"]',
+                            '[class*="name"]',
+                            'span',
+                            'div',
+                        ];
                         
-                        // 提取频道类型（文本/语音）
-                        const isVoice = element.classList.contains('voice-channel') ||
-                                       element.querySelector('[class*="voice"]') !== null;
+                        for (const sel of nameSelectors) {
+                            const nameEl = element.querySelector(sel);
+                            if (nameEl && nameEl.textContent.trim()) {
+                                channelName = nameEl.textContent.trim();
+                                // 移除频道名称前的# 或其他符号
+                                channelName = channelName.replace(/^[#*\-\s]+/, '');
+                                break;
+                            }
+                        }
+                        
+                        // 如果找不到名称，尝试元素文本
+                        if (!channelName) {
+                            channelName = element.textContent.trim().split('\n')[0];
+                            channelName = channelName.replace(/^[#*\-\s]+/, '');
+                        }
+                        
+                        // 判断频道类型（文本/语音）
+                        const elementClass = element.className.toLowerCase();
+                        const elementHTML = element.innerHTML.toLowerCase();
+                        
+                        const isVoice = 
+                            elementClass.includes('voice') ||
+                            elementHTML.includes('voice') ||
+                            element.querySelector('[class*="voice"]') !== null ||
+                            element.querySelector('svg[class*="voice"]') !== null;
+                        
                         const channelType = isVoice ? 'voice' : 'text';
+                        
+                        // 获取title作为备选名称
+                        if (!channelName && element.title) {
+                            channelName = element.title.replace(/^[#*\-\s]+/, '');
+                        }
                         
                         if (channelId && channelName) {
                             channels.push({
@@ -597,11 +774,19 @@ class KookScraper:
                 }
             """, server_id)
             
-            logger.info(f"成功获取 {len(channels)} 个频道")
+            if len(channels) > 0:
+                logger.info(f"✅ 成功获取 {len(channels)} 个频道")
+                logger.debug(f"频道列表: {channels[:3]}...")  # 打印前3个用于调试
+            else:
+                logger.warning(f"⚠️ 未获取到服务器 {server_id} 的任何频道")
+                logger.info(f"提示: 请查看 debug_channels_{server_id}.png 截图")
+            
             return channels
             
         except Exception as e:
-            logger.error(f"获取频道列表失败: {str(e)}")
+            logger.error(f"❌ 获取频道列表失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return []
 
 

@@ -290,5 +290,193 @@ class ImageProcessor:
             return None
 
 
+class AttachmentProcessor:
+    """附件文件处理器（支持最大50MB文件）"""
+    
+    def __init__(self):
+        # 附件存储目录
+        self.storage_path = Path(settings.data_dir) / "attachments"
+        self.storage_path.mkdir(parents=True, exist_ok=True)
+        
+        # 最大文件大小（50MB）
+        self.max_size_mb = 50
+    
+    async def download_attachment(self, url: str,
+                                  filename: str,
+                                  cookies: Optional[Dict] = None,
+                                  referer: Optional[str] = None) -> Optional[str]:
+        """
+        下载附件文件
+        
+        Args:
+            url: 附件URL
+            filename: 文件名
+            cookies: Cookie字典
+            referer: Referer头
+            
+        Returns:
+            本地文件路径，失败返回None
+        """
+        try:
+            logger.info(f"开始下载附件: {filename}")
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            if referer:
+                headers['Referer'] = referer
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    url,
+                    headers=headers,
+                    cookies=cookies,
+                    timeout=aiohttp.ClientTimeout(total=60)  # 60秒超时
+                ) as response:
+                    if response.status != 200:
+                        logger.error(f"附件下载失败: {url}, 状态码: {response.status}")
+                        return None
+                    
+                    # 检查文件大小
+                    content_length = response.headers.get('Content-Length')
+                    if content_length:
+                        size_mb = int(content_length) / (1024 * 1024)
+                        if size_mb > self.max_size_mb:
+                            logger.error(f"附件过大: {size_mb:.2f}MB > {self.max_size_mb}MB")
+                            return None
+                        logger.info(f"附件大小: {size_mb:.2f}MB")
+                    
+                    # 生成安全的文件名
+                    safe_filename = self._sanitize_filename(filename)
+                    
+                    # 如果文件已存在，添加时间戳
+                    filepath = self.storage_path / safe_filename
+                    if filepath.exists():
+                        name, ext = os.path.splitext(safe_filename)
+                        timestamp = int(time.time())
+                        safe_filename = f"{name}_{timestamp}{ext}"
+                        filepath = self.storage_path / safe_filename
+                    
+                    # 分块下载并保存
+                    total_size = 0
+                    with open(filepath, 'wb') as f:
+                        async for chunk in response.content.iter_chunked(8192):
+                            f.write(chunk)
+                            total_size += len(chunk)
+                            
+                            # 检查是否超过最大大小
+                            if total_size > self.max_size_mb * 1024 * 1024:
+                                f.close()
+                                filepath.unlink()  # 删除部分下载的文件
+                                logger.error(f"附件下载超过最大限制: {self.max_size_mb}MB")
+                                return None
+                    
+                    logger.info(f"✅ 附件下载成功: {filepath}, 大小: {total_size / 1024:.2f}KB")
+                    return str(filepath)
+                    
+        except asyncio.TimeoutError:
+            logger.error(f"附件下载超时: {url}")
+            return None
+        except Exception as e:
+            logger.error(f"附件下载异常: {url}, 错误: {str(e)}")
+            return None
+    
+    def _sanitize_filename(self, filename: str) -> str:
+        """
+        清理文件名，移除不安全字符
+        
+        Args:
+            filename: 原始文件名
+            
+        Returns:
+            安全的文件名
+        """
+        # 移除路径分隔符和不安全字符
+        unsafe_chars = ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
+        safe_name = filename
+        for char in unsafe_chars:
+            safe_name = safe_name.replace(char, '_')
+        
+        # 限制文件名长度（保留扩展名）
+        name, ext = os.path.splitext(safe_name)
+        if len(name) > 200:
+            name = name[:200]
+        
+        return name + ext
+    
+    async def cleanup_old_attachments(self, days: int = 7):
+        """
+        清理旧附件
+        
+        Args:
+            days: 保留天数
+        """
+        try:
+            current_time = time.time()
+            deleted_count = 0
+            freed_space = 0
+            
+            for filepath in self.storage_path.glob("*"):
+                if filepath.is_file():
+                    # 检查文件修改时间
+                    mtime = filepath.stat().st_mtime
+                    age_days = (current_time - mtime) / (24 * 3600)
+                    
+                    if age_days > days:
+                        file_size = filepath.stat().st_size
+                        filepath.unlink()
+                        deleted_count += 1
+                        freed_space += file_size
+            
+            freed_mb = freed_space / (1024 * 1024)
+            logger.info(f"清理旧附件完成: 删除 {deleted_count} 个文件, 释放 {freed_mb:.2f}MB 空间")
+            
+        except Exception as e:
+            logger.error(f"清理旧附件失败: {str(e)}")
+    
+    def get_storage_size(self) -> float:
+        """
+        获取附件存储空间占用（GB）
+        
+        Returns:
+            占用大小（GB）
+        """
+        total_size = 0
+        for filepath in self.storage_path.glob("*"):
+            if filepath.is_file():
+                total_size += filepath.stat().st_size
+        
+        return total_size / (1024 ** 3)
+    
+    def get_file_info(self, filepath: str) -> Optional[Dict]:
+        """
+        获取文件信息
+        
+        Args:
+            filepath: 文件路径
+            
+        Returns:
+            文件信息字典
+        """
+        try:
+            path = Path(filepath)
+            if not path.exists():
+                return None
+            
+            stat = path.stat()
+            return {
+                'filename': path.name,
+                'size': stat.st_size,
+                'size_mb': stat.st_size / (1024 * 1024),
+                'created_at': stat.st_ctime,
+                'modified_at': stat.st_mtime,
+            }
+        except Exception as e:
+            logger.error(f"获取文件信息失败: {str(e)}")
+            return None
+
+
 # 全局单例
 image_processor = ImageProcessor()
+attachment_processor = AttachmentProcessor()

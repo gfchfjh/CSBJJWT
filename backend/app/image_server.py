@@ -108,9 +108,41 @@ async def get_stats():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+async def auto_cleanup_task():
+    """自动清理任务（每天执行一次）"""
+    while True:
+        try:
+            # 等待24小时
+            await asyncio.sleep(24 * 3600)
+            
+            logger.info("开始自动清理旧图片...")
+            
+            # 清理旧图片
+            await image_processor.cleanup_old_images(days=settings.image_cleanup_days)
+            
+            # 检查存储空间
+            storage_size_gb = image_processor.get_storage_size()
+            if storage_size_gb > settings.image_max_size_gb:
+                logger.warning(f"存储空间超过限制: {storage_size_gb:.2f}GB > {settings.image_max_size_gb}GB")
+                # 清理更早的图片
+                await image_processor.cleanup_old_images(days=3)
+            
+            # 同样清理附件
+            from .processors.image import attachment_processor
+            await attachment_processor.cleanup_old_attachments(days=settings.image_cleanup_days)
+            
+            logger.info("自动清理完成")
+            
+        except Exception as e:
+            logger.error(f"自动清理异常: {str(e)}")
+
+
 async def start_image_server():
     """启动图床服务器"""
     import uvicorn
+    
+    # 启动自动清理任务
+    cleanup_task = asyncio.create_task(auto_cleanup_task())
     
     config = uvicorn.Config(
         image_app,
@@ -121,11 +153,14 @@ async def start_image_server():
     server = uvicorn.Server(config)
     
     logger.info(f"图床服务器启动: http://127.0.0.1:{settings.image_server_port}")
+    logger.info(f"自动清理任务已启动（每24小时执行一次）")
     
     try:
         await server.serve()
     except Exception as e:
         logger.error(f"图床服务器异常: {str(e)}")
+    finally:
+        cleanup_task.cancel()
 
 
 if __name__ == "__main__":
