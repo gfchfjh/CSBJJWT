@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     app_name: str = "KOOK消息转发系统"
     app_version: str = "1.0.0"
     debug: bool = False
+    data_dir: Path = DATA_DIR
     
     # API服务配置
     api_host: str = "127.0.0.1"

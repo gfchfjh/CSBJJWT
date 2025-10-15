@@ -3,8 +3,9 @@ KOOK消息抓取模块（使用Playwright）
 """
 import asyncio
 import json
+import base64
 from typing import Optional, Dict, Any, Callable
-from playwright.async_api import async_playwright, Page, Browser, BrowserContext
+from playwright.async_api import async_playwright, Page, Browser, BrowserContext, TimeoutError
 from ..utils.logger import logger
 from ..database import db
 
@@ -206,17 +207,183 @@ class KookScraper:
             # 点击登录按钮
             await self.page.click('button[type="submit"]')
             
-            # 等待登录完成
-            await asyncio.sleep(5)
+            # 等待登录完成或验证码出现
+            await asyncio.sleep(3)
             
             # 检查是否需要验证码
-            # TODO: 实现验证码处理
+            captcha_required = await self._check_captcha_required()
+            
+            if captcha_required:
+                logger.info("检测到需要验证码")
+                success = await self._handle_captcha()
+                if not success:
+                    logger.error("验证码处理失败")
+                    return False
+            
+            # 再次等待登录完成
+            await asyncio.sleep(2)
             
             return True
             
         except Exception as e:
             logger.error(f"账号密码登录失败: {str(e)}")
             return False
+    
+    async def _check_captcha_required(self) -> bool:
+        """
+        检查是否需要验证码
+        
+        Returns:
+            是否需要验证码
+        """
+        try:
+            # 尝试查找验证码输入框或验证码图片
+            # 注意：实际选择器需要根据KOOK网页的实际结构调整
+            captcha_selectors = [
+                'input[name="captcha"]',
+                'input[placeholder*="验证码"]',
+                'img.captcha-image',
+                '.captcha-container'
+            ]
+            
+            for selector in captcha_selectors:
+                try:
+                    element = await self.page.wait_for_selector(selector, timeout=2000)
+                    if element:
+                        return True
+                except TimeoutError:
+                    continue
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"检查验证码异常: {str(e)}")
+            return False
+    
+    async def _handle_captcha(self) -> bool:
+        """
+        处理验证码（需要用户输入）
+        
+        Returns:
+            是否成功
+        """
+        try:
+            # 获取验证码图片
+            captcha_image_url = await self._get_captcha_image()
+            
+            if not captcha_image_url:
+                logger.error("无法获取验证码图片")
+                return False
+            
+            logger.info(f"验证码图片URL: {captcha_image_url}")
+            
+            # TODO: 这里需要通过WebSocket或其他方式通知前端显示验证码对话框
+            # 由于当前架构限制，暂时使用等待方式
+            # 在实际应用中，应该建立前后端实时通信机制
+            
+            # 存储验证码信息到数据库，让前端轮询获取
+            db.set_system_config(
+                f"captcha_required_{self.account_id}",
+                json.dumps({
+                    "image_url": captcha_image_url,
+                    "timestamp": asyncio.get_event_loop().time()
+                })
+            )
+            
+            # 等待用户输入验证码（最多2分钟）
+            captcha_code = await self._wait_for_captcha_input(timeout=120)
+            
+            if not captcha_code:
+                logger.error("验证码输入超时")
+                return False
+            
+            # 填写验证码
+            await self.page.fill('input[name="captcha"]', captcha_code)
+            
+            # 再次提交
+            await self.page.click('button[type="submit"]')
+            await asyncio.sleep(2)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"处理验证码异常: {str(e)}")
+            return False
+    
+    async def _get_captcha_image(self) -> Optional[str]:
+        """
+        获取验证码图片
+        
+        Returns:
+            图片URL或base64数据
+        """
+        try:
+            # 查找验证码图片元素
+            img_element = await self.page.query_selector('img.captcha-image')
+            
+            if not img_element:
+                # 尝试其他可能的选择器
+                img_element = await self.page.query_selector('img[alt*="验证码"]')
+            
+            if img_element:
+                # 获取图片URL
+                src = await img_element.get_attribute('src')
+                
+                if src:
+                    # 如果是完整URL，直接返回
+                    if src.startswith('http'):
+                        return src
+                    
+                    # 如果是base64，也返回
+                    if src.startswith('data:image'):
+                        return src
+                    
+                    # 如果是相对路径，拼接完整URL
+                    return f"https://www.kookapp.cn{src}"
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"获取验证码图片异常: {str(e)}")
+            return None
+    
+    async def _wait_for_captcha_input(self, timeout: int = 120) -> Optional[str]:
+        """
+        等待用户输入验证码
+        
+        Args:
+            timeout: 超时时间（秒）
+            
+        Returns:
+            验证码字符串
+        """
+        start_time = asyncio.get_event_loop().time()
+        
+        while asyncio.get_event_loop().time() - start_time < timeout:
+            # 从数据库检查用户是否已输入验证码
+            captcha_data = db.get_system_config(f"captcha_input_{self.account_id}")
+            
+            if captcha_data:
+                try:
+                    data = json.loads(captcha_data)
+                    code = data.get('code')
+                    
+                    if code:
+                        # 清除已使用的验证码
+                        db.delete_system_config(f"captcha_input_{self.account_id}")
+                        db.delete_system_config(f"captcha_required_{self.account_id}")
+                        
+                        return code
+                except:
+                    pass
+            
+            # 每秒检查一次
+            await asyncio.sleep(1)
+        
+        # 超时，清除验证码请求
+        db.delete_system_config(f"captcha_required_{self.account_id}")
+        
+        return None
     
     async def _check_login_status(self) -> bool:
         """检查登录状态"""

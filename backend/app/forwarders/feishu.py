@@ -133,6 +133,87 @@ class FeishuForwarder:
             logger.error(f"飞书发送异常: {str(e)}")
             return False
     
+    async def send_image(self, app_id: str, app_secret: str,
+                        chat_id: str, image_url: str,
+                        caption: Optional[str] = None) -> bool:
+        """
+        发送图片到飞书（使用消息卡片）
+        
+        Args:
+            app_id: App ID
+            app_secret: App Secret
+            chat_id: 群聊ID
+            image_url: 图片URL
+            caption: 图片说明
+            
+        Returns:
+            是否成功
+        """
+        try:
+            await self.rate_limiter.acquire()
+            
+            access_token = await self.get_access_token(app_id, app_secret)
+            if not access_token:
+                return False
+            
+            # 构建图片消息卡片
+            card_content = {
+                "config": {
+                    "wide_screen_mode": True
+                },
+                "elements": [
+                    {
+                        "tag": "img",
+                        "img_key": image_url,
+                        "alt": {
+                            "tag": "plain_text",
+                            "content": caption or "图片"
+                        }
+                    }
+                ]
+            }
+            
+            # 如果有说明文字，添加到卡片
+            if caption:
+                card_content["elements"].insert(0, {
+                    "tag": "div",
+                    "text": {
+                        "tag": "plain_text",
+                        "content": caption
+                    }
+                })
+            
+            message = {
+                "msg_type": "interactive",
+                "content": card_content
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"https://open.feishu.cn/open-apis/im/v1/messages",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "receive_id": chat_id,
+                        "receive_id_type": "chat_id",
+                        **message
+                    }
+                ) as response:
+                    data = await response.json()
+                    
+                    if data.get("code") == 0:
+                        logger.info("飞书图片发送成功")
+                        return True
+                    else:
+                        logger.error(f"飞书图片发送失败: {data}")
+                        return False
+                        
+        except Exception as e:
+            logger.error(f"飞书图片发送异常: {str(e)}")
+            return False
+    
     async def send_card(self, app_id: str, app_secret: str,
                        chat_id: str, card_content: Dict[str, Any]) -> bool:
         """

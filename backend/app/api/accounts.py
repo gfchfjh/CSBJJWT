@@ -4,6 +4,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
+import json
 from ..database import db
 from ..utils.crypto import crypto_manager
 from ..kook.scraper import scraper_manager
@@ -114,3 +115,41 @@ async def stop_account(account_id: int):
         raise HTTPException(status_code=404, detail="抓取器不存在")
     
     return {"message": "抓取器已停止"}
+
+
+class CaptchaInput(BaseModel):
+    code: str
+
+
+@router.get("/{account_id}/captcha")
+async def get_captcha_status(account_id: int):
+    """获取验证码状态"""
+    captcha_data = db.get_system_config(f"captcha_required_{account_id}")
+    
+    if not captcha_data:
+        return {"required": False}
+    
+    try:
+        data = json.loads(captcha_data)
+        return {
+            "required": True,
+            "image_url": data.get("image_url"),
+            "timestamp": data.get("timestamp")
+        }
+    except:
+        return {"required": False}
+
+
+@router.post("/{account_id}/captcha")
+async def submit_captcha(account_id: int, captcha: CaptchaInput):
+    """提交验证码"""
+    # 保存用户输入的验证码
+    db.set_system_config(
+        f"captcha_input_{account_id}",
+        json.dumps({
+            "code": captcha.code,
+            "timestamp": "now"
+        })
+    )
+    
+    return {"message": "验证码已提交"}
