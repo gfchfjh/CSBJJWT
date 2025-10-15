@@ -44,6 +44,10 @@ export default {
   deleteAccount: (id) => api.delete(`/api/accounts/${id}`),
   startAccount: (id) => api.post(`/api/accounts/${id}/start`),
   stopAccount: (id) => api.post(`/api/accounts/${id}/stop`),
+  getServers: (accountId) => api.get(`/api/accounts/${accountId}/servers`),
+  getChannels: (accountId, serverId) => api.get(`/api/accounts/${accountId}/servers/${serverId}/channels`),
+  getCaptchaStatus: (accountId) => api.get(`/api/accounts/${accountId}/captcha`),
+  submitCaptcha: (accountId, code) => api.post(`/api/accounts/${accountId}/captcha`, { code }),
   
   // Bot配置
   getBotConfigs: (platform) => api.get('/api/bots/', { params: { platform } }),
@@ -64,7 +68,13 @@ export default {
   getFilterRules: () => api.get('/api/system/filter-rules'),
   saveFilterRules: (data) => api.post('/api/system/filter-rules', data),
   
-  // Bot管理（向导使用）
-  addBot: (data) => api.post('/api/bots/', data),
-  addAccount: (data) => api.post('/api/accounts/', data)
+  // 智能映射
+  suggestMappings: (data) => api.post('/api/smart-mapping/suggest', data),
+  applySmartMappings: (suggestions) => api.post('/api/smart-mapping/apply', suggestions),
+  previewSmartMapping: (accountId) => api.get(`/api/smart-mapping/preview/${accountId}`),
+  
+  // 备份恢复
+  backupConfig: () => api.post('/api/backup/create'),
+  restoreConfig: (data) => api.post('/api/backup/restore', data),
+  listBackups: () => api.get('/api/backup/list')
 }
