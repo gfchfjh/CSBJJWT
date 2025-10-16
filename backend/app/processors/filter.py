@@ -3,6 +3,7 @@
 支持关键词过滤、用户过滤、消息类型过滤
 """
 import re
+import json
 from typing import Dict, Any, List, Optional
 from ..database import db
 from ..utils.logger import logger
@@ -47,7 +48,13 @@ class MessageFilter:
             
             for row in rows:
                 rule_type = row['rule_type']
-                rule_value = eval(row['rule_value'])  # JSON数组字符串转为列表
+                
+                # 安全地解析JSON（替换eval）
+                try:
+                    rule_value = json.loads(row['rule_value'])
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"规则值JSON解析失败: {row['rule_value']}, 错误: {e}")
+                    continue
                 
                 if rule_type == 'keyword_blacklist':
                     rules['keyword_blacklist'] = rule_value
@@ -198,13 +205,13 @@ class MessageFilter:
                         UPDATE filter_rules 
                         SET rule_value = ?, enabled = ?
                         WHERE id = ?
-                    """, (str(rule_value), 1 if enabled else 0, existing['id']))
+                    """, (json.dumps(rule_value, ensure_ascii=False), 1 if enabled else 0, existing['id']))
                 else:
                     # 插入新规则
                     cursor.execute("""
                         INSERT INTO filter_rules (rule_type, rule_value, scope, enabled)
                         VALUES (?, ?, ?, ?)
-                    """, (rule_type, str(rule_value), scope, 1 if enabled else 0))
+                    """, (rule_type, json.dumps(rule_value, ensure_ascii=False), scope, 1 if enabled else 0))
             
             # 清空缓存
             self.rules_cache = {}
@@ -256,10 +263,16 @@ class MessageFilter:
             
             rules = []
             for row in rows:
+                try:
+                    rule_value = json.loads(row['rule_value'])
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"规则值JSON解析失败: {row['rule_value']}, 错误: {e}")
+                    rule_value = []
+                
                 rules.append({
                     'id': row['id'],
                     'rule_type': row['rule_type'],
-                    'rule_value': eval(row['rule_value']),
+                    'rule_value': rule_value,
                     'scope': row['scope'],
                     'enabled': bool(row['enabled'])
                 })

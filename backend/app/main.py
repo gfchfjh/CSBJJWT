@@ -1,15 +1,16 @@
 """
 FastAPI主应用
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, auth
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
 from .utils.logger import logger
 from .utils.captcha_solver import init_captcha_solver
+from .utils.auth import verify_api_token, generate_api_token
 from .config import settings
 import asyncio
 
@@ -21,6 +22,13 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 50)
     logger.info(f"启动 {settings.app_name} v{settings.app_version}")
     logger.info("=" * 50)
+    
+    # 检查API Token配置
+    if settings.api_token:
+        logger.info(f"✅ API认证已启用（Token: {settings.api_token[:10]}...）")
+    else:
+        logger.warning("⚠️  API认证未启用（建议设置API_TOKEN环境变量）")
+        logger.warning("⚠️  生成Token建议：export API_TOKEN=" + generate_api_token())
     
     # 存储后台任务
     background_tasks = []
@@ -100,13 +108,20 @@ app = FastAPI(
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 生产环境应该限制具体域名
+    # 开发环境允许本地访问，生产环境应限制具体域名
+    allow_origins=[
+        "http://localhost:5173",  # Vite开发服务器
+        "http://localhost:3000",  # 备用端口
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "X-API-Token"],  # 明确允许Token头
 )
 
 # 注册路由
+app.include_router(auth.router)  # 认证相关（无需Token）
 app.include_router(accounts.router)
 app.include_router(bots.router)
 app.include_router(mappings.router)

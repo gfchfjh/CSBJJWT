@@ -22,6 +22,8 @@ class KookScraper:
         self.is_running = False
         self.message_callback: Optional[Callable] = None
         self.playwright = None
+        self.reconnect_count = 0
+        self.max_reconnect = 5  # 最大重连次数
     
     async def start(self, cookie: Optional[str] = None, 
                    email: Optional[str] = None,
@@ -55,11 +57,20 @@ class KookScraper:
             # 如果提供了Cookie，加载Cookie
             if cookie:
                 try:
+                    # 验证Cookie格式
+                    if not self._validate_cookies(cookie):
+                        logger.error("Cookie格式验证失败")
+                        return False
+                    
                     cookies = json.loads(cookie)
                     await self.context.add_cookies(cookies)
                     logger.info("已加载Cookie")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Cookie JSON解析失败: {str(e)}")
+                    return False
                 except Exception as e:
                     logger.error(f"加载Cookie失败: {str(e)}")
+                    return False
             
             # 创建页面
             self.page = await self.context.new_page()
@@ -93,8 +104,20 @@ class KookScraper:
                 # 心跳检测
                 try:
                     await self.page.evaluate('() => console.log("heartbeat")')
-                except:
-                    logger.warning("心跳检测失败，尝试重连...")
+                    # 心跳成功，重置重连计数
+                    self.reconnect_count = 0
+                except Exception as e:
+                    logger.warning(f"心跳检测失败: {str(e)}，尝试重连...")
+                    
+                    # 检查是否达到最大重连次数
+                    if self.reconnect_count >= self.max_reconnect:
+                        logger.error(f"账号{self.account_id}达到最大重连次数({self.max_reconnect})，停止抓取器")
+                        self.is_running = False
+                        db.update_account_status(self.account_id, 'offline')
+                        break
+                    
+                    self.reconnect_count += 1
+                    logger.info(f"第{self.reconnect_count}次重连尝试（最多{self.max_reconnect}次）")
                     await self._reconnect()
             
             return True
@@ -128,6 +151,57 @@ class KookScraper:
     def set_message_callback(self, callback: Callable):
         """设置消息回调函数"""
         self.message_callback = callback
+    
+    def _validate_cookies(self, cookie_str: str) -> bool:
+        """
+        验证Cookie格式
+        
+        Args:
+            cookie_str: Cookie字符串
+            
+        Returns:
+            是否有效
+        """
+        try:
+            cookies = json.loads(cookie_str)
+            
+            # 检查是否为列表
+            if not isinstance(cookies, list):
+                logger.error("Cookie必须是列表格式")
+                return False
+            
+            # 检查列表不为空
+            if len(cookies) == 0:
+                logger.error("Cookie列表不能为空")
+                return False
+            
+            # 检查每个Cookie必需字段
+            for i, cookie in enumerate(cookies):
+                if not isinstance(cookie, dict):
+                    logger.error(f"Cookie[{i}]必须是字典格式")
+                    return False
+                
+                # 必需字段：name, value, domain
+                if 'name' not in cookie:
+                    logger.error(f"Cookie[{i}]缺少name字段")
+                    return False
+                if 'value' not in cookie:
+                    logger.error(f"Cookie[{i}]缺少value字段")
+                    return False
+                
+                # domain字段建议但非必需
+                if 'domain' not in cookie:
+                    logger.warning(f"Cookie[{i}]建议包含domain字段")
+            
+            logger.info(f"Cookie格式验证通过，共{len(cookies)}条")
+            return True
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Cookie不是有效的JSON格式: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"Cookie验证异常: {str(e)}")
+            return False
     
     async def _handle_websocket(self, ws):
         """处理WebSocket消息"""
@@ -505,8 +579,10 @@ class KookScraper:
             if await self._check_login_status():
                 logger.info("重新连接成功")
                 db.update_account_status(self.account_id, 'online')
+                # 重连成功，重置计数器
+                self.reconnect_count = 0
             else:
-                logger.error("重新连接失败")
+                logger.error("重新连接失败，登录状态检查不通过")
                 db.update_account_status(self.account_id, 'offline')
                 
         except Exception as e:

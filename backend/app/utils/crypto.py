@@ -115,3 +115,31 @@ class CryptoManager:
 
 # 创建全局加密管理器实例
 crypto_manager = CryptoManager()
+
+
+# 导出快捷函数
+def hash_password(password: str) -> str:
+    """
+    对密码进行哈希（快捷函数）
+    
+    Args:
+        password: 原始密码
+        
+    Returns:
+        哈希后的密码
+    """
+    return CryptoManager.hash_password(password)
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    """
+    验证密码（快捷函数）
+    
+    Args:
+        password: 原始密码
+        hashed: 哈希后的密码
+        
+    Returns:
+        是否匹配
+    """
+    return CryptoManager.verify_password(password, hashed)

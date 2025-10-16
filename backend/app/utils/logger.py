@@ -25,10 +25,13 @@ def setup_logger():
         settings.log_dir / "app_{time:YYYY-MM-DD}.log",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function} - {message}",
         level="DEBUG",
-        rotation="00:00",  # 每天轮转
+        rotation="100 MB",  # 文件大小达到100MB时轮转（或每天00:00）
         retention=f"{settings.log_retention_days} days",  # 保留天数
         compression="zip",  # 压缩旧日志
-        encoding="utf-8"
+        encoding="utf-8",
+        enqueue=True,  # 异步写入，提高性能
+        backtrace=True,  # 显示异常回溯
+        diagnose=True  # 显示变量值
     )
     
     # 错误日志单独文件
@@ -36,10 +39,13 @@ def setup_logger():
         settings.log_dir / "error_{time:YYYY-MM-DD}.log",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function} - {message}",
         level="ERROR",
-        rotation="00:00",
+        rotation="50 MB",  # 错误日志50MB轮转
         retention=f"{settings.log_retention_days} days",
         compression="zip",
-        encoding="utf-8"
+        encoding="utf-8",
+        enqueue=True,
+        backtrace=True,
+        diagnose=True
     )
     
     logger.info(f"日志系统已初始化，日志目录: {settings.log_dir}")

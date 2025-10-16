@@ -3,6 +3,7 @@
 """
 import asyncio
 from datetime import datetime
+from collections import OrderedDict
 from typing import Dict, Any, List, Optional
 from ..utils.logger import logger
 from ..database import db
@@ -15,12 +16,53 @@ from ..forwarders.feishu import feishu_forwarder
 from .redis_client import redis_queue
 
 
+class LRUCache:
+    """简单的LRU缓存，防止无限增长"""
+    
+    def __init__(self, max_size: int = 10000):
+        """
+        初始化LRU缓存
+        
+        Args:
+            max_size: 最大缓存大小
+        """
+        self.cache = OrderedDict()
+        self.max_size = max_size
+    
+    def add(self, key: str):
+        """
+        添加键到缓存
+        
+        Args:
+            key: 键
+        """
+        if key in self.cache:
+            # 已存在，移到末尾（最近使用）
+            self.cache.move_to_end(key)
+        else:
+            # 新增
+            self.cache[key] = True
+            # 检查是否超出限制
+            if len(self.cache) > self.max_size:
+                # 删除最旧的项（最前面的）
+                self.cache.popitem(last=False)
+    
+    def __contains__(self, key: str) -> bool:
+        """检查键是否存在"""
+        return key in self.cache
+    
+    def __len__(self) -> int:
+        """获取缓存大小"""
+        return len(self.cache)
+
+
 class MessageWorker:
     """消息处理Worker"""
     
     def __init__(self):
         self.is_running = False
-        self.processed_messages = set()  # 已处理的消息ID（去重）
+        # 使用LRU缓存防止内存泄漏（最多保留10000条消息ID）
+        self.processed_messages = LRUCache(max_size=10000)
     
     async def start(self):
         """启动Worker"""
@@ -114,7 +156,7 @@ class MessageWorker:
     async def process_images(self, image_urls: List[str], 
                             message: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        处理消息中的图片
+        处理消息中的图片（并行处理优化）
         
         Args:
             image_urls: 图片URL列表
@@ -123,43 +165,75 @@ class MessageWorker:
         Returns:
             处理后的图片信息列表
         """
+        if not image_urls:
+            return []
+        
+        logger.info(f"开始并行处理{len(image_urls)}张图片")
+        
+        # 创建并行任务
+        tasks = [
+            self._process_single_image(url)
+            for url in image_urls
+        ]
+        
+        # 并行执行（使用gather，return_exceptions=True避免单个失败影响其他）
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # 处理结果
         processed_images = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"图片处理失败: {image_urls[i]}, 错误: {result}")
+            elif result:
+                processed_images.append(result)
         
-        for url in image_urls:
-            try:
-                logger.info(f"处理图片: {url}")
-                
-                # 使用智能策略处理图片
-                result = await image_processor.process_image(
-                    url=url,
-                    strategy='smart',  # 智能模式：优先直传，失败用图床
-                    cookies=None,  # TODO: 从消息中获取Cookie
-                    referer='https://www.kookapp.cn'
-                )
-                
-                if result:
-                    if isinstance(result, dict):
-                        # 智能模式返回dict
-                        processed_images.append(result)
-                    else:
-                        # 其他模式返回URL字符串
-                        processed_images.append({
-                            'original': url,
-                            'local': result,
-                            'filepath': None
-                        })
-                else:
-                    logger.error(f"图片处理失败: {url}")
-                    
-            except Exception as e:
-                logger.error(f"处理图片异常: {url}, 错误: {str(e)}")
-        
+        logger.info(f"图片处理完成: 成功{len(processed_images)}/{len(image_urls)}张")
         return processed_images
+    
+    async def _process_single_image(self, url: str) -> Optional[Dict[str, Any]]:
+        """
+        处理单张图片
+        
+        Args:
+            url: 图片URL
+            
+        Returns:
+            处理后的图片信息
+        """
+        try:
+            logger.debug(f"处理图片: {url}")
+            
+            # 使用智能策略处理图片
+            result = await image_processor.process_image(
+                url=url,
+                strategy='smart',  # 智能模式：优先直传，失败用图床
+                cookies=None,  # TODO: 从消息中获取Cookie
+                referer='https://www.kookapp.cn'
+            )
+            
+            if result:
+                if isinstance(result, dict):
+                    # 智能模式返回dict
+                    return result
+                else:
+                    # 其他模式返回URL字符串
+                    return {
+                        'original': url,
+                        'local': result,
+                        'filepath': None
+                    }
+            else:
+                logger.error(f"图片处理返回None: {url}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"处理图片异常: {url}, 错误: {str(e)}")
+            raise  # 重新抛出让gather捕获
     
     async def process_attachments(self, file_attachments: List[Dict[str, Any]],
                                    message: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        处理消息中的附件文件
+        处理消息中的附件文件（并行处理优化）
         
         Args:
             file_attachments: 附件列表
@@ -168,45 +242,77 @@ class MessageWorker:
         Returns:
             处理后的附件信息列表
         """
+        if not file_attachments:
+            return []
+        
+        logger.info(f"开始并行处理{len(file_attachments)}个附件")
+        
+        # 创建并行任务
+        tasks = [
+            self._process_single_attachment(attachment)
+            for attachment in file_attachments
+        ]
+        
+        # 并行执行
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # 处理结果
         processed_attachments = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.error(f"附件处理失败: {file_attachments[i].get('name')}, 错误: {result}")
+            elif result:
+                processed_attachments.append(result)
         
-        for attachment in file_attachments:
-            try:
-                url = attachment.get('url')
-                filename = attachment.get('name', 'unknown')
-                file_size_mb = attachment.get('size', 0) / (1024 * 1024)
-                
-                logger.info(f"处理附件: {filename} ({file_size_mb:.2f}MB)")
-                
-                # 检查文件大小（最大50MB）
-                if file_size_mb > 50:
-                    logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
-                    continue
-                
-                # 下载附件
-                local_path = await attachment_processor.download_attachment(
-                    url=url,
-                    filename=filename,
-                    cookies=None,  # TODO: 从消息中获取Cookie
-                    referer='https://www.kookapp.cn'
-                )
-                
-                if local_path:
-                    processed_attachments.append({
-                        'original_url': url,
-                        'filename': filename,
-                        'local_path': local_path,
-                        'size': attachment.get('size', 0),
-                        'type': attachment.get('type', 'application/octet-stream')
-                    })
-                    logger.info(f"✅ 附件下载成功: {filename}")
-                else:
-                    logger.error(f"❌ 附件下载失败: {filename}")
-                    
-            except Exception as e:
-                logger.error(f"处理附件异常: {attachment.get('name')}, 错误: {str(e)}")
-        
+        logger.info(f"附件处理完成: 成功{len(processed_attachments)}/{len(file_attachments)}个")
         return processed_attachments
+    
+    async def _process_single_attachment(self, attachment: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        处理单个附件
+        
+        Args:
+            attachment: 附件信息
+            
+        Returns:
+            处理后的附件信息
+        """
+        try:
+            url = attachment.get('url')
+            filename = attachment.get('name', 'unknown')
+            file_size_mb = attachment.get('size', 0) / (1024 * 1024)
+            
+            logger.debug(f"处理附件: {filename} ({file_size_mb:.2f}MB)")
+            
+            # 检查文件大小（最大50MB）
+            if file_size_mb > 50:
+                logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
+                return None
+            
+            # 下载附件
+            local_path = await attachment_processor.download_attachment(
+                url=url,
+                filename=filename,
+                cookies=None,  # TODO: 从消息中获取Cookie
+                referer='https://www.kookapp.cn'
+            )
+            
+            if local_path:
+                logger.info(f"✅ 附件下载成功: {filename}")
+                return {
+                    'original_url': url,
+                    'filename': filename,
+                    'local_path': local_path,
+                    'size': attachment.get('size', 0),
+                    'type': attachment.get('type', 'application/octet-stream')
+                }
+            else:
+                logger.error(f"❌ 附件下载失败: {filename}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"处理附件异常: {attachment.get('name')}, 错误: {str(e)}")
+            raise  # 重新抛出让gather捕获
     
     async def forward_to_target(self, message: Dict[str, Any], 
                                mapping: Dict[str, Any]):

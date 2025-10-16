@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景渐变 -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="icon-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffd89b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#19547b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 圆角矩形背景 -->
+  <rect width="512" height="512" rx="100" fill="url(#bg-gradient)"/>
+  
+  <!-- KOOK图标主体 - 消息转发符号 -->
+  <g transform="translate(256,256)">
+    <!-- 左侧消息框 -->
+    <rect x="-180" y="-80" width="120" height="100" rx="15" fill="white" opacity="0.9"/>
+    <line x1="-150" y1="-50" x2="-120" y2="-50" stroke="#667eea" stroke-width="8" stroke-linecap="round"/>
+    <line x1="-150" y1="-25" x2="-100" y2="-25" stroke="#667eea" stroke-width="8" stroke-linecap="round"/>
+    <line x1="-150" y1="0" x2="-110" y2="0" stroke="#667eea" stroke-width="8" stroke-linecap="round"/>
+    
+    <!-- 中间转发箭头 -->
+    <g transform="rotate(0)">
+      <!-- 上箭头 -->
+      <path d="M -40,-40 L 40,-40 L 40,-60 L 80,-30 L 40,0 L 40,-20 L -40,-20 Z" 
+            fill="url(#icon-gradient)" opacity="0.9"/>
+      
+      <!-- 下箭头（反向） -->
+      <path d="M 40,40 L -40,40 L -40,60 L -80,30 L -40,0 L -40,20 L 40,20 Z" 
+            fill="url(#icon-gradient)" opacity="0.9"/>
+    </g>
+    
+    <!-- 右侧消息框 -->
+    <rect x="60" y="-80" width="120" height="100" rx="15" fill="white" opacity="0.9"/>
+    <line x1="90" y1="-50" x2="120" y2="-50" stroke="#764ba2" stroke-width="8" stroke-linecap="round"/>
+    <line x1="90" y1="-25" x2="140" y2="-25" stroke="#764ba2" stroke-width="8" stroke-linecap="round"/>
+    <line x1="90" y1="0" x2="130" y2="0" stroke="#764ba2" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  
+  <!-- 底部标识 -->
+  <text x="256" y="450" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
+        text-anchor="middle" fill="white" opacity="0.9">KOOK</text>
+</svg>

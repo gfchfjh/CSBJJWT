@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     # 安全配置
     encryption_key: Optional[str] = None
     require_password: bool = True
+    api_token: Optional[str] = None  # API访问Token（如果设置则启用认证）
+    api_token_header: str = "X-API-Token"  # Token请求头名称
     
     # 验证码自动识别配置
     captcha_2captcha_api_key: Optional[str] = None
