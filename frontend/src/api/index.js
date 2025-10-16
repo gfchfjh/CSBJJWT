@@ -76,5 +76,12 @@ export default {
   // 备份恢复
   backupConfig: () => api.post('/api/backup/create'),
   restoreConfig: (data) => api.post('/api/backup/restore', data),
-  listBackups: () => api.get('/api/backup/list')
+  listBackups: () => api.get('/api/backup/list'),
+  
+  // 认证与密码
+  checkPasswordExists: () => api.get('/api/auth/password-exists'),
+  setPassword: (data) => api.post('/api/auth/set-password', data),
+  verifyPassword: (data) => api.post('/api/auth/verify-password', data),
+  changePassword: (data) => api.post('/api/auth/change-password', data),
+  resetPassword: () => api.post('/api/auth/reset-password')
 }

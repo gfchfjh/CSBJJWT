@@ -59,49 +59,100 @@ function createTray() {
   const iconPath = path.join(__dirname, '../public/icon.png')
   tray = new Tray(iconPath)
   
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '显示主窗口',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show()
-          mainWindow.focus()
-        } else {
-          createWindow()
+  const updateTrayMenu = (stats = null) => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'KOOK消息转发系统',
+        enabled: false,
+        icon: iconPath
+      },
+      { type: 'separator' },
+      {
+        label: stats ? `📊 今日转发: ${stats.total || 0} 条` : '📊 统计信息',
+        enabled: !!stats,
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show()
+            mainWindow.focus()
+            mainWindow.webContents.send('navigate-to', '/')
+          }
+        }
+      },
+      {
+        label: stats ? `✅ 成功率: ${stats.success_rate || 0}%` : '⏸️ 服务未启动',
+        enabled: !!stats
+      },
+      { type: 'separator' },
+      {
+        label: '📱 显示主窗口',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show()
+            mainWindow.focus()
+          } else {
+            createWindow()
+          }
+        }
+      },
+      {
+        label: '📋 查看日志',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show()
+            mainWindow.focus()
+            mainWindow.webContents.send('navigate-to', '/logs')
+          }
+        }
+      },
+      { type: 'separator' },
+      {
+        label: '⚙️ 设置',
+        submenu: [
+          {
+            label: '开机自启',
+            type: 'checkbox',
+            checked: app.getLoginItemSettings().openAtLogin,
+            click: (menuItem) => {
+              app.setLoginItemSettings({
+                openAtLogin: menuItem.checked
+              })
+              // 更新AutoLauncher
+              if (menuItem.checked) {
+                autoLauncher.enable().catch(console.error)
+              } else {
+                autoLauncher.disable().catch(console.error)
+              }
+            }
+          },
+          {
+            label: '启动时最小化',
+            type: 'checkbox',
+            checked: app.getLoginItemSettings().openAsHidden,
+            click: (menuItem) => {
+              app.setLoginItemSettings({
+                openAsHidden: menuItem.checked
+              })
+            }
+          }
+        ]
+      },
+      { type: 'separator' },
+      {
+        label: '🚪 退出程序',
+        click: () => {
+          app.isQuiting = true
+          app.quit()
         }
       }
-    },
-    {
-      label: '系统状态',
-      click: () => {
-        // 显示系统状态
-        if (mainWindow) {
-          mainWindow.webContents.send('show-status')
-        }
-      }
-    },
-    { type: 'separator' },
-    {
-      label: '开机自启',
-      type: 'checkbox',
-      checked: app.getLoginItemSettings().openAtLogin,
-      click: (menuItem) => {
-        app.setLoginItemSettings({
-          openAtLogin: menuItem.checked
-        })
-      }
-    },
-    { type: 'separator' },
-    {
-      label: '退出',
-      click: () => {
-        app.quit()
-      }
-    }
-  ])
+    ])
+    
+    tray.setContextMenu(contextMenu)
+  }
   
-  tray.setToolTip('KOOK消息转发系统')
-  tray.setContextMenu(contextMenu)
+  // 初始化托盘菜单
+  updateTrayMenu()
+  
+  tray.setToolTip('KOOK消息转发系统 - 运行中')
   
   // 双击托盘图标显示窗口
   tray.on('double-click', () => {
@@ -112,6 +163,36 @@ function createTray() {
       createWindow()
     }
   })
+  
+  // 单击显示菜单（Windows/Linux）
+  tray.on('click', () => {
+    if (process.platform !== 'darwin') {
+      tray.popUpContextMenu()
+    }
+  })
+  
+  // 定期更新统计信息（每10秒）
+  setInterval(async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:9527/api/logs/stats')
+      if (response.ok) {
+        const stats = await response.json()
+        updateTrayMenu(stats)
+        
+        // 更新tooltip
+        tray.setToolTip(
+          `KOOK消息转发系统\n` +
+          `今日转发: ${stats.total || 0} 条\n` +
+          `成功率: ${stats.success_rate || 0}%`
+        )
+      }
+    } catch (error) {
+      // 后端未就绪或出错，保持默认菜单
+    }
+  }, 10000)
+  
+  // 返回更新函数，供外部调用
+  return { updateMenu: updateTrayMenu }
 }
 
 // 创建主窗口
@@ -154,10 +235,16 @@ function createWindow() {
       
       // 首次最小化时提示
       if (!app.hasShownTrayTip) {
-        tray.displayBalloon({
-          title: 'KOOK消息转发系统',
-          content: '程序已最小化到系统托盘，双击图标可恢复窗口'
-        })
+        const { Notification } = require('electron')
+        
+        if (Notification.isSupported()) {
+          new Notification({
+            title: 'KOOK消息转发系统',
+            body: '程序已最小化到系统托盘，双击托盘图标可恢复窗口',
+            icon: path.join(__dirname, '../public/icon.png')
+          }).show()
+        }
+        
         app.hasShownTrayTip = true
       }
     }

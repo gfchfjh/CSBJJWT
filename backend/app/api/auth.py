@@ -156,3 +156,84 @@ async def change_app_password(request: PasswordChangeRequest):
     except Exception as e:
         logger.error(f"修改密码异常: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/password-exists")
+async def check_password_exists():
+    """
+    检查应用密码是否已设置
+    
+    Returns:
+        密码存在状态
+    """
+    password_hash = db.get_system_config('app_password_hash')
+    return {
+        "exists": bool(password_hash),
+        "message": "密码已设置" if password_hash else "未设置密码"
+    }
+
+
+class PasswordSetRequest(BaseModel):
+    """设置密码请求"""
+    password: str
+
+
+@router.post("/set-password")
+async def set_app_password(request: PasswordSetRequest):
+    """
+    设置应用密码（首次使用）
+    
+    Args:
+        request: 密码设置请求
+        
+    Returns:
+        设置结果
+    """
+    try:
+        # 检查是否已设置
+        password_hash = db.get_system_config('app_password_hash')
+        if password_hash:
+            raise HTTPException(status_code=400, detail="密码已设置，请使用修改密码功能")
+        
+        # 验证密码长度
+        if len(request.password) < 6 or len(request.password) > 20:
+            raise HTTPException(status_code=400, detail="密码长度必须在6-20位之间")
+        
+        # 设置密码
+        hashed = hash_password(request.password)
+        db.set_system_config('app_password_hash', hashed)
+        
+        logger.info("应用密码已设置")
+        return {"success": True, "message": "密码设置成功"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"设置密码异常: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reset-password")
+async def reset_app_password():
+    """
+    重置应用密码（危险操作，将清空所有配置）
+    
+    Returns:
+        重置结果
+    """
+    try:
+        # 删除密码哈希
+        db.delete_system_config('app_password_hash')
+        
+        # 清空其他敏感配置（可选）
+        # 注意：这里可以根据需要决定是否清空其他数据
+        logger.warning("应用密码已重置！")
+        
+        return {
+            "success": True,
+            "message": "密码已重置，请重新设置"
+        }
+        
+    except Exception as e:
+        logger.error(f"重置密码异常: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

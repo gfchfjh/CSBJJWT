@@ -79,7 +79,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getCaptchaWS } from '../utils/websocket'
+import api from '../api'
 
 const props = defineProps({
   visible: {
@@ -131,7 +131,7 @@ const formatTime = (timestamp) => {
   return date.toLocaleString('zh-CN')
 }
 
-// 提交验证码
+// 提交验证码 - 使用HTTP API
 const submitCaptcha = async () => {
   if (!form.value.code) {
     ElMessage.warning('请输入验证码')
@@ -141,42 +141,17 @@ const submitCaptcha = async () => {
   submitting.value = true
 
   try {
-    // 通过WebSocket发送验证码
-    const ws = getCaptchaWS()
-    ws.send({
-      type: 'captcha_input',
-      account_id: props.accountId,
-      code: form.value.code
-    })
-
-    // 等待服务器响应
-    const timeout = setTimeout(() => {
-      submitting.value = false
-      ElMessage.error('提交超时，请重试')
-    }, 10000)
-
-    // 监听响应
-    const handleResponse = (data) => {
-      clearTimeout(timeout)
-      submitting.value = false
-
-      if (data.status === 'success') {
-        ElMessage.success('验证码已提交')
-        emit('submit', form.value.code)
-        dialogVisible.value = false
-      } else {
-        ElMessage.error('验证码提交失败')
-      }
-
-      ws.off('captcha_received', handleResponse)
-    }
-
-    ws.on('captcha_received', handleResponse)
-
+    // 通过HTTP API提交验证码
+    await api.submitCaptcha(props.accountId, form.value.code)
+    
+    ElMessage.success('验证码已提交')
+    emit('submit', form.value.code)
+    dialogVisible.value = false
   } catch (error) {
-    submitting.value = false
     console.error('提交验证码失败:', error)
     ElMessage.error('提交失败，请重试')
+  } finally {
+    submitting.value = false
   }
 }
 

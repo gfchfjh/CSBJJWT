@@ -86,8 +86,8 @@ appImage:
 # 发布配置
 publish:
   provider: github
-  owner: yourusername
-  repo: kook-forwarder
+  owner: gfchfjh
+  repo: CSBJJWT
 
 # 压缩配置
 compression: maximum
