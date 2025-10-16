@@ -35,3 +35,6 @@ loguru==0.7.2
 
 # 日期时间
 python-dateutil==2.8.2
+
+# 邮件发送
+aiosmtplib==3.0.1

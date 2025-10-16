@@ -149,6 +149,8 @@ async def restart_service():
 async def health_check():
     """健康检查"""
     try:
+        from datetime import datetime
+        
         # 检查Redis连接
         redis_ok = await redis_queue.ping() if hasattr(redis_queue, 'ping') else True
         
@@ -173,3 +175,80 @@ async def health_check():
             "error": str(e),
             "timestamp": datetime.now().isoformat()
         }
+
+
+class EmailConfig(BaseModel):
+    """邮件配置"""
+    enabled: bool = False
+    smtp_server: Optional[str] = None
+    smtp_port: int = 587
+    smtp_user: Optional[str] = None
+    smtp_password: Optional[str] = None
+    from_email: Optional[str] = None
+    to_emails: List[str] = []
+
+
+@router.get("/email-config")
+async def get_email_config():
+    """获取邮件配置"""
+    from ..database import db
+    import json
+    
+    email_config = db.get_system_config('email_config')
+    if email_config:
+        config = json.loads(email_config)
+        # 隐藏密码
+        if config.get('smtp_password'):
+            config['smtp_password'] = '******'
+        return config
+    else:
+        return EmailConfig().dict()
+
+
+@router.post("/email-config")
+async def save_email_config(config: EmailConfig):
+    """保存邮件配置"""
+    from ..database import db
+    from ..utils.email_sender import email_sender
+    import json
+    
+    try:
+        # 如果密码是******，则保持原密码不变
+        if config.smtp_password == '******':
+            old_config = db.get_system_config('email_config')
+            if old_config:
+                old_data = json.loads(old_config)
+                config.smtp_password = old_data.get('smtp_password')
+        
+        # 保存配置
+        db.set_system_config('email_config', json.dumps(config.dict(), ensure_ascii=False))
+        
+        # 重新加载配置
+        email_sender.load_config()
+        
+        return {"success": True, "message": "邮件配置保存成功"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/email-test")
+async def test_email():
+    """测试邮件发送"""
+    from ..utils.email_sender import email_sender
+    
+    # 先重新加载配置
+    email_sender.load_config()
+    
+    # 测试连接
+    success, message = await email_sender.test_connection()
+    
+    if success:
+        # 发送测试邮件
+        await email_sender.send_alert(
+            alert_type='info',
+            title='邮件测试',
+            message='这是一封测试邮件，如果您收到此邮件，说明邮件配置正确。'
+        )
+        return {"success": True, "message": "测试邮件已发送"}
+    else:
+        return {"success": False, "message": message}

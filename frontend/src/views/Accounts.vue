@@ -135,7 +135,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useAccountsStore } from '../store/accounts'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import CaptchaDialog from '../components/CaptchaDialog.vue'
-import { getCaptchaWS } from '../utils/websocket'
+import api from '../api'
 
 const accountsStore = useAccountsStore()
 
@@ -223,31 +223,51 @@ const handleCaptchaSubmit = (code) => {
   ElMessage.success('验证码已提交，请等待登录完成')
 }
 
-// WebSocket连接
-let captchaWS = null
+// 验证码轮询
+let captchaCheckInterval = null
 
-onMounted(() => {
-  accountsStore.fetchAccounts()
-  
-  // 连接验证码WebSocket
-  captchaWS = getCaptchaWS()
-  
-  // 监听验证码请求
-  captchaWS.on('captcha_required', (data) => {
-    console.log('收到验证码请求:', data)
-    captchaData.value = {
-      accountId: data.account_id,
-      imageUrl: data.image_url,
-      timestamp: data.timestamp
+// 检查验证码状态
+const checkCaptchaStatus = async () => {
+  try {
+    // 遍历所有账号，检查是否需要验证码
+    for (const account of accountsStore.accounts) {
+      try {
+        const response = await api.getCaptchaStatus(account.id)
+        
+        if (response && response.required) {
+          // 显示验证码对话框
+          captchaData.value = {
+            accountId: account.id,
+            imageUrl: response.image_url,
+            timestamp: response.timestamp
+          }
+          showCaptchaDialog.value = true
+          break // 一次只处理一个验证码
+        }
+      } catch (error) {
+        // 单个账号检查失败不影响其他账号
+        console.debug(`账号${account.id}验证码检查失败:`, error)
+      }
     }
-    showCaptchaDialog.value = true
-  })
+  } catch (error) {
+    console.error('检查验证码状态失败:', error)
+  }
+}
+
+onMounted(async () => {
+  await accountsStore.fetchAccounts()
+  
+  // 开始轮询验证码状态（每3秒检查一次）
+  captchaCheckInterval = setInterval(checkCaptchaStatus, 3000)
+  
+  // 立即检查一次
+  await checkCaptchaStatus()
 })
 
 onUnmounted(() => {
-  // 清理WebSocket监听
-  if (captchaWS) {
-    captchaWS.off('captcha_required')
+  // 清理轮询
+  if (captchaCheckInterval) {
+    clearInterval(captchaCheckInterval)
   }
 })
 </script>
