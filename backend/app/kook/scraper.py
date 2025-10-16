@@ -7,6 +7,7 @@ import base64
 from typing import Optional, Dict, Any, Callable
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext, TimeoutError
 from ..utils.logger import logger
+from ..utils.captcha_solver import get_captcha_solver
 from ..database import db
 
 
@@ -152,12 +153,21 @@ class KookScraper:
                 attachments = message_data.get('attachments', [])
                 content = message_data.get('content', '')
                 
-                # 提取图片URL
+                # 提取图片URL和附件文件URL
                 image_urls = []
+                file_attachments = []
                 if message_type == 'image' or attachments:
                     for attachment in attachments:
                         if attachment.get('type') == 'image':
                             image_urls.append(attachment.get('url'))
+                        elif attachment.get('type') == 'file':
+                            # 提取文件附件信息
+                            file_attachments.append({
+                                'url': attachment.get('url'),
+                                'name': attachment.get('name', 'unknown'),
+                                'size': attachment.get('size', 0),
+                                'type': attachment.get('file_type', 'application/octet-stream')
+                            })
                 
                 # 提取@提及
                 mentions = []
@@ -199,6 +209,7 @@ class KookScraper:
                     'timestamp': message_data.get('timestamp'),
                     'attachments': message_data.get('attachments', []),
                     'image_urls': image_urls,
+                    'file_attachments': file_attachments,  # 新增：文件附件列表
                     'mentions': mentions,
                     'mention_all': mention_all,
                     'quote': quote,
@@ -314,7 +325,7 @@ class KookScraper:
     
     async def _handle_captcha(self) -> bool:
         """
-        处理验证码（需要用户输入）
+        处理验证码（智能模式：优先2Captcha自动识别，失败则人工输入）
         
         Returns:
             是否成功
@@ -329,25 +340,52 @@ class KookScraper:
             
             logger.info(f"验证码图片URL: {captcha_image_url}")
             
-            # TODO: 这里需要通过WebSocket或其他方式通知前端显示验证码对话框
-            # 由于当前架构限制，暂时使用等待方式
-            # 在实际应用中，应该建立前后端实时通信机制
+            captcha_code = None
             
-            # 存储验证码信息到数据库，让前端轮询获取
-            db.set_system_config(
-                f"captcha_required_{self.account_id}",
-                json.dumps({
-                    "image_url": captcha_image_url,
-                    "timestamp": asyncio.get_event_loop().time()
-                })
-            )
+            # 尝试使用2Captcha自动识别
+            captcha_solver = get_captcha_solver()
+            if captcha_solver and captcha_solver.enabled:
+                logger.info("🤖 尝试使用2Captcha自动识别验证码...")
+                
+                # 检查余额
+                balance = await captcha_solver.get_balance()
+                if balance is not None and balance > 0:
+                    logger.info(f"2Captcha余额充足: ${balance:.2f}")
+                    
+                    # 自动识别
+                    captcha_code = await captcha_solver.solve_image_captcha(
+                        image_url=captcha_image_url,
+                        timeout=120
+                    )
+                    
+                    if captcha_code:
+                        logger.info(f"✅ 2Captcha识别成功: {captcha_code}")
+                    else:
+                        logger.warning("⚠️ 2Captcha识别失败，切换到手动模式")
+                else:
+                    logger.warning(f"⚠️ 2Captcha余额不足: ${balance or 0:.2f}，切换到手动模式")
+            else:
+                logger.info("📝 2Captcha未配置，使用手动输入模式")
             
-            # 等待用户输入验证码（最多2分钟）
-            captcha_code = await self._wait_for_captcha_input(timeout=120)
-            
+            # 如果自动识别失败，使用手动输入
             if not captcha_code:
-                logger.error("验证码输入超时")
-                return False
+                logger.info("等待用户手动输入验证码...")
+                
+                # 存储验证码信息到数据库，让前端轮询获取
+                db.set_system_config(
+                    f"captcha_required_{self.account_id}",
+                    json.dumps({
+                        "image_url": captcha_image_url,
+                        "timestamp": asyncio.get_event_loop().time()
+                    })
+                )
+                
+                # 等待用户输入验证码（最多2分钟）
+                captcha_code = await self._wait_for_captcha_input(timeout=120)
+                
+                if not captcha_code:
+                    logger.error("验证码输入超时")
+                    return False
             
             # 填写验证码
             await self.page.fill('input[name="captcha"]', captcha_code)

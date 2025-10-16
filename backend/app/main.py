@@ -9,6 +9,7 @@ from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
 from .utils.logger import logger
+from .utils.captcha_solver import init_captcha_solver
 from .config import settings
 import asyncio
 
@@ -25,6 +26,13 @@ async def lifespan(app: FastAPI):
     background_tasks = []
     
     try:
+        # 初始化验证码求解器
+        if settings.captcha_2captcha_api_key:
+            init_captcha_solver(settings.captcha_2captcha_api_key)
+            logger.info("✅ 2Captcha验证码求解器已初始化")
+        else:
+            logger.info("ℹ️ 2Captcha未配置，验证码需手动输入")
+        
         # 连接Redis
         await redis_queue.connect()
         logger.info("✅ Redis连接成功")

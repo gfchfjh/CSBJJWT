@@ -214,6 +214,94 @@ class FeishuForwarder:
             logger.error(f"飞书图片发送异常: {str(e)}")
             return False
     
+    async def send_file(self, app_id: str, app_secret: str,
+                       chat_id: str, file_path: str,
+                       file_name: Optional[str] = None) -> bool:
+        """
+        发送文件到飞书
+        
+        Args:
+            app_id: App ID
+            app_secret: App Secret
+            chat_id: 群聊ID
+            file_path: 文件路径
+            file_name: 文件名（可选）
+            
+        Returns:
+            是否成功
+        """
+        try:
+            await self.rate_limiter.acquire()
+            
+            access_token = await self.get_access_token(app_id, app_secret)
+            if not access_token:
+                return False
+            
+            import os
+            file_name = file_name or os.path.basename(file_path)
+            
+            # 1. 上传文件获取file_key
+            async with aiohttp.ClientSession() as session:
+                # 准备文件上传
+                with open(file_path, 'rb') as f:
+                    form = aiohttp.FormData()
+                    form.add_field('file_type', 'stream')
+                    form.add_field('file_name', file_name)
+                    form.add_field('file', f, filename=file_name)
+                    
+                    # 上传文件
+                    async with session.post(
+                        "https://open.feishu.cn/open-apis/im/v1/files",
+                        headers={
+                            "Authorization": f"Bearer {access_token}"
+                        },
+                        data=form
+                    ) as response:
+                        data = await response.json()
+                        
+                        if data.get("code") != 0:
+                            logger.error(f"飞书文件上传失败: {data}")
+                            return False
+                        
+                        file_key = data.get("data", {}).get("file_key")
+                        if not file_key:
+                            logger.error("飞书文件上传未返回file_key")
+                            return False
+            
+            # 2. 发送文件消息
+            message = {
+                "msg_type": "file",
+                "content": {
+                    "file_key": file_key
+                }
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"https://open.feishu.cn/open-apis/im/v1/messages",
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "receive_id": chat_id,
+                        "receive_id_type": "chat_id",
+                        **message
+                    }
+                ) as response:
+                    data = await response.json()
+                    
+                    if data.get("code") == 0:
+                        logger.info(f"飞书文件发送成功: {file_name}")
+                        return True
+                    else:
+                        logger.error(f"飞书文件消息发送失败: {data}")
+                        return False
+                        
+        except Exception as e:
+            logger.error(f"飞书文件发送异常: {str(e)}")
+            return False
+    
     async def send_card(self, app_id: str, app_secret: str,
                        chat_id: str, card_content: Dict[str, Any]) -> bool:
         """

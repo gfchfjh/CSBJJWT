@@ -72,6 +72,10 @@ class Settings(BaseSettings):
     encryption_key: Optional[str] = None
     require_password: bool = True
     
+    # 验证码自动识别配置
+    captcha_2captcha_api_key: Optional[str] = None
+    captcha_auto_solve: bool = True  # 是否启用自动识别
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
