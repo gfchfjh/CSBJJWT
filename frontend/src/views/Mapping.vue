@@ -20,7 +20,7 @@
       <el-alert
         title="提示"
         type="info"
-        description="频道映射用于将KOOK频道的消息转发到目标平台。一个KOOK频道可以同时转发到多个目标。"
+        description="频道映射用于将KOOK频道的消息转发到目标平台。一个KOOK频道可以同时转发到多个目标。使用智能映射可以快速匹配同名频道。"
         :closable="false"
         style="margin-bottom: 20px"
       />

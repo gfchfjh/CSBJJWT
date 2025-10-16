@@ -8,7 +8,7 @@ from ..utils.logger import logger
 from ..database import db
 from ..processors.filter import message_filter
 from ..processors.formatter import formatter
-from ..processors.image import image_processor
+from ..processors.image import image_processor, attachment_processor
 from ..forwarders.discord import discord_forwarder
 from ..forwarders.telegram import telegram_forwarder
 from ..forwarders.feishu import feishu_forwarder
@@ -156,6 +156,58 @@ class MessageWorker:
         
         return processed_images
     
+    async def process_attachments(self, file_attachments: List[Dict[str, Any]],
+                                   message: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        处理消息中的附件文件
+        
+        Args:
+            file_attachments: 附件列表
+            message: 原始消息数据（用于获取Cookie等）
+            
+        Returns:
+            处理后的附件信息列表
+        """
+        processed_attachments = []
+        
+        for attachment in file_attachments:
+            try:
+                url = attachment.get('url')
+                filename = attachment.get('name', 'unknown')
+                file_size_mb = attachment.get('size', 0) / (1024 * 1024)
+                
+                logger.info(f"处理附件: {filename} ({file_size_mb:.2f}MB)")
+                
+                # 检查文件大小（最大50MB）
+                if file_size_mb > 50:
+                    logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
+                    continue
+                
+                # 下载附件
+                local_path = await attachment_processor.download_attachment(
+                    url=url,
+                    filename=filename,
+                    cookies=None,  # TODO: 从消息中获取Cookie
+                    referer='https://www.kookapp.cn'
+                )
+                
+                if local_path:
+                    processed_attachments.append({
+                        'original_url': url,
+                        'filename': filename,
+                        'local_path': local_path,
+                        'size': attachment.get('size', 0),
+                        'type': attachment.get('type', 'application/octet-stream')
+                    })
+                    logger.info(f"✅ 附件下载成功: {filename}")
+                else:
+                    logger.error(f"❌ 附件下载失败: {filename}")
+                    
+            except Exception as e:
+                logger.error(f"处理附件异常: {attachment.get('name')}, 错误: {str(e)}")
+        
+        return processed_attachments
+    
     async def forward_to_target(self, message: Dict[str, Any], 
                                mapping: Dict[str, Any]):
         """
@@ -183,6 +235,7 @@ class MessageWorker:
             sender_name = message.get('sender_name', '未知用户')
             message_type = message.get('message_type', 'text')
             image_urls = message.get('image_urls', [])
+            file_attachments = message.get('file_attachments', [])
             
             # 提取引用和提及
             quote = message.get('quote')
@@ -199,6 +252,12 @@ class MessageWorker:
                 logger.info(f"检测到 {len(image_urls)} 张图片")
                 processed_images = await self.process_images(image_urls, message)
             
+            # 处理附件（如果有）
+            processed_attachments = []
+            if file_attachments:
+                logger.info(f"检测到 {len(file_attachments)} 个附件")
+                processed_attachments = await self.process_attachments(file_attachments, message)
+            
             # 格式转换
             if platform == 'discord':
                 # 格式化引用
@@ -210,6 +269,12 @@ class MessageWorker:
                 
                 # 组合最终内容
                 formatted_content = f"{quote_text}**{sender_name}**: {formatted_content}"
+                
+                # 如果有附件，添加到内容中
+                if processed_attachments:
+                    formatted_content += f"\n\n📎 **附件** ({len(processed_attachments)}个):"
+                    for att in processed_attachments:
+                        formatted_content += f"\n• {att['filename']}"
                 
                 webhook_url = bot_config['config'].get('webhook_url')
                 
@@ -249,6 +314,21 @@ class MessageWorker:
                         username=sender_name
                     )
                 
+                # 转发附件文件（如果有）
+                if processed_attachments and success:
+                    for att in processed_attachments:
+                        try:
+                            att_success = await discord_forwarder.send_with_attachment(
+                                webhook_url=webhook_url,
+                                content=f"**{sender_name}** 发送了附件:",
+                                file_path=att['local_path'],
+                                username=sender_name
+                            )
+                            if not att_success:
+                                logger.warning(f"附件发送失败: {att['filename']}")
+                        except Exception as e:
+                            logger.error(f"发送附件异常: {str(e)}")
+                
             elif platform == 'telegram':
                 # 格式化引用
                 quote_text = formatter.format_quote(quote, 'telegram') if quote else ""
@@ -259,6 +339,13 @@ class MessageWorker:
                 
                 # 组合最终内容
                 formatted_content = f"{quote_text}<b>{sender_name}</b>: {formatted_content}"
+                
+                # 如果有附件，添加到内容中
+                if processed_attachments:
+                    formatted_content += f"\n\n📎 <b>附件</b> ({len(processed_attachments)}个):"
+                    for att in processed_attachments:
+                        size_mb = att['size'] / (1024 * 1024)
+                        formatted_content += f"\n• {att['filename']} ({size_mb:.2f}MB)"
                 
                 token = bot_config['config'].get('token')
                 
@@ -293,6 +380,21 @@ class MessageWorker:
                         content=formatted_content
                     )
                 
+                # 转发附件文件（如果有）
+                if processed_attachments and success:
+                    for att in processed_attachments:
+                        try:
+                            att_success = await telegram_forwarder.send_document(
+                                token=token,
+                                chat_id=target_channel,
+                                document_path=att['local_path'],
+                                caption=f"📎 {att['filename']}"
+                            )
+                            if not att_success:
+                                logger.warning(f"附件发送失败: {att['filename']}")
+                        except Exception as e:
+                            logger.error(f"发送附件异常: {str(e)}")
+                
             elif platform == 'feishu':
                 # 格式化引用
                 quote_text = formatter.format_quote(quote, 'feishu') if quote else ""
@@ -303,6 +405,13 @@ class MessageWorker:
                 
                 # 组合最终内容
                 formatted_content = f"{quote_text}{sender_name}: {formatted_content}"
+                
+                # 如果有附件，添加到内容中
+                if processed_attachments:
+                    formatted_content += f"\n\n📎 附件 ({len(processed_attachments)}个):"
+                    for att in processed_attachments:
+                        size_mb = att['size'] / (1024 * 1024)
+                        formatted_content += f"\n• {att['filename']} ({size_mb:.2f}MB)"
                 
                 app_id = bot_config['config'].get('app_id')
                 app_secret = bot_config['config'].get('app_secret')
@@ -340,6 +449,22 @@ class MessageWorker:
                         chat_id=target_channel,
                         content=formatted_content
                     )
+                
+                # 转发附件文件（如果有）
+                if processed_attachments and success:
+                    for att in processed_attachments:
+                        try:
+                            att_success = await feishu_forwarder.send_file(
+                                app_id=app_id,
+                                app_secret=app_secret,
+                                chat_id=target_channel,
+                                file_path=att['local_path'],
+                                file_name=att['filename']
+                            )
+                            if not att_success:
+                                logger.warning(f"附件发送失败: {att['filename']}")
+                        except Exception as e:
+                            logger.error(f"发送附件异常: {str(e)}")
                 
             else:
                 logger.error(f"不支持的平台: {platform}")

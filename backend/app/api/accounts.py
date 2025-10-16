@@ -43,11 +43,16 @@ async def add_account(account: AccountCreate):
     if account.password:
         password_encrypted = crypto_manager.encrypt(account.password)
     
+    # 加密Cookie
+    cookie_encrypted = None
+    if account.cookie:
+        cookie_encrypted = crypto_manager.encrypt(account.cookie)
+    
     # 添加到数据库
     account_id = db.add_account(
         email=account.email,
         password_encrypted=password_encrypted,
-        cookie=account.cookie
+        cookie=cookie_encrypted  # 存储加密后的Cookie
     )
     
     # 返回账号信息
@@ -87,6 +92,15 @@ async def start_account(account_id: int):
     if account.get('password_encrypted'):
         password = crypto_manager.decrypt(account['password_encrypted'])
     
+    # 解密Cookie
+    cookie = None
+    if account.get('cookie'):
+        try:
+            cookie = crypto_manager.decrypt(account['cookie'])
+        except Exception as e:
+            # 如果解密失败，可能是旧数据（未加密），直接使用
+            cookie = account.get('cookie')
+    
     # 消息回调函数
     async def message_callback(message):
         await redis_queue.enqueue(message)
@@ -94,7 +108,7 @@ async def start_account(account_id: int):
     # 启动抓取器
     success = await scraper_manager.start_scraper(
         account_id=account_id,
-        cookie=account.get('cookie'),
+        cookie=cookie,
         email=account.get('email'),
         password=password,
         message_callback=message_callback
