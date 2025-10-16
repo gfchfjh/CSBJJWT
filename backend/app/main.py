@@ -4,7 +4,7 @@ FastAPI主应用
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
@@ -106,6 +106,7 @@ app.include_router(logs.router)
 app.include_router(system.router)
 app.include_router(websocket.router)
 app.include_router(backup.router)
+app.include_router(smart_mapping.router)
 
 
 @app.get("/")
