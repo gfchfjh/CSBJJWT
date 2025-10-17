@@ -11,6 +11,7 @@ from .queue.retry_worker import retry_worker
 from .utils.logger import logger
 from .utils.captcha_solver import init_captcha_solver
 from .utils.auth import verify_api_token, generate_api_token
+from .utils.scheduler import setup_scheduled_tasks, shutdown_scheduled_tasks
 from .config import settings
 import asyncio
 
@@ -61,6 +62,10 @@ async def lifespan(app: FastAPI):
         background_tasks.append(image_server_task)
         logger.info(f"✅ 图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
         
+        # 启动定时任务调度器
+        setup_scheduled_tasks()
+        logger.info("✅ 定时任务调度器已启动")
+        
     except Exception as e:
         logger.error(f"❌ 启动失败: {str(e)}")
     
@@ -70,6 +75,10 @@ async def lifespan(app: FastAPI):
     logger.info("正在关闭服务...")
     
     try:
+        # 停止定时任务
+        shutdown_scheduled_tasks()
+        logger.info("✅ 定时任务已停止")
+        
         # 停止Worker
         await message_worker.stop()
         logger.info("✅ 消息处理Worker已停止")

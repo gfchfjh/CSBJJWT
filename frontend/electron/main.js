@@ -377,17 +377,68 @@ ipcMain.handle('select-folder', async () => {
   return null
 })
 
-// 显示通知
-ipcMain.on('show-notification', (event, { title, body }) => {
+// 显示通知（增强版）
+ipcMain.on('show-notification', (event, options) => {
   const { Notification } = require('electron')
   
   if (Notification.isSupported()) {
-    new Notification({
+    const { title, body, type = 'info', urgency = 'normal', silent = false } = options
+    
+    // 根据类型设置不同的图标和紧急程度
+    const notification = new Notification({
       title,
       body,
-      icon: path.join(__dirname, '../public/icon.png')
-    }).show()
+      icon: path.join(__dirname, '../public/icon.png'),
+      urgency,  // 'normal', 'critical', 'low'
+      silent,
+      timeoutType: type === 'error' ? 'never' : 'default'  // 错误通知不自动消失
+    })
+    
+    // 点击通知时显示主窗口
+    notification.on('click', () => {
+      if (mainWindow) {
+        mainWindow.show()
+        mainWindow.focus()
+      } else {
+        createWindow()
+      }
+    })
+    
+    notification.show()
+    
+    // 记录通知日志
+    console.log(`[通知] ${type.toUpperCase()}: ${title} - ${body}`)
   }
+})
+
+// 显示系统通知（后端可调用）
+function showSystemNotification(title, body, type = 'info') {
+  const { Notification } = require('electron')
+  
+  if (Notification.isSupported()) {
+    const urgency = type === 'error' ? 'critical' : 'normal'
+    
+    const notification = new Notification({
+      title: `🤖 ${title}`,
+      body,
+      icon: path.join(__dirname, '../public/icon.png'),
+      urgency
+    })
+    
+    notification.on('click', () => {
+      if (mainWindow) {
+        mainWindow.show()
+        mainWindow.focus()
+      }
+    })
+    
+    notification.show()
+  }
+}
+
+// IPC监听后端通知请求
+ipcMain.on('backend-notification', (event, { title, body, type }) => {
+  showSystemNotification(title, body, type)
 })
 
 // 获取应用信息
