@@ -28,7 +28,8 @@ class KookScraper:
     
     async def start(self, cookie: Optional[str] = None, 
                    email: Optional[str] = None,
-                   password: Optional[str] = None):
+                   password: Optional[str] = None,
+                   sync_history_minutes: int = 0):
         """
         启动抓取器
         
@@ -36,6 +37,7 @@ class KookScraper:
             cookie: Cookie字符串（JSON格式）
             email: 邮箱（用于账号密码登录）
             password: 密码（用于账号密码登录）
+            sync_history_minutes: 同步最近N分钟的历史消息（0=不同步）
         """
         try:
             logger.info(f"启动KOOK抓取器，账号ID: {self.account_id}")
@@ -98,6 +100,11 @@ class KookScraper:
             self.is_running = True
             db.update_account_status(self.account_id, 'online')
             logger.info("KOOK抓取器启动成功")
+            
+            # 如果需要，同步历史消息
+            if sync_history_minutes > 0:
+                logger.info(f"开始同步最近{sync_history_minutes}分钟的历史消息...")
+                await self.sync_history_messages(sync_history_minutes)
             
             # 保持运行
             while self.is_running:
@@ -902,6 +909,136 @@ class KookScraper:
             import traceback
             logger.error(traceback.format_exc())
             return []
+    
+    async def sync_history_messages(self, minutes: int = 10) -> int:
+        """
+        同步历史消息
+        
+        Args:
+            minutes: 同步最近N分钟的消息
+            
+        Returns:
+            同步的消息数量
+        """
+        try:
+            if not self.page or self.page.is_closed():
+                logger.error("页面未初始化或已关闭，无法同步历史消息")
+                return 0
+            
+            logger.info(f"开始同步最近{minutes}分钟的历史消息...")
+            synced_count = 0
+            
+            # 获取当前账号监听的所有频道映射
+            from ..database import db
+            mappings = db.get_all_mappings()
+            
+            # 获取需要监听的频道ID列表
+            channel_ids = set()
+            for mapping in mappings:
+                if mapping.get('enabled'):
+                    channel_ids.add(mapping.get('kook_channel_id'))
+            
+            if not channel_ids:
+                logger.warning("没有配置频道映射，跳过历史消息同步")
+                return 0
+            
+            logger.info(f"需要同步 {len(channel_ids)} 个频道的历史消息")
+            
+            # 计算时间范围（毫秒时间戳）
+            import time
+            current_time = int(time.time() * 1000)
+            start_time = current_time - (minutes * 60 * 1000)
+            
+            # 遍历每个频道，获取历史消息
+            for channel_id in channel_ids:
+                try:
+                    # 尝试导航到频道（通过URL）
+                    channel_url = f"https://www.kookapp.cn/app/channels/{channel_id}"
+                    await self.page.goto(channel_url, wait_until='networkidle', timeout=10000)
+                    await asyncio.sleep(1)
+                    
+                    # 执行JavaScript获取消息历史
+                    # 注意：这是一个示例实现，实际的DOM结构需要根据KOOK网页调整
+                    messages = await self.page.evaluate("""
+                        (startTime) => {
+                            const messages = [];
+                            const messageElements = document.querySelectorAll('[class*="message"]');
+                            
+                            messageElements.forEach(element => {
+                                try {
+                                    // 提取消息时间戳
+                                    const timeElement = element.querySelector('[class*="time"]');
+                                    if (!timeElement) return;
+                                    
+                                    const timestamp = parseInt(timeElement.getAttribute('data-timestamp') || '0');
+                                    if (timestamp < startTime) return;
+                                    
+                                    // 提取消息内容
+                                    const contentElement = element.querySelector('[class*="content"]');
+                                    const content = contentElement ? contentElement.textContent : '';
+                                    
+                                    // 提取发送者信息
+                                    const authorElement = element.querySelector('[class*="author"]');
+                                    const author = authorElement ? authorElement.textContent : '';
+                                    
+                                    // 提取消息ID
+                                    const messageId = element.getAttribute('data-message-id') || 
+                                                     element.id || '';
+                                    
+                                    if (messageId && content) {
+                                        messages.push({
+                                            id: messageId,
+                                            content: content,
+                                            author: author,
+                                            timestamp: timestamp
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.error('提取消息失败:', e);
+                                }
+                            });
+                            
+                            return messages;
+                        }
+                    """, start_time)
+                    
+                    # 处理获取到的历史消息
+                    for msg in messages:
+                        # 检查消息是否已经存在（去重）
+                        existing = db.get_message_log(msg['id'])
+                        if existing:
+                            continue
+                        
+                        # 构建消息对象
+                        message_data = {
+                            'message_id': msg['id'],
+                            'channel_id': channel_id,
+                            'content': msg['content'],
+                            'sender_name': msg['author'],
+                            'timestamp': msg['timestamp'],
+                            'message_type': 'text',
+                            'is_history': True  # 标记为历史消息
+                        }
+                        
+                        # 调用消息回调处理
+                        if self.message_callback:
+                            await self.message_callback(message_data)
+                            synced_count += 1
+                    
+                    logger.info(f"频道 {channel_id} 同步了 {len(messages)} 条历史消息")
+                    
+                except Exception as e:
+                    logger.error(f"同步频道 {channel_id} 历史消息失败: {str(e)}")
+                    continue
+            
+            logger.info(f"✅ 历史消息同步完成，共同步 {synced_count} 条消息")
+            return synced_count
+            
+        except Exception as e:
+            logger.error(f"同步历史消息异常: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return 0
 
 
 class ScraperManager:
