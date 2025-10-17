@@ -399,7 +399,7 @@ const progressColor = computed(() => {
 const loadSettings = async () => {
   try {
     const response = await api.getSystemConfig()
-    if (response.data) {
+    if (response.success && response.data) {
       Object.assign(settings.value, response.data)
     }
     
@@ -410,19 +410,32 @@ const loadSettings = async () => {
     settings.value.imageStoragePath = settings.value.imageStoragePath || 
       '用户文档/KookForwarder/data/images'
     
-    // 获取图片使用情况
-    // TODO: 实现API
-    imageUsedGB.value = 2.3
-    
-    // 获取日志使用情况
-    // TODO: 实现API
-    logUsedMB.value = 125
+    // 获取存储使用情况
+    await loadStorageUsage()
     
     // 获取最后备份时间
     lastBackupTime.value = localStorage.getItem('last_backup_time') || ''
     
   } catch (error) {
     console.error('加载设置失败:', error)
+    ElMessage.error('加载设置失败：' + (error.response?.data?.detail || error.message))
+  }
+}
+
+// 加载存储使用情况
+const loadStorageUsage = async () => {
+  try {
+    const response = await api.getStorageUsage()
+    if (response.success && response.data) {
+      imageUsedGB.value = response.data.image.size_gb || 0
+      logUsedMB.value = response.data.log.size_mb || 0
+      // 更新路径
+      if (response.data.image.path) {
+        settings.value.imageStoragePath = response.data.image.path
+      }
+    }
+  } catch (error) {
+    console.error('获取存储使用情况失败:', error)
   }
 }
 
@@ -440,22 +453,62 @@ const saveSettings = async () => {
 }
 
 // 打开图片文件夹
-const openImageFolder = () => {
-  // TODO: 调用Electron API打开文件夹
-  ElMessage.info('打开图片文件夹功能开发中...')
+const openImageFolder = async () => {
+  try {
+    // 先获取路径
+    const response = await api.getSystemPaths()
+    if (response.success && response.data.image_storage) {
+      const path = response.data.image_storage
+      
+      // 调用Electron API打开文件夹
+      if (window.electronAPI && window.electronAPI.openPath) {
+        await window.electronAPI.openPath(path)
+      } else {
+        // Web环境降级处理
+        ElMessage.info(`图片文件夹路径：${path}`)
+        // 复制路径到剪贴板
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(path)
+          ElMessage.success('路径已复制到剪贴板')
+        }
+      }
+    }
+  } catch (error) {
+    ElMessage.error('打开文件夹失败：' + (error.response?.data?.detail || error.message))
+  }
 }
 
 // 打开日志文件夹
-const openLogFolder = () => {
-  // TODO: 调用Electron API打开文件夹
-  ElMessage.info('打开日志文件夹功能开发中...')
+const openLogFolder = async () => {
+  try {
+    // 先获取路径
+    const response = await api.getSystemPaths()
+    if (response.success && response.data.log_dir) {
+      const path = response.data.log_dir
+      
+      // 调用Electron API打开文件夹
+      if (window.electronAPI && window.electronAPI.openPath) {
+        await window.electronAPI.openPath(path)
+      } else {
+        // Web环境降级处理
+        ElMessage.info(`日志文件夹路径：${path}`)
+        // 复制路径到剪贴板
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(path)
+          ElMessage.success('路径已复制到剪贴板')
+        }
+      }
+    }
+  } catch (error) {
+    ElMessage.error('打开文件夹失败：' + (error.response?.data?.detail || error.message))
+  }
 }
 
 // 清理旧图片
 const cleanupOldImages = async () => {
   try {
     await ElMessageBox.confirm(
-      `确定要清理 ${settings.value.imageCleanupDays} 天前的旧图片吗？`,
+      `确定要清理 ${settings.value.imageCleanupDays} 天前的旧图片吗？此操作不可恢复！`,
       '确认清理',
       {
         confirmButtonText: '确定清理',
@@ -464,10 +517,17 @@ const cleanupOldImages = async () => {
       }
     )
     
-    // TODO: 调用清理API
-    ElMessage.success('清理完成')
-  } catch {
-    // 取消
+    // 调用清理API
+    const response = await api.cleanupImages(settings.value.imageCleanupDays)
+    if (response.success) {
+      ElMessage.success(`清理完成，删除了 ${response.count} 个文件，释放 ${response.size_mb} MB 空间`)
+      // 刷新存储使用情况
+      await loadStorageUsage()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('清理失败：' + (error.response?.data?.detail || error.message))
+    }
   }
 }
 
@@ -480,22 +540,43 @@ const clearAllLogs = async () => {
       {
         confirmButtonText: '确定清空',
         cancelButtonText: '取消',
-        type: 'warning',
+        type: 'error',
+        dangerouslyUseHTMLString: true,
+        message: '<p>⚠️ <strong>此操作将删除所有日志文件！</strong></p><p>日志文件用于故障排查，删除后将无法追溯历史问题。</p>'
       }
     )
     
-    // TODO: 调用清理API
-    ElMessage.success('日志已清空')
-    logUsedMB.value = 0
-  } catch {
-    // 取消
+    // 调用清理API
+    const response = await api.cleanupLogs()
+    if (response.success) {
+      ElMessage.success(`日志已清空，删除了 ${response.count} 个文件，释放 ${response.size_mb} MB 空间`)
+      logUsedMB.value = 0
+      // 刷新存储使用情况
+      await loadStorageUsage()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('清空日志失败：' + (error.response?.data?.detail || error.message))
+    }
   }
 }
 
 // 测试邮件
 const testEmail = async () => {
-  // TODO: 调用测试邮件API
-  ElMessage.info('发送测试邮件功能开发中...')
+  try {
+    // 先保存当前的邮件配置
+    await saveSettings()
+    
+    // 发送测试邮件
+    const response = await api.testEmail()
+    if (response.success) {
+      ElMessage.success('测试邮件已发送，请检查您的邮箱')
+    } else {
+      ElMessage.error('发送失败：' + response.message)
+    }
+  } catch (error) {
+    ElMessage.error('发送测试邮件失败：' + (error.response?.data?.detail || error.message))
+  }
 }
 
 // 检查更新
@@ -503,11 +584,30 @@ const checkUpdate = async () => {
   checkingUpdate.value = true
   
   try {
-    // TODO: 调用检查更新API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success('当前已是最新版本')
+    const response = await api.checkForUpdates()
+    if (response.has_update) {
+      ElMessageBox.confirm(
+        `发现新版本 v${response.latest_version}！<br/><br/>` +
+        `<strong>更新内容：</strong><br/>${response.release_notes || '查看完整更新日志'}`,
+        '发现新版本',
+        {
+          confirmButtonText: '立即更新',
+          cancelButtonText: '稍后提醒',
+          type: 'success',
+          dangerouslyUseHTMLString: true
+        }
+      ).then(() => {
+        // 打开下载页面或触发自动更新
+        if (response.download_url) {
+          window.open(response.download_url, '_blank')
+        }
+      })
+    } else {
+      ElMessage.success(`当前已是最新版本 v${appVersion.value}`)
+    }
   } catch (error) {
-    ElMessage.error('检查更新失败')
+    console.error('检查更新失败:', error)
+    ElMessage.warning('检查更新失败，请稍后重试')
   } finally {
     checkingUpdate.value = false
   }
@@ -516,13 +616,21 @@ const checkUpdate = async () => {
 // 备份配置
 const backupConfig = async () => {
   try {
-    // TODO: 调用备份API
-    const now = new Date().toLocaleString('zh-CN')
-    localStorage.setItem('last_backup_time', now)
-    lastBackupTime.value = now
-    ElMessage.success('配置备份成功')
+    const response = await api.backupConfig()
+    if (response.success) {
+      const now = new Date().toLocaleString('zh-CN')
+      localStorage.setItem('last_backup_time', now)
+      lastBackupTime.value = now
+      
+      // 如果返回了备份文件，触发下载
+      if (response.backup_file) {
+        ElMessage.success('配置备份成功，备份文件：' + response.backup_file)
+      } else {
+        ElMessage.success('配置备份成功')
+      }
+    }
   } catch (error) {
-    ElMessage.error('备份失败')
+    ElMessage.error('备份失败：' + (error.response?.data?.detail || error.message))
   }
 }
 

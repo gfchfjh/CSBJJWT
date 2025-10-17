@@ -143,5 +143,13 @@ export default {
   reloadSelectorConfig: () => api.post('/api/selectors/reload'),
   exportSelectorConfig: () => api.get('/api/selectors/export'),
   importSelectorConfig: (data) => api.post('/api/selectors/import', data),
-  getSelectorFileInfo: () => api.get('/api/selectors/file-info')
+  getSelectorFileInfo: () => api.get('/api/selectors/file-info'),
+  
+  // 系统配置（新增）
+  getSystemConfig: () => api.get('/api/system/system-config'),
+  saveSystemConfig: (data) => api.post('/api/system/system-config', data),
+  getStorageUsage: () => api.get('/api/system/storage-usage'),
+  cleanupImages: (days) => api.post('/api/system/cleanup-images', { days }),
+  cleanupLogs: (days) => api.post('/api/system/cleanup-logs', days ? { days } : null),
+  getSystemPaths: () => api.get('/api/system/paths')
 }
