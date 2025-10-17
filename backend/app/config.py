@@ -78,6 +78,18 @@ class Settings(BaseSettings):
     captcha_2captcha_api_key: Optional[str] = None
     captcha_auto_solve: bool = True  # 是否启用自动识别
     
+    # 健康检查配置
+    health_check_interval: int = 300  # 健康检查间隔（秒）
+    health_check_enabled: bool = True  # 是否启用健康检查
+    
+    # 自动更新配置
+    auto_update_enabled: bool = True  # 是否启用自动更新检查
+    auto_update_check_interval: int = 86400  # 检查间隔（秒，默认24小时）
+    github_repo: str = "gfchfjh/CSBJJWT"  # GitHub仓库
+    
+    # 选择器配置
+    selector_config_path: Path = DATA_DIR / "selectors.yaml"  # 选择器配置文件路径
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

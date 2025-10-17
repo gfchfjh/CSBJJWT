@@ -41,3 +41,9 @@ aiosmtplib==3.0.1
 
 # 定时任务
 apscheduler==3.10.4
+
+# 版本比较
+packaging==23.2
+
+# YAML解析
+PyYAML==6.0.1

@@ -4,7 +4,7 @@ FastAPI主应用
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, auth
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, auth, health, updates, selectors
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
@@ -12,6 +12,8 @@ from .utils.logger import logger
 from .utils.captcha_solver import init_captcha_solver
 from .utils.auth import verify_api_token, generate_api_token
 from .utils.scheduler import setup_scheduled_tasks, shutdown_scheduled_tasks
+from .utils.health import health_checker
+from .utils.update_checker import update_checker
 from .config import settings
 import asyncio
 
@@ -66,6 +68,18 @@ async def lifespan(app: FastAPI):
         setup_scheduled_tasks()
         logger.info("✅ 定时任务调度器已启动")
         
+        # 启动健康检查器
+        if settings.health_check_enabled:
+            health_check_task = asyncio.create_task(health_checker.start())
+            background_tasks.append(health_check_task)
+            logger.info("✅ 健康检查器已启动")
+        
+        # 启动更新检查器
+        if settings.auto_update_enabled:
+            update_check_task = asyncio.create_task(update_checker.start())
+            background_tasks.append(update_check_task)
+            logger.info("✅ 更新检查器已启动")
+        
     except Exception as e:
         logger.error(f"❌ 启动失败: {str(e)}")
     
@@ -78,6 +92,14 @@ async def lifespan(app: FastAPI):
         # 停止定时任务
         shutdown_scheduled_tasks()
         logger.info("✅ 定时任务已停止")
+        
+        # 停止健康检查器
+        await health_checker.stop()
+        logger.info("✅ 健康检查器已停止")
+        
+        # 停止更新检查器
+        await update_checker.stop()
+        logger.info("✅ 更新检查器已停止")
         
         # 停止Worker
         await message_worker.stop()
@@ -139,6 +161,9 @@ app.include_router(system.router)
 app.include_router(websocket.router)
 app.include_router(backup.router)
 app.include_router(smart_mapping.router)
+app.include_router(health.router)  # 健康检查
+app.include_router(updates.router)  # 更新检查
+app.include_router(selectors.router)  # 选择器配置
 
 
 @app.get("/")
