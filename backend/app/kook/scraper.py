@@ -8,12 +8,7 @@ from typing import Optional, Dict, Any, Callable
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext, TimeoutError
 from ..utils.logger import logger
 from ..utils.captcha_solver import get_captcha_solver
-from ..utils.selector_config import (
-    SERVER_CONTAINER_SELECTORS,
-    SERVER_ITEM_SELECTORS,
-    CHANNEL_CONTAINER_SELECTORS,
-    CHANNEL_ITEM_SELECTORS,
-)
+from ..utils.selector_manager import selector_manager
 from ..database import db
 
 
@@ -609,8 +604,11 @@ class KookScraper:
             
             logger.info("开始获取服务器列表...")
             
-            # 使用配置文件中的选择器
-            selectors = SERVER_CONTAINER_SELECTORS
+            # 检查选择器配置是否有更新
+            selector_manager.check_and_reload()
+            
+            # 使用选择器管理器中的选择器
+            selectors = selector_manager.get_selectors('server_container')
             
             container_found = False
             for selector in selectors:
@@ -744,6 +742,9 @@ class KookScraper:
                 return []
             
             logger.info(f"开始获取服务器 {server_id} 的频道列表...")
+            
+            # 检查选择器配置是否有更新
+            selector_manager.check_and_reload()
             
             # 尝试多种方式点击服务器
             click_selectors = [

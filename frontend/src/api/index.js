@@ -121,5 +121,27 @@ export default {
   // 邮件配置
   getEmailConfig: () => api.get('/api/system/email-config'),
   saveEmailConfig: (data) => api.post('/api/system/email-config', data),
-  testEmail: () => api.post('/api/system/email-test')
+  testEmail: () => api.post('/api/system/email-test'),
+  
+  // 健康检查
+  performHealthCheck: () => api.get('/api/health/check'),
+  getHealthStatus: () => api.get('/api/health/status'),
+  checkSingleBot: (botId) => api.post(`/api/health/check-bot/${botId}`),
+  
+  // 更新检查
+  checkForUpdates: () => api.get('/api/updates/check'),
+  getUpdateStatus: () => api.get('/api/updates/status'),
+  getLatestVersion: () => api.get('/api/updates/latest'),
+  getDownloadUrl: (platform) => api.get(`/api/updates/download/${platform}`),
+  
+  // 选择器配置
+  getSelectorConfig: () => api.get('/api/selectors/config'),
+  getCategorySelectors: (category) => api.get(`/api/selectors/category/${category}`),
+  updateSelectors: (data) => api.post('/api/selectors/update', data),
+  addSelector: (data) => api.post('/api/selectors/add', data),
+  removeSelector: (data) => api.post('/api/selectors/remove', data),
+  reloadSelectorConfig: () => api.post('/api/selectors/reload'),
+  exportSelectorConfig: () => api.get('/api/selectors/export'),
+  importSelectorConfig: (data) => api.post('/api/selectors/import', data),
+  getSelectorFileInfo: () => api.get('/api/selectors/file-info')
 }

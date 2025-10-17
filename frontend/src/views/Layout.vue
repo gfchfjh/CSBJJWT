@@ -46,6 +46,11 @@
           <el-icon><Setting /></el-icon>
           <span>系统设置</span>
         </el-menu-item>
+        
+        <el-menu-item index="/advanced">
+          <el-icon><Tools /></el-icon>
+          <span>高级功能</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     

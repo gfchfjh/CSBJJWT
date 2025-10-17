@@ -7,6 +7,7 @@ import Mapping from '../views/Mapping.vue'
 import Filter from '../views/Filter.vue'
 import Logs from '../views/Logs.vue'
 import Settings from '../views/Settings.vue'
+import Advanced from '../views/Advanced.vue'
 import Wizard from '../views/Wizard.vue'
 import Login from '../views/Login.vue'
 
@@ -70,6 +71,12 @@ const routes = [
         name: 'Settings',
         component: Settings,
         meta: { title: '系统设置' }
+      },
+      {
+        path: '/advanced',
+        name: 'Advanced',
+        component: Advanced,
+        meta: { title: '高级功能' }
       }
     ]
   }
