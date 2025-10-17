@@ -61,12 +61,41 @@ export default {
   getMappings: (kookChannelId) => api.get('/api/mappings/', { params: { kook_channel_id: kookChannelId } }),
   addMapping: (data) => api.post('/api/mappings/', data),
   deleteMapping: (id) => api.delete(`/api/mappings/${id}`),
+  toggleMapping: (id) => api.put(`/api/mappings/${id}/toggle`),
+  exportMappings: () => {
+    // 导出文件需要特殊处理
+    return axios.get(`${API_BASE_URL}/api/mappings/export`, {
+      responseType: 'blob'
+    })
+  },
+  importMappings: (data) => api.post('/api/mappings/import', data),
+  importMappingsFromFile: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/mappings/import/file', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
   
   // 日志
   getLogs: (limit, status) => api.get('/api/logs/', { params: { limit, status } }),
   getStats: () => api.get('/api/logs/stats'),
   getStatsTrend: (hours = 24) => api.get('/api/logs/stats/trend', { params: { hours } }),
   getStatsByPlatform: () => api.get('/api/logs/stats/platforms'),
+  exportLogsCSV: (limit, status) => {
+    return axios.get(`${API_BASE_URL}/api/logs/export/csv`, {
+      params: { limit, status },
+      responseType: 'blob'
+    })
+  },
+  exportLogsJSON: (limit, status) => {
+    return axios.get(`${API_BASE_URL}/api/logs/export/json`, {
+      params: { limit, status },
+      responseType: 'blob'
+    })
+  },
   
   // 过滤规则
   getFilterRules: () => api.get('/api/system/filter-rules'),

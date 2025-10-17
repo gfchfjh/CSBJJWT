@@ -5,6 +5,14 @@
         <div class="card-header">
           <span>🔀 频道映射配置</span>
           <div>
+            <el-button @click="exportMappings">
+              <el-icon><Download /></el-icon>
+              导出
+            </el-button>
+            <el-button @click="showImportDialog = true">
+              <el-icon><Upload /></el-icon>
+              导入
+            </el-button>
             <el-button type="success" @click="showSmartMappingDialog = true">
               <el-icon><MagicStick /></el-icon>
               智能映射
@@ -153,6 +161,74 @@
         <el-button type="primary" @click="addMapping">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 导入映射对话框 -->
+    <el-dialog
+      v-model="showImportDialog"
+      title="📥 导入频道映射"
+      width="600px"
+    >
+      <el-alert
+        title="导入说明"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 20px"
+      >
+        <ul style="margin: 0; padding-left: 20px;">
+          <li>支持导入之前导出的JSON文件</li>
+          <li>可选择替换现有映射或追加到现有映射</li>
+          <li>导入前请确保对应的机器人已配置</li>
+        </ul>
+      </el-alert>
+
+      <el-form label-width="120px">
+        <el-form-item label="选择文件">
+          <el-upload
+            ref="uploadRef"
+            :auto-upload="false"
+            :limit="1"
+            :on-change="handleFileChange"
+            :on-remove="handleFileRemove"
+            accept=".json"
+            drag
+          >
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">
+              拖拽文件到此处 或 <em>点击选择文件</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                仅支持 .json 文件
+              </div>
+            </template>
+          </el-upload>
+        </el-form-item>
+
+        <el-form-item label="导入方式">
+          <el-radio-group v-model="importReplaceExisting">
+            <el-radio :label="false">追加到现有映射</el-radio>
+            <el-radio :label="true">替换现有映射</el-radio>
+          </el-radio-group>
+          <div class="form-tip">
+            <el-text type="warning" size="small">
+              ⚠️ 替换模式将删除所有现有映射
+            </el-text>
+          </div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showImportDialog = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          :disabled="!importFile" 
+          :loading="importing"
+          @click="importMappings"
+        >
+          开始导入
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -163,11 +239,15 @@ import api from '../api'
 
 const showAddDialog = ref(false)
 const showSmartMappingDialog = ref(false)
+const showImportDialog = ref(false)
 const mappings = ref([])
 const bots = ref([])
 const smartSuggestions = ref([])
 const loadingSuggestions = ref(false)
 const applyingMappings = ref(false)
+const importing = ref(false)
+const importFile = ref(null)
+const importReplaceExisting = ref(false)
 
 const mappingForm = ref({
   kook_server_id: '',
@@ -330,6 +410,111 @@ const getConfidenceColor = (confidence) => {
   return '#F56C6C'
 }
 
+// 导出映射
+const exportMappings = async () => {
+  try {
+    const response = await api.exportMappings()
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    
+    // 生成文件名（带时间戳）
+    const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0]
+    link.setAttribute('download', `channel_mappings_${timestamp}.json`)
+    
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('映射导出成功')
+  } catch (error) {
+    console.error('导出映射失败:', error)
+    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+  }
+}
+
+// 处理文件选择
+const handleFileChange = (file) => {
+  importFile.value = file.raw
+}
+
+// 处理文件移除
+const handleFileRemove = () => {
+  importFile.value = null
+}
+
+// 导入映射
+const importMappings = async () => {
+  if (!importFile.value) {
+    ElMessage.warning('请先选择文件')
+    return
+  }
+
+  try {
+    importing.value = true
+    
+    // 读取文件内容
+    const fileContent = await readFileAsText(importFile.value)
+    const data = JSON.parse(fileContent)
+    
+    if (!data.mappings || !Array.isArray(data.mappings)) {
+      ElMessage.error('文件格式错误：缺少mappings字段或格式不正确')
+      return
+    }
+    
+    // 调用导入API
+    const result = await api.importMappings({
+      mappings: data.mappings,
+      replace_existing: importReplaceExisting.value
+    })
+    
+    // 显示结果
+    if (result.failed_count === 0) {
+      ElMessage.success(`导入成功！共导入 ${result.success_count} 条映射`)
+    } else {
+      ElMessage.warning({
+        message: `导入完成！成功 ${result.success_count} 条，失败 ${result.failed_count} 条`,
+        duration: 5000
+      })
+      
+      // 如果有错误，显示详情
+      if (result.errors && result.errors.length > 0) {
+        console.error('导入错误详情:', result.errors)
+      }
+    }
+    
+    // 关闭对话框并刷新列表
+    showImportDialog.value = false
+    importFile.value = null
+    await fetchMappings()
+    
+  } catch (error) {
+    console.error('导入映射失败:', error)
+    if (error instanceof SyntaxError) {
+      ElMessage.error('文件格式错误：不是有效的JSON文件')
+    } else {
+      ElMessage.error('导入失败: ' + (error.response?.data?.detail || error.message))
+    }
+  } finally {
+    importing.value = false
+  }
+}
+
+// 读取文件为文本
+const readFileAsText = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target.result)
+    reader.onerror = (e) => reject(e)
+    reader.readAsText(file)
+  })
+}
+
 watch(() => mappingForm.value.target_platform, () => {
   mappingForm.value.target_bot_id = null
 })
@@ -345,5 +530,26 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.form-tip {
+  margin-top: 8px;
+}
+
+.el-icon--upload {
+  font-size: 67px;
+  color: #8c939d;
+  margin: 40px 0 16px;
+}
+
+.el-upload__text {
+  color: #606266;
+  font-size: 14px;
+  text-align: center;
+}
+
+.el-upload__text em {
+  color: #409EFF;
+  font-style: normal;
 }
 </style>

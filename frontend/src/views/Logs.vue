@@ -87,6 +87,19 @@
               <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
+            <el-dropdown @command="handleExport" style="margin-left: 10px">
+              <el-button size="small">
+                <el-icon><Download /></el-icon>
+                导出
+                <el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="csv">导出为CSV</el-dropdown-item>
+                  <el-dropdown-item command="json">导出为JSON</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </div>
       </template>
@@ -480,6 +493,42 @@ const handleSizeChange = (val) => {
 
 const handleCurrentChange = (val) => {
   currentPage.value = val
+}
+
+// 导出日志
+const handleExport = async (format) => {
+  try {
+    ElMessage.info('正在导出日志，请稍候...')
+    
+    let response
+    if (format === 'csv') {
+      response = await api.exportLogsCSV(1000, filterStatus.value)
+    } else if (format === 'json') {
+      response = await api.exportLogsJSON(1000, filterStatus.value)
+    }
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    
+    // 生成文件名
+    const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0]
+    const ext = format === 'csv' ? 'csv' : 'json'
+    link.setAttribute('download', `message_logs_${timestamp}.${ext}`)
+    
+    document.body.appendChild(link)
+    link.click()
+    
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    ElMessage.success('日志导出成功')
+  } catch (error) {
+    console.error('导出日志失败:', error)
+    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+  }
 }
 
 let logsInterval = null

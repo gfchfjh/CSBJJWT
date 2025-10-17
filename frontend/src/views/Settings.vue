@@ -309,9 +309,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
+import { useTheme } from '@/composables/useTheme'
+
+// 主题管理
+const { currentTheme, setTheme } = useTheme()
 
 // 当前激活的标签页
 const activeTab = ref('service')
@@ -367,9 +371,14 @@ const settings = ref({
   
   // 其他
   language: 'zh-CN',
-  theme: 'light',
+  theme: currentTheme.value || 'auto',  // 从主题管理器获取当前主题
   autoUpdate: 'check',
   autoBackup: true
+})
+
+// 监听主题变化并应用
+watch(() => settings.value.theme, (newTheme) => {
+  setTheme(newTheme)
 })
 
 // 计算属性：图片使用百分比
@@ -393,6 +402,9 @@ const loadSettings = async () => {
     if (response.data) {
       Object.assign(settings.value, response.data)
     }
+    
+    // 加载保存的主题设置
+    settings.value.theme = currentTheme.value
     
     // 获取图片存储路径（从配置或使用默认）
     settings.value.imageStoragePath = settings.value.imageStoragePath || 
