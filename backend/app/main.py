@@ -4,7 +4,7 @@ FastAPI主应用
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, auth, health, updates, selectors
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, auth, health, updates, selectors, password_reset
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
@@ -153,6 +153,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router)  # 认证相关（无需Token）
+app.include_router(password_reset.router)  # 密码重置（无需Token）
 app.include_router(accounts.router)
 app.include_router(bots.router)
 app.include_router(mappings.router)

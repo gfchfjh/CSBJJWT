@@ -528,8 +528,41 @@ const backupConfig = async () => {
 
 // 恢复配置
 const restoreConfig = () => {
-  // TODO: 实现恢复配置
-  ElMessage.info('恢复配置功能开发中...')
+  // 创建文件选择输入框
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json,.zip'
+  
+  input.onchange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await api.post('/api/backup/restore', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      
+      ElMessage.success('配置恢复成功，将在3秒后重启应用')
+      
+      // 3秒后重启应用
+      setTimeout(() => {
+        if (window.electronAPI && window.electronAPI.relaunch) {
+          window.electronAPI.relaunch()
+        } else {
+          window.location.reload()
+        }
+      }, 3000)
+    } catch (error) {
+      ElMessage.error('恢复配置失败：' + (error.response?.data?.detail || error.message))
+    }
+  }
+  
+  input.click()
 }
 
 onMounted(() => {
