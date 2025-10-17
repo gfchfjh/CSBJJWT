@@ -461,6 +461,9 @@
 
           <div class="action-buttons">
             <el-button @click="prevStep">上一步</el-button>
+            <el-button @click="skipBotConfig" plain>
+              跳过，稍后配置
+            </el-button>
             <el-button
               type="primary"
               :disabled="addedBots.length === 0"
@@ -592,6 +595,12 @@ const prevStep = () => {
   if (currentStep.value > 0) {
     currentStep.value--
   }
+}
+
+// 跳过Bot配置（步骤4）
+const skipBotConfig = () => {
+  ElMessage.info('已跳过机器人配置，您可以稍后在"机器人配置"页面添加')
+  currentStep.value = 4  // 直接跳转到完成步骤
 }
 
 // 跳过向导（在第一步即退出应用）
