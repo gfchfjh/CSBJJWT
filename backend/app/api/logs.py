@@ -1,10 +1,14 @@
 """
 日志查询API
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
+import csv
+import io
+import json
 from ..database import db
 
 
@@ -148,3 +152,113 @@ async def get_stats_by_platform() -> Dict[str, Any]:
         "platforms": platforms,
         "counts": counts
     }
+
+
+@router.get("/export/csv")
+async def export_logs_csv(
+    limit: int = Query(1000, description="导出数量限制"),
+    status: Optional[str] = Query(None, description="状态过滤")
+):
+    """
+    导出日志为CSV文件
+    
+    Args:
+        limit: 导出数量限制
+        status: 状态过滤（success/failed/pending）
+        
+    Returns:
+        CSV文件流
+    """
+    try:
+        # 获取日志数据
+        logs = db.get_message_logs(limit, status)
+        
+        # 创建CSV内容
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # 写入表头
+        writer.writerow([
+            'ID', '时间', 'KOOK消息ID', 'KOOK频道ID', '发送者',
+            '消息类型', '内容', '目标平台', '目标频道',
+            '状态', '延迟(ms)', '错误信息'
+        ])
+        
+        # 写入数据
+        for log in logs:
+            writer.writerow([
+                log.get('id', ''),
+                log.get('created_at', ''),
+                log.get('kook_message_id', ''),
+                log.get('kook_channel_id', ''),
+                log.get('sender_name', ''),
+                log.get('message_type', ''),
+                (log.get('content', '') or '')[:100],  # 限制长度
+                log.get('target_platform', ''),
+                log.get('target_channel', ''),
+                log.get('status', ''),
+                log.get('latency_ms', ''),
+                log.get('error_message', '')
+            ])
+        
+        # 生成文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"message_logs_{timestamp}.csv"
+        
+        # 创建响应
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
+
+
+@router.get("/export/json")
+async def export_logs_json(
+    limit: int = Query(1000, description="导出数量限制"),
+    status: Optional[str] = Query(None, description="状态过滤")
+):
+    """
+    导出日志为JSON文件
+    
+    Args:
+        limit: 导出数量限制
+        status: 状态过滤（success/failed/pending）
+        
+    Returns:
+        JSON文件流
+    """
+    try:
+        # 获取日志数据
+        logs = db.get_message_logs(limit, status)
+        
+        # 准备导出数据
+        export_data = {
+            "export_time": datetime.now().isoformat(),
+            "total_records": len(logs),
+            "status_filter": status or "all",
+            "logs": logs
+        }
+        
+        # 生成JSON字符串
+        json_str = json.dumps(export_data, ensure_ascii=False, indent=2)
+        
+        # 生成文件名
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"message_logs_{timestamp}.json"
+        
+        # 创建响应
+        return StreamingResponse(
+            iter([json_str]),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"导出失败: {str(e)}")
