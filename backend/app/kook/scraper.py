@@ -8,6 +8,12 @@ from typing import Optional, Dict, Any, Callable
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext, TimeoutError
 from ..utils.logger import logger
 from ..utils.captcha_solver import get_captcha_solver
+from ..utils.selector_config import (
+    SERVER_CONTAINER_SELECTORS,
+    SERVER_ITEM_SELECTORS,
+    CHANNEL_CONTAINER_SELECTORS,
+    CHANNEL_ITEM_SELECTORS,
+)
 from ..database import db
 
 
@@ -603,15 +609,8 @@ class KookScraper:
             
             logger.info("开始获取服务器列表...")
             
-            # 尝试多个可能的选择器，提高兼容性
-            selectors = [
-                '.guild-list',
-                '[class*="guild-list"]',
-                '[class*="server-list"]',
-                '[class*="GuildList"]',
-                'nav[class*="guild"]',
-                'aside[class*="guild"]',
-            ]
+            # 使用配置文件中的选择器
+            selectors = SERVER_CONTAINER_SELECTORS
             
             container_found = False
             for selector in selectors:

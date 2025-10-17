@@ -225,7 +225,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import { ElMessage } from 'element-plus'
 import api from '../api'
+import { getLogsWS } from '../utils/websocket'
 
 const logs = ref([])
 const stats = ref({
@@ -481,23 +483,62 @@ const handleCurrentChange = (val) => {
 }
 
 let logsInterval = null
+let wsClient = null
 
 // 监听数据变化，更新图表
 watch(() => logs.value, () => {
   updateChartData()
 }, { deep: true })
 
+// 初始化WebSocket连接
+const initWebSocket = () => {
+  try {
+    wsClient = getLogsWS()
+    
+    // 监听新消息日志
+    wsClient.on('new_log', (data) => {
+      // 将新日志添加到列表顶部
+      logs.value.unshift(data)
+      // 重新计算统计
+      calculateStats()
+      // 显示通知
+      if (data.status === 'failed') {
+        ElMessage.warning(`消息转发失败: ${data.error_message}`)
+      }
+    })
+    
+    // 监听连接状态
+    wsClient.on('connected', () => {
+      console.log('WebSocket已连接 - 实时日志推送已启用')
+    })
+    
+    wsClient.on('disconnected', () => {
+      console.log('WebSocket已断开 - 切换到轮询模式')
+    })
+    
+    wsClient.on('reconnect_failed', () => {
+      ElMessage.error('WebSocket连接失败，使用轮询模式')
+    })
+  } catch (error) {
+    console.error('WebSocket初始化失败:', error)
+    // 降级到轮询模式
+  }
+}
+
 onMounted(async () => {
   await fetchLogs()
   await nextTick()
   initChart()
 
-  // 自动刷新
+  // 尝试初始化WebSocket
+  initWebSocket()
+
+  // 轮询作为备用方案（如果WebSocket连接失败）
   logsInterval = setInterval(() => {
-    if (autoRefresh.value) {
+    if (autoRefresh.value && (!wsClient || wsClient.ws?.readyState !== WebSocket.OPEN)) {
       fetchLogs()
     }
-  }, 5000)
+  }, 10000)  // 降低轮询频率到10秒
 
   // 响应式调整图表大小
   window.addEventListener('resize', () => {
@@ -513,6 +554,9 @@ onUnmounted(() => {
   }
   if (chart) {
     chart.dispose()
+  }
+  if (wsClient) {
+    wsClient.disconnect()
   }
   window.removeEventListener('resize', () => {
     if (chart) {

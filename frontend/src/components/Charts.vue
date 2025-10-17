@@ -198,22 +198,18 @@ const initPlatformChart = (data) => {
 // 获取图表数据
 const fetchChartData = async () => {
   try {
-    // 获取统计数据
-    const stats = await api.getStats()
-    
-    // 模拟24小时数据（实际应该从后端获取）
-    const hours = []
-    const counts = []
-    for (let i = 23; i >= 0; i--) {
-      const hour = new Date()
-      hour.setHours(hour.getHours() - i)
-      hours.push(hour.getHours() + ':00')
-      // 这里应该从后端获取实际数据
-      counts.push(Math.floor(Math.random() * 100))
-    }
+    // 并行获取所有统计数据
+    const [stats, trendData, platformData] = await Promise.all([
+      api.getStats(),
+      api.getStatsTrend(24),
+      api.getStatsByPlatform()
+    ])
 
     // 更新趋势图
-    initTrendChart({ hours, counts })
+    initTrendChart({
+      hours: trendData.hours || [],
+      counts: trendData.counts || []
+    })
 
     // 更新成功率图
     initSuccessChart({
@@ -222,17 +218,17 @@ const fetchChartData = async () => {
     })
 
     // 更新平台分布图
-    // 这里需要后端提供按平台统计的API
     initPlatformChart({
-      platforms: ['Discord', 'Telegram', '飞书'],
-      counts: [
-        Math.floor((stats.total || 0) * 0.5),
-        Math.floor((stats.total || 0) * 0.3),
-        Math.floor((stats.total || 0) * 0.2)
-      ]
+      platforms: platformData.platforms || ['Discord', 'Telegram', '飞书'],
+      counts: platformData.counts || [0, 0, 0]
     })
   } catch (error) {
     console.error('获取图表数据失败:', error)
+    
+    // 失败时显示默认数据
+    initTrendChart({ hours: [], counts: [] })
+    initSuccessChart({ success: 0, failed: 0 })
+    initPlatformChart({ platforms: ['Discord', 'Telegram', '飞书'], counts: [0, 0, 0] })
   }
 }
 
