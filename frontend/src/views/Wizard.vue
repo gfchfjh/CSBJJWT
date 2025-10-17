@@ -843,8 +843,24 @@ const unselectAll = () => {
   })
 }
 
+// 历史消息同步开关变化
+const onSyncToggleChange = (value) => {
+  if (value) {
+    ElMessage.info('已启用历史消息同步，请选择合适的时间范围')
+  } else {
+    ElMessage.info('已关闭历史消息同步，仅转发新消息')
+  }
+}
+
 // 保存选中的频道
 const saveSelectedChannels = () => {
+  // 保存历史消息同步设置
+  const syncSettings = {
+    enabled: syncHistoryMessages.value,
+    timeRange: syncTimeRange.value
+  }
+  localStorage.setItem('kook_sync_settings', JSON.stringify(syncSettings))
+  
   // 将选中的频道信息保存到localStorage供后续使用
   const selectedData = {
     servers: servers.value

@@ -40,13 +40,23 @@ class Database:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS accounts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    email TEXT NOT NULL,
+                    email TEXT NOT NULL UNIQUE,
                     password_encrypted TEXT,
                     cookie TEXT,
                     status TEXT DEFAULT 'offline',
                     last_active TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            
+            # 添加索引以提升查询性能
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_accounts_email 
+                ON accounts(email)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_accounts_status 
+                ON accounts(status)
             """)
             
             # Bot配置表
@@ -76,6 +86,16 @@ class Database:
                 )
             """)
             
+            # 添加频道映射索引（提升映射查询性能）
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_channel_mappings_kook_channel 
+                ON channel_mappings(kook_channel_id, enabled)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_channel_mappings_platform 
+                ON channel_mappings(target_platform)
+            """)
+            
             # 过滤规则表
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS filter_rules (
@@ -103,6 +123,24 @@ class Database:
                     latency_ms INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            
+            # 添加消息日志索引（提升查询和去重性能）
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_message_logs_kook_id 
+                ON message_logs(kook_message_id)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_message_logs_status 
+                ON message_logs(status)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_message_logs_created 
+                ON message_logs(created_at DESC)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_message_logs_channel 
+                ON message_logs(kook_channel_id, created_at DESC)
             """)
             
             # 失败消息队列
