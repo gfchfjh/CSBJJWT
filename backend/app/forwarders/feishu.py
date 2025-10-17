@@ -133,17 +133,67 @@ class FeishuForwarder:
             logger.error(f"飞书发送异常: {str(e)}")
             return False
     
+    async def upload_image(self, app_id: str, app_secret: str,
+                          image_path: str) -> Optional[str]:
+        """
+        上传图片到飞书云存储
+        
+        Args:
+            app_id: App ID
+            app_secret: App Secret
+            image_path: 本地图片路径
+            
+        Returns:
+            图片key（img_key）
+        """
+        try:
+            access_token = await self.get_access_token(app_id, app_secret)
+            if not access_token:
+                return None
+            
+            import os
+            file_name = os.path.basename(image_path)
+            
+            async with aiohttp.ClientSession() as session:
+                with open(image_path, 'rb') as f:
+                    # 准备表单数据
+                    form = aiohttp.FormData()
+                    form.add_field('image_type', 'message')
+                    form.add_field('image', f, filename=file_name, content_type='image/jpeg')
+                    
+                    # 上传图片
+                    async with session.post(
+                        "https://open.feishu.cn/open-apis/im/v1/images",
+                        headers={
+                            "Authorization": f"Bearer {access_token}"
+                        },
+                        data=form
+                    ) as response:
+                        data = await response.json()
+                        
+                        if data.get("code") == 0:
+                            img_key = data.get("data", {}).get("image_key")
+                            logger.info(f"飞书图片上传成功: {img_key}")
+                            return img_key
+                        else:
+                            logger.error(f"飞书图片上传失败: {data}")
+                            return None
+                            
+        except Exception as e:
+            logger.error(f"飞书图片上传异常: {str(e)}")
+            return None
+    
     async def send_image(self, app_id: str, app_secret: str,
-                        chat_id: str, image_url: str,
+                        chat_id: str, image_path: str,
                         caption: Optional[str] = None) -> bool:
         """
-        发送图片到飞书（使用消息卡片）
+        发送图片到飞书
         
         Args:
             app_id: App ID
             app_secret: App Secret
             chat_id: 群聊ID
-            image_url: 图片URL
+            image_path: 图片路径（本地文件路径）
             caption: 图片说明
             
         Returns:
@@ -156,36 +206,18 @@ class FeishuForwarder:
             if not access_token:
                 return False
             
-            # 构建图片消息卡片
-            card_content = {
-                "config": {
-                    "wide_screen_mode": True
-                },
-                "elements": [
-                    {
-                        "tag": "img",
-                        "img_key": image_url,
-                        "alt": {
-                            "tag": "plain_text",
-                            "content": caption or "图片"
-                        }
-                    }
-                ]
-            }
+            # 1. 先上传图片获取img_key
+            img_key = await self.upload_image(app_id, app_secret, image_path)
+            if not img_key:
+                logger.error("图片上传失败，无法发送")
+                return False
             
-            # 如果有说明文字，添加到卡片
-            if caption:
-                card_content["elements"].insert(0, {
-                    "tag": "div",
-                    "text": {
-                        "tag": "plain_text",
-                        "content": caption
-                    }
-                })
-            
+            # 2. 发送图片消息（使用image类型，更简洁）
             message = {
-                "msg_type": "interactive",
-                "content": card_content
+                "msg_type": "image",
+                "content": {
+                    "image_key": img_key
+                }
             }
             
             async with aiohttp.ClientSession() as session:
@@ -205,6 +237,12 @@ class FeishuForwarder:
                     
                     if data.get("code") == 0:
                         logger.info("飞书图片发送成功")
+                        
+                        # 如果有说明文字，再发送一条文本消息
+                        if caption:
+                            await asyncio.sleep(0.5)  # 稍微延迟
+                            await self.send_message(app_id, app_secret, chat_id, caption)
+                        
                         return True
                     else:
                         logger.error(f"飞书图片发送失败: {data}")
@@ -212,6 +250,54 @@ class FeishuForwarder:
                         
         except Exception as e:
             logger.error(f"飞书图片发送异常: {str(e)}")
+            return False
+    
+    async def send_image_url(self, app_id: str, app_secret: str,
+                            chat_id: str, image_url: str,
+                            caption: Optional[str] = None) -> bool:
+        """
+        从URL发送图片到飞书（先下载后上传）
+        
+        Args:
+            app_id: App ID
+            app_secret: App Secret
+            chat_id: 群聊ID
+            image_url: 图片URL
+            caption: 图片说明
+            
+        Returns:
+            是否成功
+        """
+        try:
+            # 1. 下载图片到临时文件
+            import tempfile
+            import os
+            
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, f"feishu_image_{id(self)}.jpg")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_url) as response:
+                    if response.status == 200:
+                        with open(temp_file, 'wb') as f:
+                            f.write(await response.read())
+                    else:
+                        logger.error(f"下载图片失败: {response.status}")
+                        return False
+            
+            # 2. 上传并发送
+            success = await self.send_image(app_id, app_secret, chat_id, temp_file, caption)
+            
+            # 3. 清理临时文件
+            try:
+                os.remove(temp_file)
+            except:
+                pass
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"从URL发送图片异常: {str(e)}")
             return False
     
     async def send_file(self, app_id: str, app_secret: str,

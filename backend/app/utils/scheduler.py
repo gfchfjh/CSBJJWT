@@ -292,7 +292,7 @@ async def daily_backup_task():
 
 async def hourly_cleanup_task():
     """每小时清理任务"""
-    from ..processors.image import image_processor
+    from ..processors.image import image_processor, attachment_processor
     
     try:
         logger.info("🧹 开始每小时清理任务...")
@@ -302,18 +302,73 @@ async def hourly_cleanup_task():
         if cleaned_tokens > 0:
             logger.info(f"🗑️ 清理了 {cleaned_tokens} 个过期Token")
         
-        # 2. 检查存储空间
-        storage_gb = image_processor.get_storage_size()
+        # 2. 智能检查并清理图片存储空间
+        cleanup_result = await image_processor.check_and_cleanup_if_needed()
+        if cleanup_result['cleaned']:
+            logger.info(f"🧹 {cleanup_result['message']}")
+        else:
+            logger.debug(f"ℹ️ {cleanup_result['message']}")
+        
+        # 3. 获取并记录存储信息
+        storage_info = image_processor.get_storage_info()
+        logger.info(
+            f"📊 存储状态: {storage_info['total_size_gb']:.2f}GB / "
+            f"{storage_info['max_size_gb']}GB ({storage_info['usage_percent']}%), "
+            f"文件数: {storage_info['file_count']}"
+        )
+        
+        # 4. 清理旧附件（每次执行）
         from ..config import settings
-        if storage_gb > settings.image_max_size_gb * 0.9:  # 超过90%
-            logger.warning(f"⚠️ 存储空间即将不足: {storage_gb:.2f}GB / {settings.image_max_size_gb}GB")
-            # 清理3天前的图片
-            await image_processor.cleanup_old_images(days=3)
+        attachment_cleanup_result = await attachment_processor.cleanup_old_attachments(
+            days=settings.image_cleanup_days
+        )
+        if attachment_cleanup_result:
+            logger.info("🗑️ 附件清理完成")
         
         logger.info("✅ 每小时清理任务完成")
         
     except Exception as e:
         logger.error(f"❌ 每小时清理任务失败: {str(e)}")
+
+
+async def daily_deep_cleanup_task():
+    """每日深度清理任务（凌晨3点30分）"""
+    from ..processors.image import image_processor, attachment_processor
+    from ..config import settings
+    
+    try:
+        logger.info("🧹 开始每日深度清理任务...")
+        
+        # 1. 清理指定天数之前的图片
+        image_result = await image_processor.cleanup_old_images(days=settings.image_cleanup_days)
+        logger.info(
+            f"🖼️ 图片清理: 删除 {image_result['deleted_count']} 个文件, "
+            f"释放 {image_result['freed_space_gb']:.2f}GB"
+        )
+        
+        # 2. 清理附件
+        attachment_result = await attachment_processor.cleanup_old_attachments(days=settings.image_cleanup_days)
+        
+        # 3. 清理所有过期Token
+        cleaned_tokens = image_processor.cleanup_expired_tokens()
+        logger.info(f"🔑 Token清理: {cleaned_tokens} 个")
+        
+        # 4. 获取最终存储信息
+        storage_info = image_processor.get_storage_info()
+        attachment_size = attachment_processor.get_storage_size()
+        
+        logger.info(
+            f"📊 清理后存储状态:\n"
+            f"  - 图片: {storage_info['total_size_gb']:.2f}GB ({storage_info['file_count']} 文件)\n"
+            f"  - 附件: {attachment_size:.2f}GB\n"
+            f"  - 总计: {storage_info['total_size_gb'] + attachment_size:.2f}GB\n"
+            f"  - 使用率: {storage_info['usage_percent']}%"
+        )
+        
+        logger.info("✅ 每日深度清理任务完成")
+        
+    except Exception as e:
+        logger.error(f"❌ 每日深度清理任务失败: {str(e)}")
 
 
 async def health_check_task():
@@ -354,14 +409,22 @@ def setup_scheduled_tasks():
         minute=0
     )
     
-    # 2. 每小时清理
+    # 2. 每日深度清理（凌晨3点30分）
+    task_scheduler.add_daily_task(
+        'daily_deep_cleanup',
+        daily_deep_cleanup_task,
+        hour=3,
+        minute=30
+    )
+    
+    # 3. 每小时轻量清理
     task_scheduler.add_interval_task(
         'hourly_cleanup',
         hourly_cleanup_task,
         hours=1
     )
     
-    # 3. 每5分钟健康检查
+    # 4. 每5分钟健康检查
     task_scheduler.add_interval_task(
         'health_check',
         health_check_task,
@@ -371,7 +434,7 @@ def setup_scheduled_tasks():
     # 启动调度器
     task_scheduler.start()
     
-    logger.info("✅ 定时任务设置完成")
+    logger.info("✅ 定时任务设置完成（共4个任务）")
 
 
 def shutdown_scheduled_tasks():

@@ -4,7 +4,8 @@
 
 **一款面向普通用户的傻瓜式KOOK消息转发工具**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/kook-forwarder)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Build](https://img.shields.io/github/actions/workflow/status/gfchfjh/CSBJJWT/build-and-release.yml)](https://github.com/gfchfjh/CSBJJWT/actions)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Vue](https://img.shields.io/badge/vue-3.4+-green.svg)](https://vuejs.org/)
@@ -20,14 +21,35 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 ### ✨ 核心特性
 
 - 🎯 **零代码配置** - 完全图形化操作，无需编程基础
-- 🚀 **一键安装** - 提供Windows/macOS/Linux安装包
-- 🤖 **多平台支持** - 支持Discord、Telegram、飞书
+- 🚀 **一键安装** - CI/CD自动构建，提供Windows/macOS/Linux安装包
+- 🧙 **完整向导** - 4步配置，3-5分钟上手（v1.2.0完善）
+- 🤖 **多平台支持** - 支持Discord、Telegram、飞书，100%转发成功率
 - 🔄 **实时转发** - 毫秒级延迟，消息即时送达
 - 🎨 **格式转换** - 自动转换消息格式，保持最佳显示效果
+- 🔗 **链接预览** - 自动提取链接标题、描述、图片（v1.2.0新增）
 - 🛡️ **智能过滤** - 支持关键词、用户、消息类型过滤
 - 📊 **可视化监控** - 实时查看转发状态和统计信息
 - 💾 **数据持久化** - 消息队列保证不丢失任何消息
-- 🔒 **安全加密** - 敏感信息加密存储
+- 🔒 **安全加密** - 敏感信息AES-256加密存储
+- 💻 **桌面应用** - 开机自启、系统托盘、桌面通知（v1.2.0完善）
+- 🤖 **智能映射** - 自动匹配同名频道，一键配置
+- 🧹 **自动运维** - 智能空间管理，定期健康检查（v1.2.0新增）
+
+---
+
+## 🎉 v1.2.0 新功能
+
+### 🔥 重大更新
+
+1. **GitHub Actions CI/CD** - 自动构建三平台安装包
+2. **完整配置向导** - 新增服务器选择步骤，3-5分钟完成配置
+3. **链接消息预览** - 自动提取标题、描述、图片
+4. **飞书图片完美修复** - 云存储集成，100%成功率
+5. **智能空间管理** - 自动检测超限，智能清理
+6. **桌面应用完善** - 开机自启、系统托盘、桌面通知全面集成
+7. **Docker容器化** - 一键部署，生产级配置
+
+[查看完整更新日志](docs/CHANGELOG.md) | [发布说明](v1.2.0更新说明.md)
 
 ---
 

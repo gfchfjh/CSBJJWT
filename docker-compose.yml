@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  kook-forwarder:
+    build: .
+    container_name: kook-forwarder
+    restart: unless-stopped
+    ports:
+      - "9527:9527"  # API端口
+    volumes:
+      # 数据持久化
+      - ./data:/data
+      # 配置文件（可选）
+      - ./config:/app/config
+    environment:
+      # API配置
+      - API_HOST=0.0.0.0
+      - API_PORT=9527
+      
+      # Redis配置
+      - REDIS_HOST=127.0.0.1
+      - REDIS_PORT=6379
+      
+      # 日志配置
+      - LOG_LEVEL=INFO
+      - LOG_RETENTION_DAYS=3
+      
+      # 图片配置
+      - IMAGE_MAX_SIZE_GB=10
+      - IMAGE_CLEANUP_DAYS=7
+      
+      # 数据目录
+      - DATA_DIR=/data
+      
+      # 时区
+      - TZ=Asia/Shanghai
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9527/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# 数据卷
+volumes:
+  data:
+    driver: local
+
+# 网络
+networks:
+  default:
+    name: kook-forwarder-network

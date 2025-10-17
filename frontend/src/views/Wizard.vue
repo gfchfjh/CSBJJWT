@@ -4,6 +4,7 @@
       <el-steps :active="currentStep" finish-status="success" align-center>
         <el-step title="欢迎" description="开始配置" />
         <el-step title="登录KOOK" description="添加账号" />
+        <el-step title="选择服务器" description="监听频道" />
         <el-step title="配置机器人" description="选择平台" />
         <el-step title="完成" description="开始使用" />
       </el-steps>
@@ -164,8 +165,135 @@
           </div>
         </div>
 
-        <!-- 步骤3: 配置机器人 -->
-        <div v-else-if="currentStep === 2" class="step-bots">
+        <!-- 步骤3: 选择服务器和频道 -->
+        <div v-else-if="currentStep === 2" class="step-servers">
+          <h2>🏠 选择要监听的KOOK服务器</h2>
+          
+          <el-alert
+            v-if="!accountAdded"
+            title="请先在上一步添加KOOK账号"
+            type="warning"
+            :closable="false"
+            class="help-alert"
+          />
+
+          <el-alert
+            v-else-if="loadingServers"
+            title="正在加载服务器列表，请稍候..."
+            type="info"
+            :closable="false"
+            class="help-alert"
+          />
+
+          <div v-else-if="servers.length === 0 && !loadingServers" class="empty-servers">
+            <el-empty description="未获取到服务器列表">
+              <el-button type="primary" @click="loadServers">
+                重新加载
+              </el-button>
+            </el-empty>
+          </div>
+
+          <div v-else class="servers-list">
+            <el-alert
+              title="请选择需要监听的服务器和频道"
+              type="info"
+              :closable="false"
+              class="help-alert"
+            >
+              <p>提示：</p>
+              <ul>
+                <li>只有选中的频道才会被监听</li>
+                <li>可以在后续的"频道映射"页面中设置转发规则</li>
+                <li>支持全选或按需选择</li>
+              </ul>
+            </el-alert>
+
+            <div class="server-selection">
+              <div class="toolbar">
+                <el-button size="small" @click="selectAll">全选</el-button>
+                <el-button size="small" @click="unselectAll">全不选</el-button>
+                <span class="selection-count">
+                  已选择：{{ selectedChannelsCount }} 个频道
+                </span>
+              </div>
+
+              <el-collapse v-model="activeServers" accordion>
+                <el-collapse-item
+                  v-for="server in servers"
+                  :key="server.id"
+                  :name="server.id"
+                  :title="`${server.name} (${server.channels?.length || 0}个频道)`"
+                >
+                  <template #title>
+                    <div class="server-header">
+                      <el-checkbox
+                        v-model="server.selected"
+                        @change="toggleServer(server)"
+                        @click.stop
+                      />
+                      <img
+                        v-if="server.icon"
+                        :src="server.icon"
+                        class="server-icon"
+                        alt="server icon"
+                      />
+                      <span class="server-name">{{ server.name }}</span>
+                      <el-tag size="small" type="info">
+                        {{ server.channels?.length || 0 }}个频道
+                      </el-tag>
+                    </div>
+                  </template>
+
+                  <div v-if="!server.channels" class="loading-channels">
+                    <el-button
+                      type="primary"
+                      size="small"
+                      :loading="loadingChannels[server.id]"
+                      @click="loadChannels(server.id)"
+                    >
+                      加载频道列表
+                    </el-button>
+                  </div>
+
+                  <el-checkbox-group
+                    v-else
+                    v-model="server.selectedChannels"
+                    class="channels-list"
+                  >
+                    <el-checkbox
+                      v-for="channel in server.channels"
+                      :key="channel.id"
+                      :label="channel.id"
+                      class="channel-item"
+                    >
+                      <span class="channel-icon">
+                        {{ channel.type === 'voice' ? '🔊' : '#' }}
+                      </span>
+                      {{ channel.name }}
+                      <el-tag v-if="channel.type === 'voice'" size="small" type="warning">
+                        语音
+                      </el-tag>
+                    </el-checkbox>
+                  </el-checkbox-group>
+                </el-collapse-item>
+              </el-collapse>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <el-button @click="prevStep">上一步</el-button>
+            <el-button
+              type="primary"
+              :disabled="selectedChannelsCount === 0"
+              @click="saveSelectedChannels"
+            >
+              继续（已选 {{ selectedChannelsCount }} 个频道）
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 步骤4: 配置机器人 -->
+        <div v-else-if="currentStep === 3" class="step-bots">
           <h2>🤖 配置转发机器人</h2>
           
           <el-alert
@@ -343,8 +471,8 @@
           </div>
         </div>
 
-        <!-- 步骤4: 完成 -->
-        <div v-else-if="currentStep === 3" class="step-complete">
+        <!-- 步骤5: 完成 -->
+        <div v-else-if="currentStep === 4" class="step-complete">
           <el-result
             icon="success"
             title="✅ 配置完成！"
@@ -355,6 +483,9 @@
                 <el-descriptions :column="1" border>
                   <el-descriptions-item label="KOOK账号">
                     {{ accountAdded ? '✅ 已添加' : '❌ 未添加' }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="监听频道">
+                    ✅ {{ selectedChannelsCount }}个频道
                   </el-descriptions-item>
                   <el-descriptions-item label="机器人配置">
                     ✅ {{ addedBots.length }}个平台
@@ -433,10 +564,26 @@ const agreedToDisclaimer = ref(false)
 // 是否正在获取Chat ID
 const gettingChatId = ref(false)
 
+// 服务器相关
+const servers = ref([])
+const loadingServers = ref(false)
+const loadingChannels = ref({})
+const activeServers = ref([])
+const selectedChannelsCount = computed(() => {
+  return servers.value.reduce((count, server) => {
+    return count + (server.selectedChannels?.length || 0)
+  }, 0)
+})
+
 // 下一步
 const nextStep = () => {
-  if (currentStep.value < 3) {
+  if (currentStep.value < 4) {
     currentStep.value++
+    
+    // 如果进入到服务器选择步骤，自动加载服务器列表
+    if (currentStep.value === 2 && accountAdded.value && servers.value.length === 0) {
+      loadServers()
+    }
   }
 }
 
@@ -599,6 +746,127 @@ const testBot = async (platform) => {
   ElMessage.info('测试功能开发中...')
 }
 
+// 加载服务器列表
+const loadServers = async () => {
+  try {
+    loadingServers.value = true
+    const accounts = await api.getAccounts()
+    
+    if (!accounts || accounts.length === 0) {
+      ElMessage.warning('未找到KOOK账号')
+      return
+    }
+
+    // 获取第一个在线账号的服务器列表
+    const onlineAccount = accounts.find(a => a.status === 'online')
+    if (!onlineAccount) {
+      ElMessage.warning('账号未在线，请等待账号连接成功后重试')
+      return
+    }
+
+    const result = await api.getServers(onlineAccount.id)
+    servers.value = result.map(server => ({
+      ...server,
+      selected: false,
+      selectedChannels: [],
+      channels: null
+    }))
+
+    if (servers.value.length === 0) {
+      ElMessage.warning('未获取到服务器列表，请确保账号已登录KOOK')
+    }
+  } catch (error) {
+    ElMessage.error('加载服务器失败：' + (error.response?.data?.detail || error.message))
+  } finally {
+    loadingServers.value = false
+  }
+}
+
+// 加载频道列表
+const loadChannels = async (serverId) => {
+  try {
+    loadingChannels.value[serverId] = true
+    
+    const accounts = await api.getAccounts()
+    const onlineAccount = accounts.find(a => a.status === 'online')
+    if (!onlineAccount) {
+      ElMessage.warning('账号未在线')
+      return
+    }
+
+    const channels = await api.getChannels(onlineAccount.id, serverId)
+    
+    const server = servers.value.find(s => s.id === serverId)
+    if (server) {
+      server.channels = channels
+    }
+  } catch (error) {
+    ElMessage.error('加载频道失败：' + (error.response?.data?.detail || error.message))
+  } finally {
+    loadingChannels.value[serverId] = false
+  }
+}
+
+// 切换服务器选择状态
+const toggleServer = (server) => {
+  if (server.selected) {
+    // 选中服务器时，加载其频道列表
+    if (!server.channels) {
+      loadChannels(server.id)
+    } else {
+      // 如果已加载，则全选频道
+      server.selectedChannels = server.channels.map(c => c.id)
+    }
+  } else {
+    // 取消选中服务器时，清空已选频道
+    server.selectedChannels = []
+  }
+}
+
+// 全选
+const selectAll = () => {
+  servers.value.forEach(server => {
+    server.selected = true
+    if (server.channels) {
+      server.selectedChannels = server.channels.map(c => c.id)
+    } else {
+      loadChannels(server.id)
+    }
+  })
+}
+
+// 全不选
+const unselectAll = () => {
+  servers.value.forEach(server => {
+    server.selected = false
+    server.selectedChannels = []
+  })
+}
+
+// 保存选中的频道
+const saveSelectedChannels = () => {
+  // 将选中的频道信息保存到localStorage供后续使用
+  const selectedData = {
+    servers: servers.value
+      .filter(s => s.selectedChannels && s.selectedChannels.length > 0)
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        channels: s.channels
+          .filter(c => s.selectedChannels.includes(c.id))
+          .map(c => ({
+            id: c.id,
+            name: c.name,
+            type: c.type
+          }))
+      }))
+  }
+  
+  localStorage.setItem('wizard_selected_channels', JSON.stringify(selectedData))
+  ElMessage.success(`已保存 ${selectedChannelsCount.value} 个频道`)
+  nextStep()
+}
+
 // 完成向导
 const finishWizard = () => {
   // 标记向导已完成
@@ -709,5 +977,88 @@ h2 {
   padding: 15px;
   background-color: #f0f9ff;
   border-radius: 4px;
+}
+
+/* 服务器选择相关样式 */
+.step-servers {
+  padding: 20px;
+}
+
+.empty-servers {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.servers-list {
+  margin-top: 20px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.selection-count {
+  margin-left: auto;
+  color: #409eff;
+  font-weight: bold;
+}
+
+.server-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.server-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.server-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.loading-channels {
+  padding: 20px;
+  text-align: center;
+}
+
+.channels-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 15px;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.channel-item:hover {
+  background-color: #f5f7fa;
+}
+
+.channel-icon {
+  font-size: 16px;
+  margin-right: 5px;
+}
+
+.server-selection {
+  max-height: 500px;
+  overflow-y: auto;
 }
 </style>

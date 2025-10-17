@@ -240,16 +240,20 @@ class ImageProcessor:
             'expired_tokens': expired_tokens
         }
     
-    async def cleanup_old_images(self, days: int = 7):
+    async def cleanup_old_images(self, days: int = 7) -> Dict[str, Any]:
         """
         清理旧图片
         
         Args:
             days: 保留天数
+            
+        Returns:
+            清理统计信息
         """
         try:
             current_time = time.time()
             deleted_count = 0
+            freed_space = 0
             
             for filepath in self.storage_path.glob("*.jpg"):
                 # 检查文件修改时间
@@ -257,17 +261,35 @@ class ImageProcessor:
                 age_days = (current_time - mtime) / (24 * 3600)
                 
                 if age_days > days:
+                    # 获取文件大小
+                    file_size = filepath.stat().st_size
+                    
+                    # 删除文件
                     filepath.unlink()
                     deleted_count += 1
+                    freed_space += file_size
                     
                     # 删除Token映射
                     if str(filepath) in self.url_tokens:
                         del self.url_tokens[str(filepath)]
             
-            logger.info(f"清理旧图片完成: 删除 {deleted_count} 个文件")
+            freed_mb = freed_space / (1024 * 1024)
+            logger.info(f"清理旧图片完成: 删除 {deleted_count} 个文件, 释放 {freed_mb:.2f}MB 空间")
+            
+            return {
+                'deleted_count': deleted_count,
+                'freed_space_mb': freed_mb,
+                'freed_space_gb': freed_mb / 1024
+            }
             
         except Exception as e:
             logger.error(f"清理旧图片失败: {str(e)}")
+            return {
+                'deleted_count': 0,
+                'freed_space_mb': 0,
+                'freed_space_gb': 0,
+                'error': str(e)
+            }
     
     def get_storage_size(self) -> float:
         """
@@ -281,6 +303,155 @@ class ImageProcessor:
             total_size += filepath.stat().st_size
         
         return total_size / (1024 ** 3)
+    
+    def get_storage_info(self) -> Dict[str, Any]:
+        """
+        获取详细的存储信息
+        
+        Returns:
+            存储信息字典
+        """
+        total_size = 0
+        file_count = 0
+        oldest_file_time = None
+        newest_file_time = None
+        
+        for filepath in self.storage_path.glob("*.jpg"):
+            stat = filepath.stat()
+            total_size += stat.st_size
+            file_count += 1
+            
+            # 记录最旧和最新文件时间
+            if oldest_file_time is None or stat.st_mtime < oldest_file_time:
+                oldest_file_time = stat.st_mtime
+            if newest_file_time is None or stat.st_mtime > newest_file_time:
+                newest_file_time = stat.st_mtime
+        
+        size_gb = total_size / (1024 ** 3)
+        max_size_gb = settings.image_max_size_gb
+        usage_percent = (size_gb / max_size_gb * 100) if max_size_gb > 0 else 0
+        
+        return {
+            'total_size_bytes': total_size,
+            'total_size_mb': total_size / (1024 * 1024),
+            'total_size_gb': size_gb,
+            'file_count': file_count,
+            'max_size_gb': max_size_gb,
+            'usage_percent': round(usage_percent, 2),
+            'is_full': size_gb >= max_size_gb,
+            'oldest_file_time': oldest_file_time,
+            'newest_file_time': newest_file_time,
+            'storage_path': str(self.storage_path)
+        }
+    
+    async def check_and_cleanup_if_needed(self) -> Dict[str, Any]:
+        """
+        检查存储空间，如果超限则自动清理
+        
+        Returns:
+            操作结果
+        """
+        info = self.get_storage_info()
+        
+        # 如果空间使用率超过90%，触发清理
+        if info['usage_percent'] >= 90:
+            logger.warning(f"存储空间使用率过高: {info['usage_percent']:.2f}%，开始清理...")
+            
+            # 逐步减少保留天数，直到释放足够空间
+            cleanup_days = settings.image_cleanup_days
+            total_deleted = 0
+            total_freed = 0
+            
+            while info['usage_percent'] >= 80 and cleanup_days > 1:
+                result = await self.cleanup_old_images(cleanup_days)
+                total_deleted += result['deleted_count']
+                total_freed += result['freed_space_mb']
+                
+                # 重新获取存储信息
+                info = self.get_storage_info()
+                
+                # 如果没有删除文件，减少保留天数继续尝试
+                if result['deleted_count'] == 0:
+                    cleanup_days = max(1, cleanup_days - 1)
+                else:
+                    break
+            
+            return {
+                'cleaned': True,
+                'deleted_count': total_deleted,
+                'freed_space_mb': total_freed,
+                'current_usage_percent': info['usage_percent'],
+                'message': f"自动清理完成：删除 {total_deleted} 个文件，释放 {total_freed:.2f}MB"
+            }
+        else:
+            return {
+                'cleaned': False,
+                'current_usage_percent': info['usage_percent'],
+                'message': '存储空间充足，无需清理'
+            }
+    
+    async def cleanup_by_size(self, target_size_gb: float) -> Dict[str, Any]:
+        """
+        清理文件直到达到目标大小
+        
+        Args:
+            target_size_gb: 目标大小（GB）
+            
+        Returns:
+            清理结果
+        """
+        try:
+            current_size = self.get_storage_size()
+            if current_size <= target_size_gb:
+                return {
+                    'deleted_count': 0,
+                    'freed_space_gb': 0,
+                    'message': '当前空间已满足要求'
+                }
+            
+            # 按文件修改时间排序（旧的先删）
+            files_with_time = []
+            for filepath in self.storage_path.glob("*.jpg"):
+                stat = filepath.stat()
+                files_with_time.append((filepath, stat.st_mtime, stat.st_size))
+            
+            # 按时间升序排序
+            files_with_time.sort(key=lambda x: x[1])
+            
+            deleted_count = 0
+            freed_space = 0
+            
+            for filepath, _, file_size in files_with_time:
+                # 如果已经达到目标，停止删除
+                if self.get_storage_size() <= target_size_gb:
+                    break
+                
+                # 删除文件
+                filepath.unlink()
+                deleted_count += 1
+                freed_space += file_size
+                
+                # 删除Token映射
+                if str(filepath) in self.url_tokens:
+                    del self.url_tokens[str(filepath)]
+            
+            freed_gb = freed_space / (1024 ** 3)
+            logger.info(f"按大小清理完成: 删除 {deleted_count} 个文件, 释放 {freed_gb:.2f}GB")
+            
+            return {
+                'deleted_count': deleted_count,
+                'freed_space_gb': freed_gb,
+                'current_size_gb': self.get_storage_size(),
+                'message': f'清理完成：删除 {deleted_count} 个文件'
+            }
+            
+        except Exception as e:
+            logger.error(f"按大小清理失败: {str(e)}")
+            return {
+                'deleted_count': 0,
+                'freed_space_gb': 0,
+                'error': str(e)
+            }
     
     async def process_image(self, url: str,
                            strategy: str = "smart",
