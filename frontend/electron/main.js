@@ -1,10 +1,11 @@
 /**
  * Electron主进程
  */
-const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, dialog, shell } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const AutoLaunch = require('auto-launch')
+const fs = require('fs')
 
 let mainWindow = null
 let backendProcess = null
@@ -203,9 +204,9 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      enableRemoteModule: true,
+      nodeIntegration: false,  // 改为false，提高安全性
+      contextIsolation: true,   // 改为true，使用contextBridge
+      preload: path.join(__dirname, 'preload.js'),  // 使用preload脚本
       webSecurity: false  // 允许加载本地资源
     },
     title: 'KOOK消息转发系统',
@@ -448,4 +449,53 @@ ipcMain.handle('get-app-info', () => {
     name: app.getName(),
     path: app.getPath('userData')
   }
+})
+
+// 打开文件夹/文件
+ipcMain.handle('open-path', async (event, filePath) => {
+  try {
+    // 确保路径存在
+    if (fs.existsSync(filePath)) {
+      // 使用shell打开文件夹
+      await shell.openPath(filePath)
+      return { success: true }
+    } else {
+      // 如果路径不存在，尝试创建目录
+      const isDirectory = !path.extname(filePath)
+      if (isDirectory) {
+        fs.mkdirSync(filePath, { recursive: true })
+        await shell.openPath(filePath)
+        return { success: true }
+      } else {
+        return { success: false, error: '文件不存在' }
+      }
+    }
+  } catch (error) {
+    console.error('打开路径失败:', error)
+    return { success: false, error: error.message }
+  }
+})
+
+// 重启应用
+ipcMain.handle('relaunch-app', () => {
+  app.relaunch()
+  app.exit(0)
+})
+
+// 选择文件对话框
+ipcMain.handle('show-open-dialog', async (event, options) => {
+  const result = await dialog.showOpenDialog(mainWindow, options)
+  return result
+})
+
+// 选择保存位置对话框
+ipcMain.handle('show-save-dialog', async (event, options) => {
+  const result = await dialog.showSaveDialog(mainWindow, options)
+  return result
+})
+
+// 显示消息对话框
+ipcMain.handle('show-message-box', async (event, options) => {
+  const result = await dialog.showMessageBox(mainWindow, options)
+  return result
 })

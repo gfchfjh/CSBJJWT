@@ -1,7 +1,7 @@
 """
 系统管理API
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from ..queue.redis_client import redis_queue
@@ -9,7 +9,13 @@ from ..queue.worker import message_worker
 from ..kook.scraper import scraper_manager
 from ..processors.filter import message_filter
 from ..config import settings
+from ..database import db
+from ..utils.logger import logger
 import asyncio
+import os
+import shutil
+from pathlib import Path
+from datetime import datetime, timedelta
 
 
 router = APIRouter(prefix="/api/system", tags=["system"])
@@ -252,3 +258,267 @@ async def test_email():
         return {"success": True, "message": "测试邮件已发送"}
     else:
         return {"success": False, "message": message}
+
+
+class SystemConfigModel(BaseModel):
+    """系统配置模型"""
+    autoStart: Optional[bool] = None
+    minimizeToTray: Optional[bool] = None
+    startMinimized: Optional[bool] = None
+    imageStrategy: Optional[str] = None
+    imageMaxSizeGB: Optional[int] = None
+    imageCleanupDays: Optional[int] = None
+    imageQuality: Optional[int] = None
+    logLevel: Optional[str] = None
+    logRetentionDays: Optional[int] = None
+    notifyOnError: Optional[bool] = None
+    notifyOnDisconnect: Optional[bool] = None
+    notifyOnFailure: Optional[bool] = None
+    emailAlertEnabled: Optional[bool] = None
+    language: Optional[str] = None
+    theme: Optional[str] = None
+    autoUpdate: Optional[str] = None
+    autoBackup: Optional[bool] = None
+
+
+@router.get("/system-config")
+async def get_system_config():
+    """获取系统配置"""
+    try:
+        # 从数据库读取所有系统配置
+        config = {}
+        
+        # 获取所有配置键
+        config_keys = [
+            'autoStart', 'minimizeToTray', 'startMinimized',
+            'imageStrategy', 'imageMaxSizeGB', 'imageCleanupDays', 'imageQuality',
+            'logLevel', 'logRetentionDays',
+            'notifyOnError', 'notifyOnDisconnect', 'notifyOnFailure',
+            'emailAlertEnabled', 'language', 'theme', 'autoUpdate', 'autoBackup'
+        ]
+        
+        for key in config_keys:
+            value = db.get_system_config(key)
+            if value is not None:
+                # 处理布尔值
+                if key in ['autoStart', 'minimizeToTray', 'startMinimized', 
+                          'notifyOnError', 'notifyOnDisconnect', 'notifyOnFailure',
+                          'emailAlertEnabled', 'autoBackup']:
+                    config[key] = value == 'true' or value == '1' or value is True
+                # 处理整数
+                elif key in ['imageMaxSizeGB', 'imageCleanupDays', 'imageQuality', 'logRetentionDays']:
+                    config[key] = int(value)
+                else:
+                    config[key] = value
+        
+        # 添加默认值
+        default_config = {
+            'autoStart': False,
+            'minimizeToTray': True,
+            'startMinimized': False,
+            'imageStrategy': 'smart',
+            'imageMaxSizeGB': 10,
+            'imageCleanupDays': 7,
+            'imageQuality': 85,
+            'logLevel': 'INFO',
+            'logRetentionDays': 3,
+            'notifyOnError': True,
+            'notifyOnDisconnect': True,
+            'notifyOnFailure': False,
+            'emailAlertEnabled': False,
+            'language': 'zh-CN',
+            'theme': 'auto',
+            'autoUpdate': 'check',
+            'autoBackup': True,
+            'imageStoragePath': str(settings.image_storage_path)
+        }
+        
+        # 合并默认配置
+        for key, value in default_config.items():
+            if key not in config:
+                config[key] = value
+        
+        return {"success": True, "data": config}
+        
+    except Exception as e:
+        logger.error(f"获取系统配置失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/system-config")
+async def save_system_config(config: SystemConfigModel):
+    """保存系统配置"""
+    try:
+        # 保存所有非None的配置项
+        config_dict = config.dict(exclude_none=True)
+        
+        for key, value in config_dict.items():
+            # 转换布尔值为字符串
+            if isinstance(value, bool):
+                value = 'true' if value else 'false'
+            # 转换整数为字符串
+            elif isinstance(value, int):
+                value = str(value)
+            
+            db.set_system_config(key, value)
+        
+        logger.info(f"系统配置已保存: {list(config_dict.keys())}")
+        return {"success": True, "message": "配置保存成功"}
+        
+    except Exception as e:
+        logger.error(f"保存系统配置失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/storage-usage")
+async def get_storage_usage():
+    """获取存储使用情况"""
+    try:
+        # 图片存储
+        image_path = Path(settings.image_storage_path)
+        image_size_bytes = 0
+        image_count = 0
+        
+        if image_path.exists():
+            for file in image_path.rglob('*'):
+                if file.is_file():
+                    image_size_bytes += file.stat().st_size
+                    image_count += 1
+        
+        image_size_gb = image_size_bytes / (1024**3)
+        
+        # 日志存储
+        log_path = Path(settings.log_dir)
+        log_size_bytes = 0
+        log_count = 0
+        
+        if log_path.exists():
+            for file in log_path.rglob('*.log'):
+                if file.is_file():
+                    log_size_bytes += file.stat().st_size
+                    log_count += 1
+        
+        log_size_mb = log_size_bytes / (1024**2)
+        
+        return {
+            "success": True,
+            "data": {
+                "image": {
+                    "size_gb": round(image_size_gb, 2),
+                    "count": image_count,
+                    "path": str(image_path)
+                },
+                "log": {
+                    "size_mb": round(log_size_mb, 2),
+                    "count": log_count,
+                    "path": str(log_path)
+                }
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"获取存储使用情况失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class CleanupRequest(BaseModel):
+    """清理请求模型"""
+    days: int
+
+
+@router.post("/cleanup-images")
+async def cleanup_old_images(request: CleanupRequest):
+    """清理旧图片"""
+    try:
+        image_path = Path(settings.image_storage_path)
+        if not image_path.exists():
+            return {"success": True, "count": 0, "size_mb": 0}
+        
+        cutoff_time = datetime.now() - timedelta(days=request.days)
+        deleted_count = 0
+        deleted_size = 0
+        
+        for file in image_path.rglob('*'):
+            if file.is_file():
+                # 检查文件修改时间
+                file_mtime = datetime.fromtimestamp(file.stat().st_mtime)
+                if file_mtime < cutoff_time:
+                    deleted_size += file.stat().st_size
+                    file.unlink()
+                    deleted_count += 1
+        
+        deleted_size_mb = deleted_size / (1024**2)
+        
+        logger.info(f"清理完成: 删除 {deleted_count} 个文件，释放 {deleted_size_mb:.2f} MB")
+        
+        return {
+            "success": True,
+            "count": deleted_count,
+            "size_mb": round(deleted_size_mb, 2)
+        }
+        
+    except Exception as e:
+        logger.error(f"清理图片失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cleanup-logs")
+async def cleanup_logs(request: Optional[CleanupRequest] = None):
+    """清空日志"""
+    try:
+        log_path = Path(settings.log_dir)
+        if not log_path.exists():
+            return {"success": True, "count": 0, "size_mb": 0}
+        
+        deleted_count = 0
+        deleted_size = 0
+        
+        if request and request.days:
+            # 清理指定天数前的日志
+            cutoff_time = datetime.now() - timedelta(days=request.days)
+            for file in log_path.rglob('*.log'):
+                if file.is_file():
+                    file_mtime = datetime.fromtimestamp(file.stat().st_mtime)
+                    if file_mtime < cutoff_time:
+                        deleted_size += file.stat().st_size
+                        file.unlink()
+                        deleted_count += 1
+        else:
+            # 清空所有日志
+            for file in log_path.rglob('*.log'):
+                if file.is_file():
+                    deleted_size += file.stat().st_size
+                    file.unlink()
+                    deleted_count += 1
+        
+        deleted_size_mb = deleted_size / (1024**2)
+        
+        logger.info(f"日志清理完成: 删除 {deleted_count} 个文件，释放 {deleted_size_mb:.2f} MB")
+        
+        return {
+            "success": True,
+            "count": deleted_count,
+            "size_mb": round(deleted_size_mb, 2)
+        }
+        
+    except Exception as e:
+        logger.error(f"清理日志失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/paths")
+async def get_system_paths():
+    """获取系统路径"""
+    try:
+        return {
+            "success": True,
+            "data": {
+                "data_dir": str(settings.data_dir),
+                "image_storage": str(settings.image_storage_path),
+                "log_dir": str(settings.log_dir),
+                "database": str(settings.database_path)
+            }
+        }
+    except Exception as e:
+        logger.error(f"获取系统路径失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

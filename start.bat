@@ -22,16 +22,28 @@ if errorlevel 1 (
 )
 
 REM 检查Redis
-if not exist "%PROJECT_DIR%redis\redis-server.exe" (
-    echo [警告] Redis未安装！
-    echo 请参考 redis/README.md 下载Redis
-    echo.
-    choice /C YN /M "是否继续启动（不含Redis）"
-    if errorlevel 2 exit /b 0
+echo [1/4] 检查Redis服务...
+netstat -ano | findstr ":6379" >nul 2>&1
+if errorlevel 1 (
+    if exist "%PROJECT_DIR%redis\redis-server.exe" (
+        echo 启动内置Redis服务器...
+        start "Redis服务器" /MIN cmd /c "%PROJECT_DIR%redis\redis-server.exe --port 6379 --bind 127.0.0.1"
+        timeout /t 2 /nobreak >nul
+        echo ✓ Redis服务已启动
+    ) else (
+        REM 尝试使用Python脚本启动Redis
+        python "%PROJECT_DIR%backend\start_redis.py" >nul 2>&1
+        if errorlevel 1 (
+            echo [警告] Redis未安装！
+            echo 提示：安装Redis可获得更好的性能
+            echo 下载地址: https://github.com/tporadowski/redis/releases
+            echo.
+        ) else (
+            echo ✓ Redis服务已启动
+        )
+    )
 ) else (
-    echo [1/4] 启动Redis服务器...
-    start "Redis服务器" /MIN cmd /c "%PROJECT_DIR%redis\start_redis.bat"
-    timeout /t 2 /nobreak >nul
+    echo ✓ Redis服务已运行在端口6379
 )
 
 echo [2/4] 启动后端服务...
