@@ -187,14 +187,58 @@ class ImageProcessor:
         
         # 检查Token是否匹配
         if token_info['token'] != token:
+            logger.warning(f"Token不匹配: {filepath}")
             return False
         
         # 检查是否过期
         if time.time() > token_info['expire_at']:
+            logger.info(f"Token已过期: {filepath}")
             del self.url_tokens[filepath]
             return False
         
         return True
+    
+    def cleanup_expired_tokens(self):
+        """清理所有过期Token"""
+        current_time = time.time()
+        expired_tokens = []
+        
+        for filepath, token_info in self.url_tokens.items():
+            if current_time > token_info['expire_at']:
+                expired_tokens.append(filepath)
+        
+        for filepath in expired_tokens:
+            del self.url_tokens[filepath]
+            logger.debug(f"清理过期Token: {filepath}")
+        
+        if expired_tokens:
+            logger.info(f"清理了 {len(expired_tokens)} 个过期Token")
+        
+        return len(expired_tokens)
+    
+    def get_token_stats(self) -> Dict[str, Any]:
+        """
+        获取Token统计信息
+        
+        Returns:
+            统计信息字典
+        """
+        current_time = time.time()
+        total_tokens = len(self.url_tokens)
+        expired_tokens = 0
+        valid_tokens = 0
+        
+        for token_info in self.url_tokens.values():
+            if current_time > token_info['expire_at']:
+                expired_tokens += 1
+            else:
+                valid_tokens += 1
+        
+        return {
+            'total_tokens': total_tokens,
+            'valid_tokens': valid_tokens,
+            'expired_tokens': expired_tokens
+        }
     
     async def cleanup_old_images(self, days: int = 7):
         """

@@ -177,6 +177,64 @@ class TelegramForwarder:
             return False, f"测试失败: {str(e)}"
         except Exception as e:
             return False, f"测试失败: {str(e)}"
+    
+    async def get_chat_ids(self, token: str) -> tuple[bool, list]:
+        """
+        获取可用的Chat ID列表
+        
+        通过getUpdates API获取最近与Bot交互的所有Chat ID
+        
+        Args:
+            token: Bot Token
+            
+        Returns:
+            (是否成功, Chat ID列表)
+        """
+        try:
+            bot = self.get_bot(token)
+            
+            # 获取Bot信息（验证Token有效性）
+            try:
+                bot_info = await bot.get_me()
+                logger.info(f"获取Chat ID - Bot: @{bot_info.username}")
+            except TelegramError as e:
+                return False, []
+            
+            # 获取最近的更新
+            updates = await bot.get_updates(limit=100)
+            
+            if not updates:
+                logger.warning("未找到任何更新，请先向Bot发送一条消息")
+                return True, []
+            
+            # 提取所有唯一的Chat ID
+            chat_ids = set()
+            chat_info = []
+            
+            for update in updates:
+                if update.message:
+                    chat = update.message.chat
+                    chat_id = str(chat.id)
+                    
+                    if chat_id not in [c['id'] for c in chat_info]:
+                        info = {
+                            'id': chat_id,
+                            'type': chat.type,
+                            'title': chat.title if chat.title else f"{chat.first_name or ''} {chat.last_name or ''}".strip(),
+                            'username': chat.username
+                        }
+                        chat_info.append(info)
+                        chat_ids.add(chat_id)
+            
+            logger.info(f"找到 {len(chat_ids)} 个Chat ID")
+            return True, chat_info
+            
+        except TelegramError as e:
+            logger.error(f"获取Chat ID失败: {str(e)}")
+            return False, []
+        except Exception as e:
+            logger.error(f"获取Chat ID异常: {str(e)}")
+            return False, []
 
 
 # 创建全局实例

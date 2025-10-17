@@ -108,3 +108,30 @@ async def test_bot_config(bot_id: int):
         raise HTTPException(status_code=400, detail="不支持的平台")
     
     return {"success": success, "message": message}
+
+
+@router.get("/telegram/chat-ids")
+async def get_telegram_chat_ids(token: str):
+    """
+    获取Telegram Chat ID列表
+    
+    通过Bot Token获取最近与Bot交互的所有Chat ID
+    """
+    if not token:
+        raise HTTPException(status_code=400, detail="缺少token参数")
+    
+    success, chat_ids = await telegram_forwarder.get_chat_ids(token)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="获取Chat ID失败，请检查Token是否正确")
+    
+    if not chat_ids:
+        return {
+            "message": "未找到任何Chat ID。请先在Telegram中向Bot发送一条消息，然后重试。",
+            "chat_ids": []
+        }
+    
+    return {
+        "message": f"找到 {len(chat_ids)} 个Chat ID",
+        "chat_ids": chat_ids
+    }

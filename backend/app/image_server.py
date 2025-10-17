@@ -137,12 +137,34 @@ async def auto_cleanup_task():
             logger.error(f"自动清理异常: {str(e)}")
 
 
+async def token_cleanup_task():
+    """Token清理任务（每小时执行一次）"""
+    while True:
+        try:
+            # 等待1小时
+            await asyncio.sleep(3600)
+            
+            # 清理过期Token
+            cleaned_count = image_processor.cleanup_expired_tokens()
+            
+            if cleaned_count > 0:
+                logger.info(f"Token清理完成，清理了 {cleaned_count} 个过期Token")
+            
+            # 记录Token统计信息
+            stats = image_processor.get_token_stats()
+            logger.debug(f"Token统计: 总计={stats['total_tokens']}, 有效={stats['valid_tokens']}, 过期={stats['expired_tokens']}")
+            
+        except Exception as e:
+            logger.error(f"Token清理异常: {str(e)}")
+
+
 async def start_image_server():
     """启动图床服务器"""
     import uvicorn
     
     # 启动自动清理任务
     cleanup_task = asyncio.create_task(auto_cleanup_task())
+    token_cleanup = asyncio.create_task(token_cleanup_task())
     
     config = uvicorn.Config(
         image_app,
@@ -154,6 +176,7 @@ async def start_image_server():
     
     logger.info(f"图床服务器启动: http://127.0.0.1:{settings.image_server_port}")
     logger.info(f"自动清理任务已启动（每24小时执行一次）")
+    logger.info(f"Token清理任务已启动（每小时执行一次）")
     
     try:
         await server.serve()
@@ -161,6 +184,7 @@ async def start_image_server():
         logger.error(f"图床服务器异常: {str(e)}")
     finally:
         cleanup_task.cancel()
+        token_cleanup.cancel()
 
 
 if __name__ == "__main__":

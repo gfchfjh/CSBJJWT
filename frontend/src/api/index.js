@@ -54,6 +54,7 @@ export default {
   addBotConfig: (data) => api.post('/api/bots/', data),
   deleteBotConfig: (id) => api.delete(`/api/bots/${id}`),
   testBotConfig: (id) => api.post(`/api/bots/${id}/test`),
+  getTelegramChatIds: (token) => api.get('/api/bots/telegram/chat-ids', { params: { token } }),
   
   // 频道映射
   getMappings: (kookChannelId) => api.get('/api/mappings/', { params: { kook_channel_id: kookChannelId } }),
@@ -83,5 +84,10 @@ export default {
   setPassword: (data) => api.post('/api/auth/set-password', data),
   verifyPassword: (data) => api.post('/api/auth/verify-password', data),
   changePassword: (data) => api.post('/api/auth/change-password', data),
-  resetPassword: () => api.post('/api/auth/reset-password')
+  resetPassword: () => api.post('/api/auth/reset-password'),
+  
+  // 邮件配置
+  getEmailConfig: () => api.get('/api/system/email-config'),
+  saveEmailConfig: (data) => api.post('/api/system/email-config', data),
+  testEmail: () => api.post('/api/system/email-test')
 }
