@@ -1,354 +1,373 @@
 <template>
   <div class="login-container">
-    <el-card class="login-card">
-      <template #header>
-        <div class="card-header">
-          <el-icon class="lock-icon"><Lock /></el-icon>
-          <h2>KOOK消息转发系统</h2>
-        </div>
-      </template>
-      
+    <div class="login-box">
+      <div class="login-header">
+        <el-icon :size="60" color="#409EFF"><Lock /></el-icon>
+        <h2>KOOK消息转发系统</h2>
+        <p>请输入密码以继续</p>
+      </div>
+
       <el-form
         ref="loginFormRef"
         :model="loginForm"
-        :rules="rules"
+        :rules="loginRules"
         label-width="0"
         class="login-form"
         @submit.prevent="handleLogin"
       >
-        <el-alert
-          v-if="errorMessage"
-          :title="errorMessage"
-          type="error"
-          :closable="false"
-          class="error-alert"
-        />
-        
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
-            placeholder="请输入应用密码"
             size="large"
+            placeholder="请输入密码"
             show-password
+            prefix-icon="Lock"
             @keyup.enter="handleLogin"
+            autofocus
           >
-            <template #prefix>
-              <el-icon><Key /></el-icon>
+            <template #prepend>
+              <el-icon><Lock /></el-icon>
             </template>
           </el-input>
         </el-form-item>
-        
+
         <el-form-item>
           <el-checkbox v-model="loginForm.remember">
-            记住密码（30天）
+            记住30天
           </el-checkbox>
         </el-form-item>
-        
+
         <el-form-item>
           <el-button
             type="primary"
             size="large"
-            :loading="loading"
+            :loading="logging"
             @click="handleLogin"
-            class="login-button"
+            style="width: 100%"
           >
-            {{ loading ? '验证中...' : '登录' }}
+            {{ logging ? '验证中...' : '登录' }}
           </el-button>
         </el-form-item>
+
+        <el-form-item>
+          <el-link type="primary" @click="showResetDialog = true">
+            忘记密码？
+          </el-link>
+        </el-form-item>
       </el-form>
-      
-      <div class="help-links">
-        <el-link type="primary" @click="showHelp = true">
-          <el-icon><QuestionFilled /></el-icon>
-          忘记密码？
-        </el-link>
-        <el-link type="info" href="https://github.com/yourusername/kook-forwarder" target="_blank">
-          <el-icon><Document /></el-icon>
-          查看文档
-        </el-link>
+
+      <!-- 首次设置密码 -->
+      <div v-if="isFirstTime" class="first-time-notice">
+        <el-alert
+          title="首次使用"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <p>检测到您是首次使用本系统，请设置一个登录密码。</p>
+          <p style="color: #F56C6C; margin-top: 10px">
+            <strong>⚠️ 请务必记住密码，遗忘后需要通过邮箱重置！</strong>
+          </p>
+        </el-alert>
+
+        <el-button
+          type="success"
+          size="large"
+          style="width: 100%; margin-top: 15px"
+          @click="showSetPasswordDialog = true"
+        >
+          设置密码
+        </el-button>
       </div>
-    </el-card>
-    
-    <!-- 帮助对话框 -->
+    </div>
+
+    <!-- 设置密码对话框 -->
     <el-dialog
-      v-model="showHelp"
-      title="密码帮助"
-      width="500px"
+      v-model="showSetPasswordDialog"
+      title="设置登录密码"
+      width="450px"
+      :close-on-click-modal="false"
     >
-      <el-alert
-        title="忘记密码"
-        type="warning"
-        :closable="false"
+      <el-form
+        ref="setPasswordFormRef"
+        :model="setPasswordForm"
+        :rules="setPasswordRules"
+        label-width="100px"
       >
-        <p>如果忘记了应用密码，可以通过以下方式重置：</p>
-        <ol>
-          <li>关闭应用</li>
-          <li>找到配置文件位置：
-            <ul>
-              <li>Windows: <code>C:\Users\[用户名]\Documents\KookForwarder\data\config.db</code></li>
-              <li>macOS: <code>/Users/[用户名]/Documents/KookForwarder/data/config.db</code></li>
-              <li>Linux: <code>/home/[用户名]/Documents/KookForwarder/data/config.db</code></li>
-            </ul>
-          </li>
-          <li>删除配置文件（会清除所有配置，请提前备份）</li>
-          <li>重新启动应用，将不再需要密码</li>
-        </ol>
-        <p><strong>或者</strong>，联系管理员获取密码。</p>
-      </el-alert>
-      
+        <el-form-item label="新密码" prop="password">
+          <el-input
+            v-model="setPasswordForm.password"
+            type="password"
+            show-password
+            placeholder="6-20位密码"
+          />
+        </el-form-item>
+
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="setPasswordForm.confirmPassword"
+            type="password"
+            show-password
+            placeholder="再次输入密码"
+          />
+        </el-form-item>
+
+        <el-form-item label="邮箱（可选）" prop="email">
+          <el-input
+            v-model="setPasswordForm.email"
+            placeholder="用于密码重置"
+          />
+          <div style="color: #909399; font-size: 12px; margin-top: 5px">
+            建议设置邮箱，以便忘记密码时重置
+          </div>
+        </el-form-item>
+      </el-form>
+
       <template #footer>
-        <el-button @click="showHelp = false">关闭</el-button>
+        <el-button @click="showSetPasswordDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleSetPassword">
+          确定
+        </el-button>
       </template>
     </el-dialog>
-    
-    <!-- 背景装饰 -->
-    <div class="background-decoration">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
-    </div>
+
+    <!-- 重置密码对话框 -->
+    <el-dialog
+      v-model="showResetDialog"
+      title="重置密码"
+      width="450px"
+    >
+      <el-alert
+        title="密码重置功能"
+        type="warning"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 20px"
+      >
+        <p>如果您设置了邮箱，系统会向您的邮箱发送重置链接。</p>
+        <p style="margin-top: 10px">如果未设置邮箱，请联系管理员或重新安装系统。</p>
+      </el-alert>
+
+      <el-form label-width="80px">
+        <el-form-item label="邮箱">
+          <el-input
+            v-model="resetEmail"
+            placeholder="请输入注册时的邮箱"
+          />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showResetDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleResetPassword">
+          发送重置邮件
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Lock, Key, QuestionFilled, Document } from '@element-plus/icons-vue'
 import api from '@/api'
 
 const router = useRouter()
-const loginFormRef = ref(null)
-const loading = ref(false)
-const errorMessage = ref('')
-const showHelp = ref(false)
 
-const loginForm = reactive({
+const logging = ref(false)
+const isFirstTime = ref(false)
+
+const loginFormRef = ref(null)
+const setPasswordFormRef = ref(null)
+
+const loginForm = ref({
   password: '',
   remember: false
 })
 
-const rules = {
+const setPasswordForm = ref({
+  password: '',
+  confirmPassword: '',
+  email: ''
+})
+
+const loginRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度至少6个字符', trigger: 'blur' }
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
   ]
 }
 
-// 检查是否已记住密码
-onMounted(() => {
-  const savedPassword = localStorage.getItem('app_password')
-  const savedExpiry = localStorage.getItem('app_password_expiry')
-  
-  if (savedPassword && savedExpiry) {
-    const expiryTime = parseInt(savedExpiry)
-    if (Date.now() < expiryTime) {
-      // 密码未过期，自动填充
-      loginForm.password = savedPassword
-      loginForm.remember = true
-    } else {
-      // 密码已过期，清除
-      localStorage.removeItem('app_password')
-      localStorage.removeItem('app_password_expiry')
+const setPasswordRules = {
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== setPasswordForm.value.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
     }
-  }
-})
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ]
+}
 
-async function handleLogin() {
-  errorMessage.value = ''
-  
-  // 验证表单
-  if (!loginFormRef.value) return
-  
+const showSetPasswordDialog = ref(false)
+const showResetDialog = ref(false)
+const resetEmail = ref('')
+
+// 检查是否已设置密码
+const checkPasswordExists = async () => {
+  try {
+    const result = await api.checkPasswordExists()
+    isFirstTime.value = !result.exists
+  } catch (error) {
+    console.error('检查密码状态失败:', error)
+  }
+}
+
+// 处理登录
+const handleLogin = async () => {
   try {
     await loginFormRef.value.validate()
-  } catch (error) {
-    return
-  }
-  
-  loading.value = true
-  
-  try {
-    // 调用后端验证密码
-    const response = await api.post('/api/auth/verify-password', {
-      password: loginForm.password
+    
+    logging.value = true
+    
+    const result = await api.verifyPassword({
+      password: loginForm.value.password,
+      remember: loginForm.value.remember
     })
     
-    if (response.data.success) {
-      // 密码正确
-      
-      // 如果选择记住密码
-      if (loginForm.remember) {
-        const expiryTime = Date.now() + (30 * 24 * 60 * 60 * 1000) // 30天
-        localStorage.setItem('app_password', loginForm.password)
-        localStorage.setItem('app_password_expiry', expiryTime.toString())
-      } else {
-        // 清除已保存的密码
-        localStorage.removeItem('app_password')
-        localStorage.removeItem('app_password_expiry')
+    if (result.success) {
+      // 保存token到本地
+      if (result.token) {
+        if (loginForm.value.remember) {
+          localStorage.setItem('auth_token', result.token)
+        } else {
+          sessionStorage.setItem('auth_token', result.token)
+        }
       }
-      
-      // 保存登录状态
-      sessionStorage.setItem('is_authenticated', 'true')
       
       ElMessage.success('登录成功')
       
-      // 跳转到主页
-      router.push('/')
+      // 检查是否需要引导向导
+      const wizardCompleted = localStorage.getItem('wizard_completed')
+      if (!wizardCompleted) {
+        router.push('/wizard')
+      } else {
+        router.push('/')
+      }
     } else {
-      errorMessage.value = '密码错误，请重试'
+      ElMessage.error('密码错误')
     }
   } catch (error) {
-    console.error('登录失败:', error)
-    
-    if (error.response?.status === 401) {
-      errorMessage.value = '密码错误'
-    } else if (error.response?.status === 403) {
-      errorMessage.value = '密码保护未启用'
-    } else {
-      errorMessage.value = '登录失败：' + (error.response?.data?.detail || error.message)
-    }
+    ElMessage.error(error.response?.data?.detail || '登录失败')
   } finally {
-    loading.value = false
+    logging.value = false
   }
 }
+
+// 设置密码
+const handleSetPassword = async () => {
+  try {
+    await setPasswordFormRef.value.validate()
+    
+    const result = await api.setPassword({
+      password: setPasswordForm.value.password,
+      email: setPasswordForm.value.email || null
+    })
+    
+    if (result.success) {
+      ElMessage.success('密码设置成功，请登录')
+      showSetPasswordDialog.value = false
+      isFirstTime.value = false
+      
+      // 自动填入密码
+      loginForm.value.password = setPasswordForm.value.password
+      
+      // 清空表单
+      setPasswordForm.value = {
+        password: '',
+        confirmPassword: '',
+        email: ''
+      }
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '设置失败')
+  }
+}
+
+// 重置密码
+const handleResetPassword = async () => {
+  if (!resetEmail.value) {
+    ElMessage.warning('请输入邮箱')
+    return
+  }
+  
+  try {
+    await api.resetPassword({ email: resetEmail.value })
+    ElMessage.success('重置邮件已发送，请查收邮箱')
+    showResetDialog.value = false
+    resetEmail.value = ''
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '发送失败')
+  }
+}
+
+onMounted(() => {
+  checkPasswordExists()
+})
 </script>
 
 <style scoped>
 .login-container {
-  position: relative;
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  overflow: hidden;
 }
 
-.login-card {
-  width: 90%;
-  max-width: 420px;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  z-index: 10;
+.login-box {
+  width: 420px;
+  padding: 40px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
 
-.card-header {
+.login-header {
   text-align: center;
-  padding: 20px 0;
+  margin-bottom: 30px;
 }
 
-.lock-icon {
-  font-size: 48px;
-  color: #667eea;
-  margin-bottom: 10px;
-}
-
-.card-header h2 {
-  margin: 10px 0 0 0;
-  color: #333;
+.login-header h2 {
+  margin: 20px 0 10px;
   font-size: 24px;
+  color: #303133;
 }
 
-.login-form {
-  padding: 20px 0;
-}
-
-.error-alert {
-  margin-bottom: 20px;
-}
-
-.login-button {
-  width: 100%;
-  height: 45px;
-  font-size: 16px;
-  border-radius: 8px;
-}
-
-.help-links {
-  display: flex;
-  justify-content: space-between;
-  padding: 15px 0 0 0;
-  border-top: 1px solid #eee;
-}
-
-.help-links .el-link {
+.login-header p {
+  color: #909399;
   font-size: 14px;
 }
 
-/* 背景装饰 */
-.background-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
+.login-form {
+  margin-top: 20px;
 }
 
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  animation: float 20s infinite ease-in-out;
-}
-
-.circle-1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  left: -100px;
-  animation-delay: 0s;
-}
-
-.circle-2 {
-  width: 200px;
-  height: 200px;
-  bottom: -50px;
-  right: -50px;
-  animation-delay: -5s;
-}
-
-.circle-3 {
-  width: 150px;
-  height: 150px;
-  top: 50%;
-  right: 10%;
-  animation-delay: -10s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  25% {
-    transform: translateY(-50px) rotate(90deg);
-  }
-  50% {
-    transform: translateY(0) rotate(180deg);
-  }
-  75% {
-    transform: translateY(50px) rotate(270deg);
-  }
-}
-
-/* 响应式 */
-@media (max-width: 768px) {
-  .login-card {
-    width: 95%;
-  }
-  
-  .card-header h2 {
-    font-size: 20px;
-  }
-}
-
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .card-header h2 {
-    color: #fff;
-  }
+.first-time-notice {
+  margin-top: 20px;
 }
 </style>

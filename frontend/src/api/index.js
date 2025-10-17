@@ -52,6 +52,7 @@ export default {
   // Bot配置
   getBotConfigs: (platform) => api.get('/api/bots/', { params: { platform } }),
   addBotConfig: (data) => api.post('/api/bots/', data),
+  addBot: (data) => api.post('/api/bots/', data),  // 别名，用于向导页面
   deleteBotConfig: (id) => api.delete(`/api/bots/${id}`),
   testBotConfig: (id) => api.post(`/api/bots/${id}/test`),
   getTelegramChatIds: (token) => api.get('/api/bots/telegram/chat-ids', { params: { token } }),
@@ -64,6 +65,8 @@ export default {
   // 日志
   getLogs: (limit, status) => api.get('/api/logs/', { params: { limit, status } }),
   getStats: () => api.get('/api/logs/stats'),
+  getStatsTrend: (hours = 24) => api.get('/api/logs/stats/trend', { params: { hours } }),
+  getStatsByPlatform: () => api.get('/api/logs/stats/platforms'),
   
   // 过滤规则
   getFilterRules: () => api.get('/api/system/filter-rules'),
