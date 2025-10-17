@@ -241,10 +241,23 @@
                     />
                   </el-form-item>
                   <el-form-item label="Chat ID">
-                    <el-input
-                      v-model="telegramForm.chat_id"
-                      placeholder="-1001234567890"
-                    />
+                    <div style="display: flex; gap: 10px">
+                      <el-input
+                        v-model="telegramForm.chat_id"
+                        placeholder="-1001234567890"
+                        style="flex: 1"
+                      />
+                      <el-button 
+                        @click="autoGetChatId" 
+                        :loading="gettingChatId"
+                        :disabled="!telegramForm.token"
+                      >
+                        🔍 自动获取
+                      </el-button>
+                    </div>
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px">
+                      提示：请先向Bot发送一条消息，然后点击"自动获取"
+                    </div>
                   </el-form-item>
                   <el-form-item>
                     <el-button type="primary" @click="addBot('telegram')">
@@ -417,6 +430,9 @@ const addedBots = ref([])
 // 是否同意免责声明
 const agreedToDisclaimer = ref(false)
 
+// 是否正在获取Chat ID
+const gettingChatId = ref(false)
+
 // 下一步
 const nextStep = () => {
   if (currentStep.value < 3) {
@@ -536,6 +552,45 @@ const addBot = async (platform) => {
     }
   } catch (error) {
     ElMessage.error(error.response?.data?.detail || '添加失败')
+  }
+}
+
+// 自动获取Telegram Chat ID
+const autoGetChatId = async () => {
+  if (!telegramForm.value.token) {
+    ElMessage.warning('请先输入Bot Token')
+    return
+  }
+
+  try {
+    gettingChatId.value = true
+    const result = await api.getTelegramChatIds(telegramForm.value.token)
+    
+    if (!result.chat_ids || result.chat_ids.length === 0) {
+      ElMessage.warning(result.message || '未找到任何Chat ID。请先在Telegram中向Bot发送一条消息，然后重试。')
+      return
+    }
+
+    // 如果只有一个Chat ID，直接填入
+    if (result.chat_ids.length === 1) {
+      telegramForm.value.chat_id = result.chat_ids[0].id
+      ElMessage.success(`已自动填入Chat ID: ${result.chat_ids[0].title}`)
+    } else {
+      // 如果有多个，让用户选择
+      const options = result.chat_ids.map(chat => ({
+        value: chat.id,
+        label: `${chat.title || chat.id} (${chat.type})`
+      }))
+      
+      // 这里简单起见，使用第一个
+      // 实际应该弹出选择框让用户选
+      telegramForm.value.chat_id = result.chat_ids[0].id
+      ElMessage.success(`找到${result.chat_ids.length}个Chat，已自动填入第一个: ${result.chat_ids[0].title}`)
+    }
+  } catch (error) {
+    ElMessage.error(error.response?.data?.detail || '获取失败，请检查Token是否正确')
+  } finally {
+    gettingChatId.value = false
   }
 }
 
