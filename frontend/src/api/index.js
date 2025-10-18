@@ -13,6 +13,11 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   config => {
+    // 添加认证Token
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   error => {
@@ -112,11 +117,18 @@ export default {
   listBackups: () => api.get('/api/backup/list'),
   
   // 认证与密码
+  getAuthStatus: () => api.get('/auth/status'),
+  setupPassword: (data) => api.post('/auth/setup', data),
+  login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
+  verifyToken: () => api.post('/auth/verify-token'),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  generateResetCode: () => api.post('/password-reset/generate-code'),
+  // 旧API兼容
   checkPasswordExists: () => api.get('/api/auth/password-exists'),
   setPassword: (data) => api.post('/api/auth/set-password', data),
   verifyPassword: (data) => api.post('/api/auth/verify-password', data),
-  changePassword: (data) => api.post('/api/auth/change-password', data),
-  resetPassword: () => api.post('/api/auth/reset-password'),
   
   // 邮件配置
   getEmailConfig: () => api.get('/api/system/email-config'),

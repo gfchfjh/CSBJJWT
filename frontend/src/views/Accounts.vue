@@ -31,12 +31,16 @@
                 
                 <div class="info-item">
                   <label>🕐 最后活跃：</label>
-                  <span>{{ account.last_active || '从未' }}</span>
+                  <span :title="formatDate(account.last_active, 'datetime')">
+                    {{ formatDate(account.last_active, 'relative') }}
+                  </span>
                 </div>
                 
                 <div class="info-item">
                   <label>📅 创建时间：</label>
-                  <span>{{ account.created_at }}</span>
+                  <span :title="formatDate(account.created_at, 'datetime')">
+                    {{ formatDate(account.created_at, 'datetime') }}
+                  </span>
                 </div>
               </div>
               
@@ -133,8 +137,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAccountsStore } from '../store/accounts'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import CaptchaDialog from '../components/CaptchaDialog.vue'
+import { formatDate, formatRelativeTime } from '../utils/date'
+import { createLoadingHelper } from '../utils/loading'
+import { handleApiError, showSuccess, confirmDangerousAction } from '../utils/error'
 import api from '../api'
 
 const accountsStore = useAccountsStore()
@@ -155,6 +161,8 @@ const captchaData = ref({
   timestamp: 0
 })
 
+const loader = createLoadingHelper()
+
 const addAccount = async () => {
   try {
     const data = {
@@ -167,8 +175,12 @@ const addAccount = async () => {
       data.cookie = accountForm.value.cookie
     }
     
-    await accountsStore.addAccount(data)
-    ElMessage.success('账号添加成功')
+    await loader.wrap(
+      accountsStore.addAccount(data),
+      '正在添加账号...'
+    )
+    
+    showSuccess('账号添加成功')
     showAddDialog.value = false
     
     // 重置表单
@@ -179,42 +191,65 @@ const addAccount = async () => {
       cookie: ''
     }
   } catch (error) {
-    ElMessage.error('添加失败: ' + error.message)
+    handleApiError(error, {
+      title: '添加账号失败',
+      showSolution: true
+    })
   }
 }
 
 const startAccount = async (accountId) => {
   try {
-    await accountsStore.startAccount(accountId)
-    ElMessage.success('账号已启动')
+    await loader.wrap(
+      accountsStore.startAccount(accountId),
+      '正在启动账号...'
+    )
+    showSuccess('账号已启动')
   } catch (error) {
-    ElMessage.error('启动失败: ' + error.message)
+    handleApiError(error, {
+      title: '启动账号失败',
+      showSolution: true
+    })
   }
 }
 
 const stopAccount = async (accountId) => {
   try {
-    await accountsStore.stopAccount(accountId)
-    ElMessage.success('账号已停止')
+    await loader.wrap(
+      accountsStore.stopAccount(accountId),
+      '正在停止账号...'
+    )
+    showSuccess('账号已停止')
   } catch (error) {
-    ElMessage.error('停止失败: ' + error.message)
+    handleApiError(error, {
+      title: '停止账号失败'
+    })
   }
 }
 
 const deleteAccount = async (accountId) => {
-  try {
-    await ElMessageBox.confirm('确定要删除此账号吗？', '确认删除', {
+  // 确认删除
+  const confirmed = await confirmDangerousAction(
+    '确定要删除此账号吗？删除后无法恢复',
+    {
+      title: '确认删除',
       confirmButtonText: '删除',
-      cancelButtonText: '取消',
       type: 'warning'
-    })
-    
-    await accountsStore.deleteAccount(accountId)
-    ElMessage.success('账号已删除')
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('删除失败: ' + error.message)
     }
+  )
+  
+  if (!confirmed) return
+  
+  try {
+    await loader.wrap(
+      accountsStore.deleteAccount(accountId),
+      '正在删除账号...'
+    )
+    showSuccess('账号已删除')
+  } catch (error) {
+    handleApiError(error, {
+      title: '删除账号失败'
+    })
   }
 }
 

@@ -8,6 +8,11 @@ import App from './App.vue'
 import router from './router'
 import './style.css'
 import './styles/theme.css'  // 导入主题样式
+import './styles/dark-theme.css'  // 导入深色主题样式
+import { initThemeOnce } from './composables/useTheme'  // 导入主题初始化
+
+// 初始化主题（在创建应用前）
+initThemeOnce()
 
 const app = createApp(App)
 const pinia = createPinia()

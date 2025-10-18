@@ -1,167 +1,126 @@
 <template>
   <div class="login-container">
-    <div class="login-box">
-      <div class="login-header">
-        <el-icon :size="60" color="#409EFF"><Lock /></el-icon>
-        <h2>KOOK消息转发系统</h2>
-        <p>请输入密码以继续</p>
-      </div>
+    <el-card class="login-card">
+      <template #header>
+        <div class="login-header">
+          <h2>🔒 KOOK消息转发系统</h2>
+          <p>{{ isSetup ? '首次设置密码' : '请输入主密码' }}</p>
+        </div>
+      </template>
 
-      <el-form
-        ref="loginFormRef"
-        :model="loginForm"
-        :rules="loginRules"
-        label-width="0"
-        class="login-form"
-        @submit.prevent="handleLogin"
-      >
-        <el-form-item prop="password">
+      <el-form :model="loginForm" :rules="rules" ref="loginFormRef" label-width="80px">
+        <el-form-item v-if="isSetup" label="设置密码" prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
-            size="large"
-            placeholder="请输入密码"
+            placeholder="请设置6-20位主密码"
             show-password
-            prefix-icon="Lock"
             @keyup.enter="handleLogin"
-            autofocus
-          >
-            <template #prepend>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
+          />
         </el-form-item>
 
-        <el-form-item>
-          <el-checkbox v-model="loginForm.remember">
-            记住30天
-          </el-checkbox>
+        <el-form-item v-if="isSetup" label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="loginForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入密码"
+            show-password
+            @keyup.enter="handleLogin"
+          />
         </el-form-item>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            size="large"
-            :loading="logging"
-            @click="handleLogin"
-            style="width: 100%"
-          >
-            {{ logging ? '验证中...' : '登录' }}
-          </el-button>
+        <el-form-item v-if="!isSetup" label="密码" prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="请输入主密码"
+            show-password
+            @keyup.enter="handleLogin"
+          />
         </el-form-item>
 
-        <el-form-item>
-          <el-link type="primary" @click="showResetDialog = true">
-            忘记密码？
-          </el-link>
+        <el-form-item v-if="!isSetup">
+          <el-checkbox v-model="loginForm.remember">记住密码（30天）</el-checkbox>
         </el-form-item>
       </el-form>
 
-      <!-- 首次设置密码 -->
-      <div v-if="isFirstTime" class="first-time-notice">
+      <div class="login-actions">
+        <el-button type="primary" size="large" :loading="loading" @click="handleLogin">
+          {{ isSetup ? '设置密码' : '登录' }}
+        </el-button>
+        
+        <el-button v-if="!isSetup" size="large" @click="showResetDialog">
+          忘记密码？
+        </el-button>
+      </div>
+
+      <div v-if="isSetup" class="setup-tips">
         <el-alert
-          title="首次使用"
+          title="密码提示"
           type="info"
           :closable="false"
           show-icon
         >
-          <p>检测到您是首次使用本系统，请设置一个登录密码。</p>
-          <p style="color: #F56C6C; margin-top: 10px">
-            <strong>⚠️ 请务必记住密码，遗忘后需要通过邮箱重置！</strong>
-          </p>
+          <ul>
+            <li>密码长度为6-20位</li>
+            <li>建议包含字母和数字</li>
+            <li>请妥善保管密码</li>
+            <li>忘记密码需要通过验证码重置</li>
+          </ul>
         </el-alert>
-
-        <el-button
-          type="success"
-          size="large"
-          style="width: 100%; margin-top: 15px"
-          @click="showSetPasswordDialog = true"
-        >
-          设置密码
-        </el-button>
       </div>
-    </div>
-
-    <!-- 设置密码对话框 -->
-    <el-dialog
-      v-model="showSetPasswordDialog"
-      title="设置登录密码"
-      width="450px"
-      :close-on-click-modal="false"
-    >
-      <el-form
-        ref="setPasswordFormRef"
-        :model="setPasswordForm"
-        :rules="setPasswordRules"
-        label-width="100px"
-      >
-        <el-form-item label="新密码" prop="password">
-          <el-input
-            v-model="setPasswordForm.password"
-            type="password"
-            show-password
-            placeholder="6-20位密码"
-          />
-        </el-form-item>
-
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input
-            v-model="setPasswordForm.confirmPassword"
-            type="password"
-            show-password
-            placeholder="再次输入密码"
-          />
-        </el-form-item>
-
-        <el-form-item label="邮箱（可选）" prop="email">
-          <el-input
-            v-model="setPasswordForm.email"
-            placeholder="用于密码重置"
-          />
-          <div style="color: #909399; font-size: 12px; margin-top: 5px">
-            建议设置邮箱，以便忘记密码时重置
-          </div>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="showSetPasswordDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSetPassword">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    </el-card>
 
     <!-- 重置密码对话框 -->
     <el-dialog
-      v-model="showResetDialog"
+      v-model="resetDialogVisible"
       title="重置密码"
-      width="450px"
+      width="500px"
+      :close-on-click-modal="false"
     >
       <el-alert
-        title="密码重置功能"
+        title="请联系管理员或查看日志文件获取验证码"
         type="warning"
         :closable="false"
         show-icon
         style="margin-bottom: 20px"
       >
-        <p>如果您设置了邮箱，系统会向您的邮箱发送重置链接。</p>
-        <p style="margin-top: 10px">如果未设置邮箱，请联系管理员或重新安装系统。</p>
+        <p>验证码已生成并写入日志文件：</p>
+        <code>backend/data/logs/app.log</code>
       </el-alert>
 
-      <el-form label-width="80px">
-        <el-form-item label="邮箱">
+      <el-form :model="resetForm" label-width="100px">
+        <el-form-item label="验证码">
           <el-input
-            v-model="resetEmail"
-            placeholder="请输入注册时的邮箱"
+            v-model="resetForm.verificationCode"
+            placeholder="请输入6位验证码"
+            maxlength="6"
+          />
+        </el-form-item>
+
+        <el-form-item label="新密码">
+          <el-input
+            v-model="resetForm.newPassword"
+            type="password"
+            placeholder="请输入新密码（6-20位）"
+            show-password
+          />
+        </el-form-item>
+
+        <el-form-item label="确认密码">
+          <el-input
+            v-model="resetForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password
           />
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="showResetDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleResetPassword">
-          发送重置邮件
+        <el-button @click="resetDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="resetting" @click="handleReset">
+          重置密码
         </el-button>
       </template>
     </el-dialog>
@@ -169,205 +128,230 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '@/api'
 
 const router = useRouter()
-
-const logging = ref(false)
-const isFirstTime = ref(false)
-
 const loginFormRef = ref(null)
-const setPasswordFormRef = ref(null)
 
-const loginForm = ref({
+const isSetup = ref(false)
+const loading = ref(false)
+const resetting = ref(false)
+const resetDialogVisible = ref(false)
+
+const loginForm = reactive({
   password: '',
+  confirmPassword: '',
   remember: false
 })
 
-const setPasswordForm = ref({
-  password: '',
-  confirmPassword: '',
-  email: ''
+const resetForm = reactive({
+  verificationCode: '',
+  newPassword: '',
+  confirmPassword: ''
 })
 
-const loginRules = {
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
-  ]
+const validateConfirmPassword = (rule, value, callback) => {
+  if (value === '') {
+    callback(new Error('请再次输入密码'))
+  } else if (value !== loginForm.password) {
+    callback(new Error('两次输入密码不一致'))
+  } else {
+    callback()
+  }
 }
 
-const setPasswordRules = {
+const rules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (value !== setPasswordForm.value.password) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'blur'
-    }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
   ]
 }
 
-const showSetPasswordDialog = ref(false)
-const showResetDialog = ref(false)
-const resetEmail = ref('')
-
 // 检查是否已设置密码
-const checkPasswordExists = async () => {
+const checkAuthStatus = async () => {
   try {
-    const result = await api.checkPasswordExists()
-    isFirstTime.value = !result.exists
+    const data = await api.getAuthStatus()
+    isSetup.value = !data.password_set
   } catch (error) {
-    console.error('检查密码状态失败:', error)
+    console.error('检查认证状态失败:', error)
+    ElMessage.error('检查认证状态失败')
   }
 }
 
-// 处理登录
+// 登录/设置密码
 const handleLogin = async () => {
   try {
+    // 表单验证
+    if (!loginFormRef.value) return
     await loginFormRef.value.validate()
-    
-    logging.value = true
-    
-    const result = await api.verifyPassword({
-      password: loginForm.value.password,
-      remember: loginForm.value.remember
-    })
-    
-    if (result.success) {
-      // 保存token到本地
-      if (result.token) {
-        if (loginForm.value.remember) {
-          localStorage.setItem('auth_token', result.token)
-        } else {
-          sessionStorage.setItem('auth_token', result.token)
-        }
+
+    loading.value = true
+
+    if (isSetup.value) {
+      // 首次设置密码
+      await api.setupPassword({ password: loginForm.password })
+      ElMessage.success('密码设置成功')
+      
+      // 设置成功后自动登录
+      const loginData = await api.login({
+        password: loginForm.password,
+        remember: true
+      })
+      
+      // 保存Token
+      localStorage.setItem('auth_token', loginData.token)
+      
+      // 跳转到向导页面
+      router.push('/wizard')
+    } else {
+      // 登录
+      const data = await api.login({
+        password: loginForm.password,
+        remember: loginForm.remember
+      })
+      
+      // 保存Token
+      localStorage.setItem('auth_token', data.token)
+      
+      if (loginForm.remember) {
+        // 记住30天
+        const expireTime = Date.now() + 30 * 24 * 3600 * 1000
+        localStorage.setItem('auth_token_expire', expireTime.toString())
       }
       
       ElMessage.success('登录成功')
       
-      // 检查是否需要引导向导
+      // 检查是否完成配置向导
       const wizardCompleted = localStorage.getItem('wizard_completed')
-      if (!wizardCompleted) {
-        router.push('/wizard')
-      } else {
+      if (wizardCompleted) {
         router.push('/')
+      } else {
+        router.push('/wizard')
       }
-    } else {
-      ElMessage.error('密码错误')
     }
   } catch (error) {
+    console.error('登录失败:', error)
     ElMessage.error(error.response?.data?.detail || '登录失败')
   } finally {
-    logging.value = false
+    loading.value = false
   }
 }
 
-// 设置密码
-const handleSetPassword = async () => {
-  try {
-    await setPasswordFormRef.value.validate()
-    
-    const result = await api.setPassword({
-      password: setPasswordForm.value.password,
-      email: setPasswordForm.value.email || null
-    })
-    
-    if (result.success) {
-      ElMessage.success('密码设置成功，请登录')
-      showSetPasswordDialog.value = false
-      isFirstTime.value = false
-      
-      // 自动填入密码
-      loginForm.value.password = setPasswordForm.value.password
-      
-      // 清空表单
-      setPasswordForm.value = {
-        password: '',
-        confirmPassword: '',
-        email: ''
-      }
-    }
-  } catch (error) {
-    ElMessage.error(error.response?.data?.detail || '设置失败')
-  }
+// 显示重置密码对话框
+const showResetDialog = () => {
+  resetDialogVisible.value = true
+  resetForm.verificationCode = ''
+  resetForm.newPassword = ''
+  resetForm.confirmPassword = ''
+  
+  // 生成验证码（后端API）
+  api.generateResetCode().catch(err => {
+    console.error('生成验证码失败:', err)
+  })
 }
 
 // 重置密码
-const handleResetPassword = async () => {
-  if (!resetEmail.value) {
-    ElMessage.warning('请输入邮箱')
-    return
-  }
-  
+const handleReset = async () => {
   try {
-    await api.resetPassword({ email: resetEmail.value })
-    ElMessage.success('重置邮件已发送，请查收邮箱')
-    showResetDialog.value = false
-    resetEmail.value = ''
+    // 验证
+    if (!resetForm.verificationCode) {
+      ElMessage.warning('请输入验证码')
+      return
+    }
+    if (!resetForm.newPassword || resetForm.newPassword.length < 6) {
+      ElMessage.warning('密码长度为6-20位')
+      return
+    }
+    if (resetForm.newPassword !== resetForm.confirmPassword) {
+      ElMessage.warning('两次输入密码不一致')
+      return
+    }
+
+    resetting.value = true
+
+    await api.resetPassword({
+      verification_code: resetForm.verificationCode,
+      new_password: resetForm.newPassword
+    })
+
+    ElMessage.success('密码重置成功，请重新登录')
+    resetDialogVisible.value = false
+    
+    // 清空登录表单
+    loginForm.password = ''
+    loginForm.remember = false
   } catch (error) {
-    ElMessage.error(error.response?.data?.detail || '发送失败')
+    console.error('重置密码失败:', error)
+    ElMessage.error(error.response?.data?.detail || '重置密码失败')
+  } finally {
+    resetting.value = false
   }
 }
 
 onMounted(() => {
-  checkPasswordExists()
+  checkAuthStatus()
 })
 </script>
 
 <style scoped>
 .login-container {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
-.login-box {
-  width: 420px;
-  padding: 40px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+.login-card {
+  width: 450px;
+  max-width: 100%;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 30px;
 }
 
 .login-header h2 {
-  margin: 20px 0 10px;
-  font-size: 24px;
+  margin: 0 0 10px 0;
   color: #303133;
 }
 
 .login-header p {
+  margin: 0;
   color: #909399;
   font-size: 14px;
 }
 
-.login-form {
+.login-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: 20px;
 }
 
-.first-time-notice {
+.login-actions .el-button {
+  width: 100%;
+}
+
+.setup-tips {
   margin-top: 20px;
+}
+
+.setup-tips ul {
+  margin: 10px 0 0 0;
+  padding-left: 20px;
+}
+
+.setup-tips li {
+  margin: 5px 0;
+  font-size: 14px;
+  color: #606266;
 }
 </style>

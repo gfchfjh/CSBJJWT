@@ -43,6 +43,53 @@
           </el-form>
         </el-tab-pane>
 
+        <!-- 外观主题 -->
+        <el-tab-pane label="🎨 外观主题" name="theme">
+          <el-form :model="settings" label-width="150px">
+            <el-form-item label="主题模式">
+              <el-radio-group v-model="settings.theme" @change="handleThemeChange">
+                <el-radio label="light">
+                  <div class="theme-option">
+                    <el-icon><Sunny /></el-icon>
+                    <span>浅色模式</span>
+                  </div>
+                </el-radio>
+                <el-radio label="dark">
+                  <div class="theme-option">
+                    <el-icon><Moon /></el-icon>
+                    <span>深色模式</span>
+                  </div>
+                </el-radio>
+                <el-radio label="auto">
+                  <div class="theme-option">
+                    <el-icon><Monitor /></el-icon>
+                    <span>跟随系统</span>
+                  </div>
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="当前主题">
+              <el-tag :type="isDark ? 'info' : 'primary'" size="large">
+                {{ isDark ? '🌙 深色' : '☀️ 浅色' }}
+              </el-tag>
+            </el-form-item>
+
+            <el-divider content-position="left">主题预览</el-divider>
+
+            <div class="theme-preview">
+              <el-card>
+                <template #header>
+                  <span>示例卡片</span>
+                </template>
+                <p>这是当前主题的预览效果</p>
+                <el-button type="primary">主要按钮</el-button>
+                <el-button>普通按钮</el-button>
+              </el-card>
+            </div>
+          </el-form>
+        </el-tab-pane>
+
         <!-- 图片处理 -->
         <el-tab-pane label="🖼️ 图片处理" name="image">
           <el-form :model="settings" label-width="150px">
@@ -315,7 +362,13 @@ import api from '@/api'
 import { useTheme } from '@/composables/useTheme'
 
 // 主题管理
-const { currentTheme, setTheme } = useTheme()
+const { currentTheme, isDark, setTheme } = useTheme()
+
+// 处理主题变化
+const handleThemeChange = (theme) => {
+  setTheme(theme)
+  ElMessage.success(`已切换到${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '自动'}模式`)
+}
 
 // 当前激活的标签页
 const activeTab = ref('service')

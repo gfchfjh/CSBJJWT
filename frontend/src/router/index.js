@@ -116,33 +116,68 @@ async function checkNeedsWizard() {
 router.beforeEach(async (to, from, next) => {
   // 1. 检查是否需要认证
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false)
-  const isAuthenticated = sessionStorage.getItem('is_authenticated') === 'true'
   
-  // 2. 如果需要认证但未登录，跳转到登录页
-  if (requiresAuth && !isAuthenticated && to.path !== '/login' && to.path !== '/wizard') {
-    // 检查密码保护是否启用
-    try {
-      const response = await fetch('http://localhost:9527/api/system/config/require_password')
-      const data = await response.json()
-      
-      if (data.require_password) {
-        // 密码保护已启用，跳转到登录页
+  // 2. 如果路由不需要认证，直接通过
+  if (!requiresAuth) {
+    next()
+    return
+  }
+  
+  // 3. 检查是否已设置密码
+  try {
+    const response = await fetch('http://localhost:9527/auth/status')
+    const data = await response.json()
+    
+    if (!data.password_set) {
+      // 未设置密码，首次使用，跳转到登录页进行设置
+      if (to.path !== '/login') {
         next('/login')
         return
       }
-      // 密码保护未启用，标记为已认证并继续
-      sessionStorage.setItem('is_authenticated', 'true')
-    } catch (error) {
-      console.error('检查认证状态失败:', error)
-      // 网络错误，假设未启用密码保护
-      sessionStorage.setItem('is_authenticated', 'true')
+      next()
+      return
     }
+  } catch (error) {
+    console.error('检查密码状态失败:', error)
   }
   
-  // 3. 如果已登录访问登录页，跳转到首页
-  if (isAuthenticated && to.path === '/login') {
-    next('/')
+  // 4. 检查Token
+  const token = localStorage.getItem('auth_token')
+  
+  if (!token && to.path !== '/login') {
+    // 没有Token，跳转到登录页
+    next('/login')
     return
+  }
+  
+  // 5. 验证Token（如果有）
+  if (token) {
+    try {
+      const tokenExpire = localStorage.getItem('auth_token_expire')
+      if (tokenExpire && Date.now() > parseInt(tokenExpire)) {
+        // Token已过期
+        localStorage.removeItem('auth_token')
+        localStorage.removeItem('auth_token_expire')
+        if (to.path !== '/login') {
+          next('/login')
+          return
+        }
+      }
+      
+      // Token验证通过，如果在登录页则跳转到首页
+      if (to.path === '/login') {
+        next('/')
+        return
+      }
+    } catch (error) {
+      console.error('验证Token失败:', error)
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_token_expire')
+      if (to.path !== '/login') {
+        next('/login')
+        return
+      }
+    }
   }
   
   // 4. 智能检查是否需要向导（检查实际数据而非仅标记）

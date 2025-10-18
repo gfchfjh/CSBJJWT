@@ -1,115 +1,113 @@
 /**
- * 主题管理 Composable
- * 支持浅色/深色/跟随系统三种模式
+ * 主题管理Composable
  */
 import { ref, watch, onMounted } from 'vue'
 
-const THEME_KEY = 'kook-forwarder-theme'
-const THEME_MODES = {
-  LIGHT: 'light',
-  DARK: 'dark',
-  AUTO: 'auto'
-}
+// 主题类型
+export const THEME_LIGHT = 'light'
+export const THEME_DARK = 'dark'
+export const THEME_AUTO = 'auto'
 
-// 全局主题状态
-const currentTheme = ref(THEME_MODES.AUTO)
+// 当前主题（响应式）
+const currentTheme = ref(THEME_LIGHT)
 const isDark = ref(false)
 
+/**
+ * 使用主题
+ * @returns {Object} 主题相关的状态和方法
+ */
 export function useTheme() {
   /**
-   * 获取系统主题偏好
-   */
-  const getSystemTheme = () => {
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return THEME_MODES.DARK
-    }
-    return THEME_MODES.LIGHT
-  }
-
-  /**
-   * 应用主题到页面
+   * 应用主题
+   * @param {string} theme - 主题类型
    */
   const applyTheme = (theme) => {
-    const htmlElement = document.documentElement
+    let actualTheme = theme
     
-    if (theme === THEME_MODES.DARK) {
-      htmlElement.classList.add('dark')
-      htmlElement.setAttribute('data-theme', 'dark')
-      isDark.value = true
+    // 如果是自动模式，检测系统主题
+    if (theme === THEME_AUTO) {
+      actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? THEME_DARK
+        : THEME_LIGHT
+    }
+    
+    // 更新状态
+    isDark.value = actualTheme === THEME_DARK
+    
+    // 应用到HTML
+    if (isDark.value) {
+      document.documentElement.classList.add('dark')
+      document.documentElement.setAttribute('data-theme', 'dark')
     } else {
-      htmlElement.classList.remove('dark')
-      htmlElement.setAttribute('data-theme', 'light')
-      isDark.value = false
+      document.documentElement.classList.remove('dark')
+      document.documentElement.setAttribute('data-theme', 'light')
     }
   }
-
+  
   /**
-   * 设置主题
+   * 切换主题
+   * @param {string} theme - 主题类型
    */
   const setTheme = (theme) => {
     currentTheme.value = theme
-    localStorage.setItem(THEME_KEY, theme)
-
-    // 根据选择应用主题
-    if (theme === THEME_MODES.AUTO) {
-      const systemTheme = getSystemTheme()
-      applyTheme(systemTheme)
-    } else {
-      applyTheme(theme)
-    }
+    applyTheme(theme)
+    
+    // 保存到本地存储
+    localStorage.setItem('app_theme', theme)
   }
-
+  
+  /**
+   * 切换深色/浅色
+   */
+  const toggleTheme = () => {
+    const newTheme = currentTheme.value === THEME_DARK ? THEME_LIGHT : THEME_DARK
+    setTheme(newTheme)
+  }
+  
   /**
    * 初始化主题
    */
   const initTheme = () => {
-    // 从 localStorage 读取保存的主题
-    const savedTheme = localStorage.getItem(THEME_KEY)
+    // 从本地存储读取
+    const savedTheme = localStorage.getItem('app_theme') || THEME_LIGHT
+    currentTheme.value = savedTheme
+    applyTheme(savedTheme)
     
-    if (savedTheme && Object.values(THEME_MODES).includes(savedTheme)) {
-      setTheme(savedTheme)
-    } else {
-      // 默认跟随系统
-      setTheme(THEME_MODES.AUTO)
-    }
-
-    // 监听系统主题变化
-    if (window.matchMedia) {
+    // 监听系统主题变化（自动模式）
+    if (savedTheme === THEME_AUTO) {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      
       mediaQuery.addEventListener('change', (e) => {
-        // 只在自动模式下响应系统主题变化
-        if (currentTheme.value === THEME_MODES.AUTO) {
-          applyTheme(e.matches ? THEME_MODES.DARK : THEME_MODES.LIGHT)
+        if (currentTheme.value === THEME_AUTO) {
+          applyTheme(THEME_AUTO)
         }
       })
     }
   }
-
-  /**
-   * 切换主题（在浅色和深色之间切换）
-   */
-  const toggleTheme = () => {
-    if (isDark.value) {
-      setTheme(THEME_MODES.LIGHT)
-    } else {
-      setTheme(THEME_MODES.DARK)
-    }
-  }
-
+  
+  // 监听主题变化
+  watch(currentTheme, (newTheme) => {
+    applyTheme(newTheme)
+  })
+  
   return {
     currentTheme,
     isDark,
-    THEME_MODES,
     setTheme,
     toggleTheme,
     initTheme,
-    getSystemTheme
+    THEME_LIGHT,
+    THEME_DARK,
+    THEME_AUTO
   }
 }
 
-// 自动初始化主题（仅在首次导入时执行）
-if (typeof window !== 'undefined') {
-  const { initTheme } = useTheme()
-  initTheme()
+// 在应用启动时初始化
+let initialized = false
+
+export function initThemeOnce() {
+  if (!initialized) {
+    const { initTheme } = useTheme()
+    initTheme()
+    initialized = true
+  }
 }
