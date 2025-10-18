@@ -25,9 +25,13 @@ class Settings(BaseSettings):
     
     # 应用基础配置
     app_name: str = "KOOK消息转发系统"
-    app_version: str = "1.2.0"
+    app_version: str = "1.4.0"  # 更新版本号
     debug: bool = False
     data_dir: Path = DATA_DIR
+    
+    # Redis嵌入式配置
+    redis_embedded: bool = True  # 是否使用嵌入式Redis（自动启动）
+    redis_auto_start: bool = True  # 是否自动启动Redis
     
     # API服务配置
     api_host: str = "127.0.0.1"

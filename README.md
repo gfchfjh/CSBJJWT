@@ -37,16 +37,24 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ---
 
-## 🎉 v1.3.0 新功能
+## 🎉 v1.4.0 新功能（最新）
 
 ### 🚀 完美版更新
 
-1. **历史消息同步** - 启动时可同步最近N分钟的历史消息（+2%完成度）
+1. **Redis嵌入式集成** - 自动启动和管理Redis，零配置开箱即用
+2. **智能消息分段** - 优先在段落/句子边界分割，保持内容完整性
+3. **增强错误诊断** - 50+错误解决方案，自动修复建议
+4. **视频教程系统** - 8个官方教程规划，降低使用门槛
+5. **一键安装脚本** - Linux/macOS/Windows全平台支持
+6. **打包配置优化** - Redis自动打包，真正的"零依赖"
+
+### v1.3.0 功能（已包含）
+
+1. **历史消息同步** - 启动时可同步最近N分钟的历史消息
 2. **本地OCR验证码识别** - 集成ddddocr本地OCR，免费快速识别验证码
 3. **选择器配置文件** - 新增selectors.yaml，轻松适配KOOK网页DOM变化
 4. **WebSocket实时推送** - 日志页面实时更新，无需轮询
 5. **配置向导优化** - 机器人配置步骤支持"跳过"，灵活配置
-6. **完成度提升至98%** - 达到完美级别，生产环境就绪
 
 ### v1.2.0 核心功能
 
@@ -87,12 +95,40 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ## 📥 快速开始
 
-### 方式一：使用安装包（推荐）
+### 方式一：一键安装（推荐 ⭐）
 
-1. **下载安装包**
-   - Windows: `KookForwarder_v1.0.0_Windows_x64.exe`
-   - macOS: `KookForwarder_v1.0.0_macOS.dmg`
-   - Linux: `KookForwarder_v1.0.0_Linux_x64.AppImage`
+**Linux/macOS**:
+```bash
+# 一键安装（自动安装所有依赖）
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.sh | bash
+
+# 或下载后运行
+chmod +x install.sh
+./install.sh
+```
+
+**Windows**:
+```batch
+# 下载install.bat后双击运行
+# 或在PowerShell中运行
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.bat -OutFile install.bat
+.\install.bat
+```
+
+**一键安装包含**:
+- ✅ 自动检测并安装Python 3.11+
+- ✅ 自动检测并安装Node.js 18+
+- ✅ 自动安装Redis（或使用内置版本）
+- ✅ 自动克隆项目并安装所有依赖
+- ✅ 自动创建配置文件和启动脚本
+- ✅ **预计耗时**: 3-5分钟
+
+### 方式二：使用安装包
+
+1. **下载安装包**（CI/CD自动构建）
+   - Windows: `KookForwarder_v1.4.0_Windows_x64.exe`
+   - macOS: `KookForwarder_v1.4.0_macOS.dmg`
+   - Linux: `KookForwarder_v1.4.0_Linux_x64.AppImage`
 
 2. **安装应用**
    - Windows: 双击安装程序，按向导操作
@@ -105,37 +141,49 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
    - 设置频道映射关系
    - 点击"启动服务"开始转发
 
-### 方式二：从源码运行
+### 方式三：从源码运行
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/yourusername/kook-forwarder.git
-cd kook-forwarder
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
 
-# 2. 安装后端依赖
+# 2. 运行一键安装脚本（推荐）
+./install.sh  # Linux/macOS
+# 或
+install.bat  # Windows
+
+# 3. 启动服务
+./start.sh  # Linux/macOS
+# 或
+start.bat  # Windows
+
+# 手动启动（如果不使用脚本）：
+
+# 4a. 安装后端依赖
 cd backend
 pip install -r requirements.txt
 playwright install chromium
 
-# 3. 安装前端依赖
+# 4b. 安装前端依赖
 cd ../frontend
 npm install
 
-# 4. 启动Redis（可选，如需本地测试）
-# Windows: 下载Redis for Windows
-# macOS: brew install redis && redis-server
-# Linux: sudo apt install redis-server && redis-server
+# 5. 启动Redis（v1.4.0会自动启动）
+# 或手动启动：
+# Windows: redis-server.exe
+# macOS: brew services start redis
+# Linux: sudo systemctl start redis
 
-# 5. 启动后端服务
+# 6. 启动后端服务
 cd ../backend
 python -m app.main
 
-# 6. 启动前端（新终端）
+# 7. 启动前端（新终端）
 cd ../frontend
-npm run dev
+npm run electron:dev
 
-# 7. 访问前端界面
-# 浏览器打开 http://localhost:5173
+# 注意：v1.4.0版本会自动启动Redis，无需手动启动
 ```
 
 ---
