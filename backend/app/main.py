@@ -14,6 +14,7 @@ from .utils.auth import verify_api_token, generate_api_token
 from .utils.scheduler import setup_scheduled_tasks, shutdown_scheduled_tasks
 from .utils.health import health_checker
 from .utils.update_checker import update_checker
+from .utils.redis_manager import redis_manager
 from .config import settings
 import asyncio
 
@@ -37,12 +38,20 @@ async def lifespan(app: FastAPI):
     background_tasks = []
     
     try:
+        # 启动嵌入式Redis服务（如果需要）
+        logger.info("检查Redis服务...")
+        redis_started = redis_manager.start(settings.redis_host, settings.redis_port)
+        if redis_started:
+            logger.info("✅ Redis服务已就绪")
+        else:
+            logger.warning("⚠️ Redis服务启动失败，尝试连接外部Redis...")
+        
         # 初始化验证码求解器
         if settings.captcha_2captcha_api_key:
             init_captcha_solver(settings.captcha_2captcha_api_key)
             logger.info("✅ 2Captcha验证码求解器已初始化")
         else:
-            logger.info("ℹ️ 2Captcha未配置，验证码需手动输入")
+            logger.info("ℹ️ 2Captcha未配置，将使用本地OCR或手动输入")
         
         # 连接Redis
         await redis_queue.connect()
@@ -121,6 +130,10 @@ async def lifespan(app: FastAPI):
         # 断开Redis
         await redis_queue.disconnect()
         logger.info("✅ Redis连接已关闭")
+        
+        # 停止嵌入式Redis服务
+        redis_manager.stop()
+        logger.info("✅ Redis服务已停止")
         
     except Exception as e:
         logger.error(f"❌ 关闭失败: {str(e)}")

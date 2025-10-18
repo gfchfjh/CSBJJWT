@@ -98,6 +98,10 @@
                 <li>切换到 Application/存储 → Cookies</li>
                 <li>复制所有Cookie（或使用浏览器扩展导出）</li>
               </ol>
+              <el-link type="primary" :underline="false" @click="openVideoTutorial('cookie')">
+                <el-icon><VideoPlay /></el-icon>
+                观看视频教程 (3分钟)
+              </el-link>
             </el-alert>
 
             <el-form :model="accountForm" label-width="100px" class="form-content">
