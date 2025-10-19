@@ -34,13 +34,27 @@
 
             <template #footer>
               <div class="tutorial-actions">
-                <el-button type="primary" size="small" @click="openTutorial(tutorial)">
+                <el-button 
+                  :type="tutorial.video_status === 'available' ? 'primary' : 'info'" 
+                  size="small" 
+                  @click="openTutorial(tutorial)"
+                  :disabled="tutorial.video_status === 'placeholder'"
+                >
                   <el-icon><VideoPlay /></el-icon>
-                  观看视频
+                  {{ tutorial.video_status === 'placeholder' ? '视频制作中' : '观看视频' }}
                 </el-button>
                 <el-button size="small" @click="openDocument(tutorial.doc_link)">
                   <el-icon><Document /></el-icon>
                   图文版
+                </el-button>
+                <el-button 
+                  v-if="tutorial.video_status === 'placeholder'"
+                  size="small" 
+                  type="success"
+                  @click="showRecordingGuide(tutorial)"
+                >
+                  <el-icon><Memo /></el-icon>
+                  录制脚本
                 </el-button>
               </div>
             </template>
@@ -174,7 +188,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   VideoPlay,
   Document,
@@ -182,7 +196,8 @@ import {
   QuestionFilled,
   ChatLineRound,
   Message,
-  Link
+  Link,
+  Memo
 } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -216,90 +231,106 @@ const tutorials = ref([
   {
     id: 1,
     icon: '🎬',
-    title: '完整配置演示',
-    description: '从零开始完成所有配置，适合新手观看',
-    duration: '10分钟',
+    title: '快速入门教程',
+    description: '5分钟快速上手KOOK消息转发系统，从安装到首次使用',
+    duration: '5分钟',
     views: 1523,
     difficulty: 'easy',
-    video_link: 'https://example.com/tutorial1',
-    doc_link: '/docs/quick-start'
+    video_url: 'https://www.bilibili.com/video/BV1xxxxxxxxx',  // 待录制后更新
+    video_status: 'placeholder',  // placeholder(制作中)/available(可用)/coming_soon(即将上线)
+    doc_link: '/docs/完整用户手册.md',
+    tags: ['新手必看', '安装', '配置']
   },
   {
     id: 2,
     icon: '🍪',
     title: 'Cookie获取教程',
-    description: '详细讲解如何获取KOOK账号Cookie',
+    description: '详细讲解如何从浏览器获取KOOK Cookie，支持Chrome/Edge/Firefox',
     duration: '3分钟',
-    views: 2341,
+    views: 892,
     difficulty: 'easy',
-    video_link: 'https://example.com/tutorial2',
-    doc_link: '/docs/cookie-guide'
+    video_url: 'https://www.bilibili.com/video/BV2xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/完整用户手册.md',
+    tags: ['账号登录', 'Cookie']
   },
   {
     id: 3,
     icon: '💬',
-    title: 'Discord配置教程',
-    description: '如何创建Discord Webhook并配置',
+    title: 'Discord Webhook配置',
+    description: '如何创建Discord Webhook并配置到本系统',
     duration: '2分钟',
     views: 1876,
     difficulty: 'easy',
-    video_link: 'https://example.com/tutorial3',
-    doc_link: '/docs/discord-setup'
+    video_url: 'https://www.bilibili.com/video/BV3xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/Discord配置教程.md',
+    tags: ['Discord', 'Webhook']
   },
   {
     id: 4,
     icon: '✈️',
-    title: 'Telegram配置教程',
-    description: '创建Telegram Bot并获取Chat ID',
+    title: 'Telegram Bot配置',
+    description: '与BotFather创建Bot，获取Token和Chat ID',
     duration: '4分钟',
     views: 1654,
     difficulty: 'easy',
-    video_link: 'https://example.com/tutorial4',
-    doc_link: '/docs/telegram-setup'
+    video_url: 'https://www.bilibili.com/video/BV4xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/Telegram配置教程.md',
+    tags: ['Telegram', 'Bot']
   },
   {
     id: 5,
     icon: '🐦',
-    title: '飞书配置教程',
-    description: '飞书自建应用创建和配置',
+    title: '飞书应用配置',
+    description: '在飞书开放平台创建自建应用并配置',
     duration: '5分钟',
     views: 987,
     difficulty: 'medium',
-    video_link: 'https://example.com/tutorial5',
-    doc_link: '/docs/feishu-setup'
+    video_url: 'https://www.bilibili.com/video/BV5xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/飞书配置教程.md',
+    tags: ['飞书', '自建应用']
   },
   {
     id: 6,
     icon: '🔀',
-    title: '频道映射设置',
-    description: '学习如何设置频道映射关系',
-    duration: '3分钟',
+    title: '频道映射配置详解',
+    description: '传统映射和拖拽映射两种方式的使用',
+    duration: '5分钟',
     views: 1432,
     difficulty: 'easy',
-    video_link: 'https://example.com/tutorial6',
-    doc_link: '/docs/channel-mapping'
+    video_url: 'https://www.bilibili.com/video/BV6xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/用户手册.md',
+    tags: ['频道映射', '拖拽']
   },
   {
     id: 7,
-    icon: '🔧',
-    title: '高级设置和优化',
-    description: '深入了解系统设置和性能优化',
-    duration: '8分钟',
+    icon: '🎯',
+    title: '过滤规则使用技巧',
+    description: '关键词、用户、消息类型过滤的实用技巧',
+    duration: '4分钟',
     views: 765,
-    difficulty: 'hard',
-    video_link: 'https://example.com/tutorial7',
-    doc_link: '/docs/advanced-settings'
+    difficulty: 'easy',
+    video_url: 'https://www.bilibili.com/video/BV7xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/用户手册.md',
+    tags: ['过滤规则', '技巧']
   },
   {
     id: 8,
     icon: '🐛',
-    title: '故障排查指南',
-    description: '常见问题的诊断和解决方法',
-    duration: '6分钟',
+    title: '常见问题排查',
+    description: 'Cookie过期、转发失败、图片上传等问题的解决',
+    duration: '7分钟',
     views: 1098,
     difficulty: 'medium',
-    video_link: 'https://example.com/tutorial8',
-    doc_link: '/docs/troubleshooting'
+    video_url: 'https://www.bilibili.com/video/BV8xxxxxxxxx',
+    video_status: 'placeholder',
+    doc_link: '/docs/用户手册.md',
+    tags: ['故障排查', 'FAQ']
   }
 ])
 
@@ -435,13 +466,93 @@ const shortcuts = ref([
 
 // 打开视频教程
 const openTutorial = (tutorial) => {
-  ElMessage.info(`视频教程：${tutorial.title}（开发中，将打开：${tutorial.video_link}）`)
-  // 实际实现：window.open(tutorial.video_link, '_blank')
+  if (tutorial.video_status === 'placeholder') {
+    ElMessageBox.alert(
+      '<div style="text-align: left;">' +
+      '<p><strong>📹 视频教程正在制作中</strong></p>' +
+      '<p>我们正在努力录制这个视频教程，预计将在近期完成。</p>' +
+      '<p><strong>您可以：</strong></p>' +
+      '<ul style="padding-left: 20px; margin: 10px 0;">' +
+      '<li>点击"图文版"按钮查看详细的图文教程</li>' +
+      '<li>点击"录制脚本"查看视频内容大纲</li>' +
+      '<li>关注项目获取最新进展</li>' +
+      '</ul>' +
+      '<p style="margin-top: 15px; color: #67C23A;">' +
+      '💡 如果您有录制视频的能力，欢迎贡献教程！' +
+      '</p>' +
+      '</div>',
+      '视频制作中',
+      {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: '查看图文教程',
+        cancelButtonText: '知道了',
+        showCancelButton: true,
+        type: 'info'
+      }
+    ).then(() => {
+      openDocument(tutorial.doc_link)
+    }).catch(() => {})
+  } else if (tutorial.video_url && tutorial.video_status === 'available') {
+    window.open(tutorial.video_url, '_blank')
+    // 记录观看次数
+    tutorial.views++
+  } else {
+    ElMessage.info('视频教程即将上线，敬请期待！')
+  }
+}
+
+// 显示录制指南
+const showRecordingGuide = (tutorial) => {
+  ElMessageBox.alert(
+    '<div style="text-align: left; max-height: 500px; overflow-y: auto;">' +
+    `<h3 style="margin-top: 0;">📝 ${tutorial.title} - 录制脚本</h3>` +
+    '<p><strong>录制要点：</strong></p>' +
+    '<ul style="padding-left: 20px; margin: 10px 0;">' +
+    '<li>分辨率：1920x1080（高清）</li>' +
+    '<li>时长：' + tutorial.duration + '</li>' +
+    '<li>语速：适中，吐字清晰</li>' +
+    '<li>建议添加中文字幕</li>' +
+    '<li>工具：OBS Studio（免费）或 ScreenFlow</li>' +
+    '</ul>' +
+    '<p><strong>录制内容：</strong></p>' +
+    '<div style="background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 10px 0;">' +
+    getRecordingScript(tutorial.id) +
+    '</div>' +
+    '<p style="margin-top: 15px;"><strong>📚 参考文档：</strong></p>' +
+    '<p><a href="' + tutorial.doc_link + '" style="color: #409EFF;">点击查看详细图文教程</a></p>' +
+    '<p style="margin-top: 15px; color: #909399; font-size: 12px;">' +
+    '💡 完整的录制指南请查看：docs/视频教程录制指南.md' +
+    '</p>' +
+    '</div>',
+    '录制脚本',
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: '关闭',
+      customClass: 'recording-guide-dialog'
+    }
+  )
+}
+
+// 获取录制脚本内容
+const getRecordingScript = (tutorialId) => {
+  const scripts = {
+    1: '<p><strong>第1部分：欢迎和简介（30秒）</strong></p><p>- 欢迎观看KOOK消息转发系统快速入门教程<br/>- 本教程将带您5分钟快速上手<br/>- 您将学会：安装、配置账号、设置转发</p><p><strong>第2部分：安装演示（1分钟）</strong></p><p>- 展示下载安装包<br/>- 演示Windows安装过程<br/>- 首次启动界面</p><p><strong>第3部分：配置向导（2分钟）</strong></p><p>- 步骤1：阅读免责声明<br/>- 步骤2：添加KOOK账号<br/>- 步骤3：选择服务器和频道<br/>- 步骤4：配置Discord Webhook<br/>- 步骤5：完成配置</p><p><strong>第4部分：测试转发（1分钟）</strong></p><p>- 在KOOK发送测试消息<br/>- 查看Discord接收<br/>- 查看实时日志</p><p><strong>第5部分：总结（30秒）</strong></p><p>- 恭喜您已成功配置！<br/>- 更多教程请观看其他视频</p>',
+    2: '<p><strong>第1部分：简介（20秒）</strong></p><p>- 为什么需要Cookie<br/>- Cookie是什么</p><p><strong>第2部分：Chrome浏览器（1分钟）</strong></p><p>- 打开kookapp.cn并登录<br/>- 按F12打开开发者工具<br/>- Application → Cookies<br/>- 全选并复制</p><p><strong>第3部分：Edge/Firefox浏览器（1分钟）</strong></p><p>- 步骤类似展示</p><p><strong>第4部分：导入软件（40秒）</strong></p><p>- 粘贴Cookie<br/>- 验证成功</p>',
+    3: '<p><strong>第1部分：创建Webhook（1分钟）</strong></p><p>- Discord服务器设置<br/>- 集成 → Webhooks<br/>- 新建Webhook<br/>- 复制URL</p><p><strong>第2部分：配置到软件（1分钟）</strong></p><p>- 打开机器人配置<br/>- 粘贴URL<br/>- 测试连接</p>',
+    4: '<p><strong>第1部分：创建Bot（2分钟）</strong></p><p>- 搜索@BotFather<br/>- /newbot命令<br/>- 设置名称<br/>- 获取Token</p><p><strong>第2部分：获取Chat ID（1分钟）</strong></p><p>- 添加Bot到群组<br/>- 使用工具获取ID</p><p><strong>第3部分：配置（1分钟）</strong></p><p>- 填入Token和ID<br/>- 测试</p>',
+    5: '<p><strong>第1部分：创建应用（2分钟）</strong></p><p>- 飞书开放平台<br/>- 创建自建应用<br/>- 开启机器人<br/>- 获取凭证</p><p><strong>第2部分：配置权限（1分钟）</strong></p><p>- 消息权限<br/>- 图片权限</p><p><strong>第3部分：配置到软件（2分钟）</strong></p><p>- 填入App ID/Secret<br/>- 测试连接</p>',
+    6: '<p><strong>第1部分：传统映射（2分钟）</strong></p><p>- 选择KOOK频道<br/>- 选择目标平台<br/>- 填写频道ID<br/>- 保存</p><p><strong>第2部分：拖拽映射（2分钟）</strong></p><p>- 拖拽操作<br/>- 可视化连接<br/>- 一对多支持</p><p><strong>第3部分：测试（1分钟）</strong></p><p>- 发送测试消息</p>',
+    7: '<p><strong>第1部分：关键词过滤（1.5分钟）</strong></p><p>- 黑名单设置<br/>- 白名单设置</p><p><strong>第2部分：用户过滤（1分钟）</strong></p><p>- 用户黑白名单</p><p><strong>第3部分：消息类型过滤（1分钟）</strong></p><p>- 选择消息类型</p><p><strong>第4部分：技巧（30秒）</strong></p><p>- 规则优先级</p>',
+    8: '<p><strong>第1部分：Cookie过期（2分钟）</strong></p><p>- 判断过期<br/>- 重新获取</p><p><strong>第2部分：转发失败（2分钟）</strong></p><p>- 查看日志<br/>- 检查配置<br/>- 网络测试</p><p><strong>第3部分：图片问题（1.5分钟）</strong></p><p>- 大小限制<br/>- 切换策略</p><p><strong>第4部分：其他问题（1.5分钟）</strong></p><p>- 服务启动<br/>- Redis连接</p>'
+  }
+  
+  return scripts[tutorialId] || '<p>暂无详细脚本，请参考图文教程</p>'
 }
 
 // 打开文档
 const openDocument = (link) => {
-  ElMessage.info(`打开文档：${link}（开发中）`)
+  ElMessage.info(`打开文档：${link}（功能开发中）`)
+  // 实际实现可以跳转到文档页面或打开外部链接
 }
 
 // 打开完整文档
