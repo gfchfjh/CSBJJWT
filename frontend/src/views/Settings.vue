@@ -240,48 +240,139 @@
             </el-form-item>
 
             <template v-if="settings.emailAlertEnabled">
-              <el-form-item label="SMTP服务器">
+              <el-alert
+                title="邮件告警配置说明"
+                type="info"
+                :closable="false"
+                style="margin-bottom: 20px"
+              >
+                <p><strong>常用SMTP配置：</strong></p>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                  <li>Gmail: smtp.gmail.com, 端口465 (需要应用专用密码)</li>
+                  <li>QQ邮箱: smtp.qq.com, 端口465 (需要授权码)</li>
+                  <li>163邮箱: smtp.163.com, 端口465 (需要授权码)</li>
+                  <li>Outlook: smtp-mail.outlook.com, 端口587</li>
+                </ul>
+              </el-alert>
+
+              <el-form-item label="SMTP服务器" required>
                 <el-input
                   v-model="settings.smtpServer"
-                  placeholder="smtp.example.com"
-                />
+                  placeholder="例如：smtp.gmail.com"
+                >
+                  <template #prepend>
+                    <el-icon><Message /></el-icon>
+                  </template>
+                </el-input>
+                <span class="help-text">邮件服务器地址</span>
               </el-form-item>
 
-              <el-form-item label="SMTP端口">
+              <el-form-item label="SMTP端口" required>
                 <el-input-number
                   v-model="settings.smtpPort"
                   :min="1"
                   :max="65535"
+                  placeholder="465"
+                  style="width: 150px"
                 />
+                <el-radio-group v-model="settings.smtpPort" style="margin-left: 15px">
+                  <el-radio :label="465">465 (SSL)</el-radio>
+                  <el-radio :label="587">587 (TLS)</el-radio>
+                  <el-radio :label="25">25 (普通)</el-radio>
+                </el-radio-group>
               </el-form-item>
 
-              <el-form-item label="发件邮箱">
+              <el-form-item label="发件邮箱" required>
                 <el-input
                   v-model="settings.emailFrom"
-                  placeholder="alert@example.com"
-                />
+                  placeholder="your-email@gmail.com"
+                >
+                  <template #prepend>📧</template>
+                </el-input>
+                <span class="help-text">发送告警邮件的邮箱地址</span>
               </el-form-item>
 
-              <el-form-item label="邮箱密码">
+              <el-form-item label="邮箱密码/授权码" required>
                 <el-input
                   v-model="settings.emailPassword"
                   type="password"
                   show-password
-                  placeholder="邮箱密码或授权码"
-                />
+                  placeholder="邮箱密码或SMTP授权码"
+                >
+                  <template #prepend>🔑</template>
+                </el-input>
+                <span class="help-text">
+                  Gmail需要"应用专用密码"，QQ/163邮箱需要"授权码"
+                  <el-link
+                    type="primary"
+                    href="https://support.google.com/accounts/answer/185833"
+                    target="_blank"
+                    style="margin-left: 5px"
+                  >
+                    如何获取？
+                  </el-link>
+                </span>
               </el-form-item>
 
-              <el-form-item label="收件邮箱">
+              <el-form-item label="收件邮箱" required>
                 <el-input
                   v-model="settings.emailTo"
                   placeholder="admin@example.com"
+                >
+                  <template #prepend>📬</template>
+                </el-input>
+                <span class="help-text">接收告警邮件的邮箱地址（可与发件邮箱相同）</span>
+              </el-form-item>
+
+              <el-divider content-position="left">告警触发条件</el-divider>
+
+              <el-form-item label="触发条件">
+                <el-checkbox-group v-model="settings.emailAlertTriggers">
+                  <el-checkbox label="service_error">
+                    <strong>服务异常</strong>
+                    <span class="help-text">- 后端服务崩溃或无法启动</span>
+                  </el-checkbox>
+                  <el-checkbox label="account_offline">
+                    <strong>账号掉线</strong>
+                    <span class="help-text">- KOOK账号连接断开超过5分钟</span>
+                  </el-checkbox>
+                  <el-checkbox label="forward_failed_batch">
+                    <strong>批量转发失败</strong>
+                    <span class="help-text">- 1小时内累计10次以上转发失败</span>
+                  </el-checkbox>
+                  <el-checkbox label="disk_full">
+                    <strong>磁盘空间不足</strong>
+                    <span class="help-text">- 图床或日志空间使用超过90%</span>
+                  </el-checkbox>
+                  <el-checkbox label="redis_error">
+                    <strong>Redis连接失败</strong>
+                    <span class="help-text">- 消息队列服务异常</span>
+                  </el-checkbox>
+                </el-checkbox-group>
+              </el-form-item>
+
+              <el-form-item label="告警频率限制">
+                <el-input-number
+                  v-model="settings.emailAlertInterval"
+                  :min="5"
+                  :max="1440"
+                  :step="5"
+                  style="width: 150px"
                 />
+                <span> 分钟内同类告警仅发送一次</span>
+                <span class="help-text" style="display: block; margin-top: 5px">
+                  防止告警邮件过多，建议设置为30-60分钟
+                </span>
               </el-form-item>
 
               <el-form-item>
-                <el-button type="primary" @click="testEmail">
+                <el-button type="primary" @click="testEmail" :loading="testingEmail">
+                  <el-icon><Promotion /></el-icon>
                   发送测试邮件
                 </el-button>
+                <span class="help-text" style="margin-left: 10px">
+                  点击后将发送一封测试邮件到收件邮箱
+                </span>
               </el-form-item>
             </template>
           </el-form>
@@ -393,6 +484,9 @@ const lastBackupTime = ref('')
 // 检查更新中
 const checkingUpdate = ref(false)
 
+// 测试邮件中
+const testingEmail = ref(false)
+
 // 设置数据
 const settings = ref({
   // 服务控制
@@ -421,6 +515,8 @@ const settings = ref({
   emailFrom: '',
   emailPassword: '',
   emailTo: '',
+  emailAlertTriggers: ['service_error', 'account_offline', 'disk_full'],
+  emailAlertInterval: 30,
   
   // 其他
   language: 'zh-CN',
@@ -616,19 +712,68 @@ const clearAllLogs = async () => {
 
 // 测试邮件
 const testEmail = async () => {
+  // 验证必填字段
+  if (!settings.value.smtpServer || !settings.value.emailFrom || 
+      !settings.value.emailPassword || !settings.value.emailTo) {
+    ElMessage.warning('请先填写完整的邮件配置信息')
+    return
+  }
+
   try {
+    testingEmail.value = true
+    
     // 先保存当前的邮件配置
     await saveSettings()
     
+    ElMessage.info('正在发送测试邮件，请稍候...')
+    
     // 发送测试邮件
-    const response = await api.testEmail()
+    const response = await api.testEmail({
+      smtp_host: settings.value.smtpServer,
+      smtp_port: settings.value.smtpPort,
+      smtp_user: settings.value.emailFrom,
+      smtp_password: settings.value.emailPassword,
+      recipient: settings.value.emailTo
+    })
+    
     if (response.success) {
-      ElMessage.success('测试邮件已发送，请检查您的邮箱')
+      ElMessageBox.alert(
+        '测试邮件已成功发送！请检查您的收件箱（包括垃圾邮件箱）。<br/><br/>' +
+        `<strong>收件人：</strong>${settings.value.emailTo}<br/>` +
+        `<strong>主题：</strong>KOOK消息转发系统 - 测试邮件<br/><br/>` +
+        '如果未收到邮件，请检查：<br/>' +
+        '1. SMTP服务器地址和端口是否正确<br/>' +
+        '2. 邮箱密码/授权码是否正确<br/>' +
+        '3. 邮箱是否开启了SMTP服务',
+        '测试成功',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '知道了',
+          type: 'success'
+        }
+      )
     } else {
-      ElMessage.error('发送失败：' + response.message)
+      ElMessage.error('发送失败：' + (response.message || '未知错误'))
     }
   } catch (error) {
-    ElMessage.error('发送测试邮件失败：' + (error.response?.data?.detail || error.message))
+    const errorMsg = error.response?.data?.detail || error.message || '未知错误'
+    ElMessageBox.alert(
+      `<strong>发送测试邮件失败</strong><br/><br/>` +
+      `<strong>错误信息：</strong>${errorMsg}<br/><br/>` +
+      `<strong>可能的原因：</strong><br/>` +
+      `1. SMTP服务器连接失败（请检查服务器地址和端口）<br/>` +
+      `2. 认证失败（请检查邮箱和密码/授权码）<br/>` +
+      `3. 邮箱未开启SMTP服务<br/>` +
+      `4. 网络连接问题`,
+      '发送失败',
+      {
+        dangerouslyUseHTMLString: true,
+        confirmButtonText: '知道了',
+        type: 'error'
+      }
+    )
+  } finally {
+    testingEmail.value = false
   }
 }
 
