@@ -70,7 +70,13 @@ class ImageProcessor:
                        max_size_mb: float = 10.0,
                        quality: int = 85) -> bytes:
         """
-        压缩图片
+        智能压缩图片（v1.7.2优化版）
+        
+        优化策略：
+        1. PNG大图自动转JPEG（减少30-50%体积）
+        2. 保留小图原格式（避免不必要的损失）
+        3. 超大图片自动缩小分辨率
+        4. 递归降低质量直到满足大小要求
         
         Args:
             image_data: 原始图片数据
@@ -84,34 +90,97 @@ class ImageProcessor:
             # 检查大小
             size_mb = len(image_data) / (1024 * 1024)
             if size_mb <= max_size_mb:
+                logger.debug(f"图片大小在限制内: {size_mb:.2f}MB")
                 return image_data
+            
+            logger.info(f"图片过大 ({size_mb:.2f}MB)，开始智能压缩...")
             
             # 打开图片
             img = Image.open(BytesIO(image_data))
+            original_format = img.format
+            original_size = img.size
             
-            # 转换为RGB（如果是RGBA）
-            if img.mode == 'RGBA':
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                background.paste(img, mask=img.split()[3])
-                img = background
+            # 策略1：PNG大图转JPEG（体积减少显著）
+            should_convert_to_jpeg = False
+            if original_format == 'PNG' and size_mb > 2.0:
+                should_convert_to_jpeg = True
+                logger.info(f"检测到PNG大图 ({size_mb:.2f}MB)，将转换为JPEG")
             
-            # 压缩
-            output = BytesIO()
-            img.save(output, format='JPEG', quality=quality, optimize=True)
-            compressed_data = output.getvalue()
+            # 策略2：超大图片缩小分辨率
+            should_resize = False
+            max_dimension = 4096  # 最大边长
+            if max(img.size) > max_dimension:
+                should_resize = True
+                ratio = max_dimension / max(img.size)
+                new_size = tuple(int(dim * ratio) for dim in img.size)
+                logger.info(f"图片尺寸过大，将缩放: {original_size} -> {new_size}")
             
-            # 检查压缩后大小
-            compressed_size_mb = len(compressed_data) / (1024 * 1024)
-            logger.info(f"图片压缩: {size_mb:.2f}MB -> {compressed_size_mb:.2f}MB")
+            # 应用策略
+            if should_convert_to_jpeg or should_resize:
+                # 处理透明通道（PNG转JPEG）
+                if should_convert_to_jpeg and img.mode in ('RGBA', 'LA', 'P'):
+                    # 创建白色背景
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    if img.mode in ('RGBA', 'LA'):
+                        background.paste(img, mask=img.split()[-1])
+                    img = background
+                elif img.mode not in ('RGB', 'L'):
+                    img = img.convert('RGB')
+                
+                # 缩小分辨率
+                if should_resize:
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+                
+                # 保存为JPEG
+                output = BytesIO()
+                img.save(output, format='JPEG', quality=quality, optimize=True)
+                compressed_data = output.getvalue()
+                
+                compressed_size_mb = len(compressed_data) / (1024 * 1024)
+                reduction = (1 - compressed_size_mb / size_mb) * 100
+                logger.info(f"✅ 智能压缩完成: {size_mb:.2f}MB -> {compressed_size_mb:.2f}MB (减少{reduction:.1f}%)")
+                
+                # 如果仍然太大，递归降低质量
+                if compressed_size_mb > max_size_mb and quality > 50:
+                    logger.warning(f"压缩后仍超限 ({compressed_size_mb:.2f}MB)，降低质量重试...")
+                    return self.compress_image(compressed_data, max_size_mb, quality - 15)
+                
+                return compressed_data
             
-            # 如果仍然太大，递归降低质量
-            if compressed_size_mb > max_size_mb and quality > 50:
-                return self.compress_image(image_data, max_size_mb, quality - 10)
-            
-            return compressed_data
+            else:
+                # 非PNG或小图，使用原格式优化压缩
+                output = BytesIO()
+                save_format = original_format if original_format in ('JPEG', 'PNG', 'WEBP') else 'JPEG'
+                
+                if save_format == 'JPEG':
+                    img.save(output, format=save_format, quality=quality, optimize=True)
+                elif save_format == 'PNG':
+                    img.save(output, format=save_format, optimize=True, compress_level=9)
+                else:
+                    img.save(output, format=save_format, optimize=True)
+                
+                compressed_data = output.getvalue()
+                compressed_size_mb = len(compressed_data) / (1024 * 1024)
+                
+                logger.info(f"图片优化: {size_mb:.2f}MB -> {compressed_size_mb:.2f}MB")
+                
+                # 如果仍然太大，转JPEG重试
+                if compressed_size_mb > max_size_mb:
+                    logger.warning(f"优化后仍超限，转换为JPEG重试...")
+                    # 转换为RGB
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+                    output = BytesIO()
+                    img.save(output, format='JPEG', quality=quality, optimize=True)
+                    return output.getvalue()
+                
+                return compressed_data
             
         except Exception as e:
             logger.error(f"图片压缩失败: {str(e)}")
+            # 压缩失败，返回原图
             return image_data
     
     def save_to_local(self, image_data: bytes, filename: Optional[str] = None) -> str:

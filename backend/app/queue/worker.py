@@ -170,9 +170,12 @@ class MessageWorker:
         
         logger.info(f"开始并行处理{len(image_urls)}张图片")
         
+        # 提取Cookie（用于下载防盗链图片）
+        cookies = message.get('cookies', {})
+        
         # 创建并行任务
         tasks = [
-            self._process_single_image(url)
+            self._process_single_image(url, cookies)
             for url in image_urls
         ]
         
@@ -190,12 +193,13 @@ class MessageWorker:
         logger.info(f"图片处理完成: 成功{len(processed_images)}/{len(image_urls)}张")
         return processed_images
     
-    async def _process_single_image(self, url: str) -> Optional[Dict[str, Any]]:
+    async def _process_single_image(self, url: str, cookies: dict = None) -> Optional[Dict[str, Any]]:
         """
         处理单张图片
         
         Args:
             url: 图片URL
+            cookies: Cookie字典（用于下载防盗链图片）
             
         Returns:
             处理后的图片信息
@@ -203,11 +207,11 @@ class MessageWorker:
         try:
             logger.debug(f"处理图片: {url}")
             
-            # 使用智能策略处理图片
+            # 使用智能策略处理图片（✅ 传递Cookie解决防盗链问题）
             result = await image_processor.process_image(
                 url=url,
                 strategy='smart',  # 智能模式：优先直传，失败用图床
-                cookies=None,  # TODO: 从消息中获取Cookie
+                cookies=cookies,  # ✅ 传递Cookie
                 referer='https://www.kookapp.cn'
             )
             
@@ -247,9 +251,12 @@ class MessageWorker:
         
         logger.info(f"开始并行处理{len(file_attachments)}个附件")
         
+        # 提取Cookie（用于下载防盗链附件）
+        cookies = message.get('cookies', {})
+        
         # 创建并行任务
         tasks = [
-            self._process_single_attachment(attachment)
+            self._process_single_attachment(attachment, cookies)
             for attachment in file_attachments
         ]
         
@@ -267,12 +274,13 @@ class MessageWorker:
         logger.info(f"附件处理完成: 成功{len(processed_attachments)}/{len(file_attachments)}个")
         return processed_attachments
     
-    async def _process_single_attachment(self, attachment: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def _process_single_attachment(self, attachment: Dict[str, Any], cookies: dict = None) -> Optional[Dict[str, Any]]:
         """
         处理单个附件
         
         Args:
             attachment: 附件信息
+            cookies: Cookie字典（用于下载防盗链附件）
             
         Returns:
             处理后的附件信息
@@ -288,9 +296,6 @@ class MessageWorker:
             if file_size_mb > 50:
                 logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
                 return None
-            
-            # 获取Cookie（用于下载防盗链附件）
-            cookies = message_data.get('cookies', {})
             
             # 下载附件
             local_path = await attachment_processor.download_attachment(

@@ -89,25 +89,33 @@
       @submit="handleCaptchaSubmit"
     />
 
-    <!-- 添加账号对话框 -->
+    <!-- 添加账号对话框（v1.7.2增强版 - 带表单验证） -->
     <el-dialog
       v-model="showAddDialog"
       title="添加KOOK账号"
-      width="500px"
+      width="600px"
+      :close-on-click-modal="false"
     >
-      <el-form :model="accountForm" label-width="100px">
-        <el-form-item label="邮箱">
-          <el-input v-model="accountForm.email" placeholder="请输入KOOK邮箱" />
+      <el-form :model="accountForm" :rules="accountFormRules" ref="accountFormRef" label-width="100px">
+        <el-form-item label="邮箱" prop="email">
+          <el-input 
+            v-model="accountForm.email" 
+            placeholder="请输入KOOK邮箱"
+            clearable
+          />
+          <div class="form-help-text">
+            💡 这是您的KOOK注册邮箱
+          </div>
         </el-form-item>
         
         <el-form-item label="登录方式">
           <el-radio-group v-model="accountForm.loginType">
-            <el-radio label="cookie">Cookie导入</el-radio>
+            <el-radio label="cookie">Cookie导入（推荐）</el-radio>
             <el-radio label="password">账号密码</el-radio>
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item v-if="accountForm.loginType === 'password'" label="密码">
+        <el-form-item v-if="accountForm.loginType === 'password'" label="密码" prop="password">
           <el-input
             v-model="accountForm.password"
             type="password"
@@ -116,26 +124,36 @@
           />
         </el-form-item>
         
-        <el-form-item v-if="accountForm.loginType === 'cookie'" label="Cookie">
+        <el-form-item v-if="accountForm.loginType === 'cookie'" label="Cookie" prop="cookie">
           <el-input
             v-model="accountForm.cookie"
             type="textarea"
-            :rows="4"
-            placeholder="请粘贴Cookie JSON或文本"
+            :rows="6"
+            placeholder='请粘贴Cookie JSON数组，格式如：
+[{"name":"token","value":"xxx","domain":".kookapp.cn"}]'
           />
+          <div class="form-help-text">
+            💡 <el-link type="primary" @click="openCookieTutorial">
+              如何获取Cookie？查看详细教程
+            </el-link>
+          </div>
         </el-form-item>
       </el-form>
       
       <template #footer>
-        <el-button @click="showAddDialog = false">取消</el-button>
-        <el-button type="primary" @click="addAccount">确定</el-button>
+        <el-button @click="handleCancelAdd">取消</el-button>
+        <el-button type="primary" :loading="isAdding" @click="addAccount">
+          <el-icon v-if="!isAdding"><Check /></el-icon>
+          确定添加
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAccountsStore } from '../store/accounts'
 import CaptchaDialog from '../components/CaptchaDialog.vue'
 import { formatDate, formatRelativeTime } from '../utils/date'
@@ -147,6 +165,8 @@ const accountsStore = useAccountsStore()
 
 const showAddDialog = ref(false)
 const showCaptchaDialog = ref(false)
+const isAdding = ref(false)
+const accountFormRef = ref(null)
 
 const accountForm = ref({
   email: '',
@@ -161,10 +181,88 @@ const captchaData = ref({
   timestamp: 0
 })
 
+// v1.7.2新增：表单验证规则
+const accountFormRules = computed(() => {
+  const rules = {
+    email: [
+      { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+      { 
+        type: 'email', 
+        message: '请输入有效的邮箱地址', 
+        trigger: ['blur', 'change'] 
+      }
+    ]
+  }
+  
+  // 根据登录方式动态添加验证
+  if (accountForm.value.loginType === 'password') {
+    rules.password = [
+      { required: true, message: '请输入密码', trigger: 'blur' },
+      { min: 6, message: '密码长度至少6个字符', trigger: 'blur' }
+    ]
+  } else if (accountForm.value.loginType === 'cookie') {
+    rules.cookie = [
+      { required: true, message: '请粘贴Cookie内容', trigger: 'blur' },
+      { 
+        validator: (rule, value, callback) => {
+          if (!value) {
+            callback(new Error('Cookie不能为空'))
+            return
+          }
+          
+          // 尝试解析JSON
+          try {
+            const parsed = JSON.parse(value)
+            
+            // 检查是否为数组
+            if (!Array.isArray(parsed)) {
+              callback(new Error('Cookie必须是JSON数组格式'))
+              return
+            }
+            
+            // 检查是否为空数组
+            if (parsed.length === 0) {
+              callback(new Error('Cookie数组不能为空'))
+              return
+            }
+            
+            // 检查每个Cookie是否有name和value字段
+            for (let i = 0; i < parsed.length; i++) {
+              if (!parsed[i].name || !parsed[i].value) {
+                callback(new Error(`Cookie[${i}]缺少name或value字段`))
+                return
+              }
+            }
+            
+            callback()
+          } catch (e) {
+            callback(new Error('Cookie格式错误，必须是有效的JSON数组'))
+          }
+        },
+        trigger: 'blur'
+      }
+    ]
+  }
+  
+  return rules
+})
+
 const loader = createLoadingHelper()
 
 const addAccount = async () => {
+  // v1.7.2增强：先验证表单
+  if (!accountFormRef.value) return
+  
   try {
+    await accountFormRef.value.validate()
+  } catch (error) {
+    ElMessage.warning('请检查表单填写是否正确')
+    return
+  }
+  
+  try {
+    isAdding.value = true
+    
     const data = {
       email: accountForm.value.email
     }
@@ -180,10 +278,11 @@ const addAccount = async () => {
       '正在添加账号...'
     )
     
-    showSuccess('账号添加成功')
+    showSuccess('✅ 账号添加成功，正在连接...')
     showAddDialog.value = false
     
     // 重置表单
+    accountFormRef.value?.resetFields()
     accountForm.value = {
       email: '',
       loginType: 'cookie',
@@ -195,7 +294,29 @@ const addAccount = async () => {
       title: '添加账号失败',
       showSolution: true
     })
+  } finally {
+    isAdding.value = false
   }
+}
+
+// 取消添加
+const handleCancelAdd = () => {
+  showAddDialog.value = false
+  accountFormRef.value?.resetFields()
+}
+
+// 打开Cookie教程
+const openCookieTutorial = () => {
+  ElMessageBox.alert(
+    '请查看帮助中心的"Cookie获取详细教程"了解如何获取KOOK Cookie',
+    'Cookie获取教程',
+    {
+      confirmButtonText: '前往帮助中心',
+      callback: () => {
+        window.open('#/help', '_blank')
+      }
+    }
+  )
 }
 
 const startAccount = async (accountId) => {
@@ -343,5 +464,12 @@ onUnmounted(() => {
 .account-actions {
   display: flex;
   gap: 8px;
+}
+
+.form-help-text {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
 }
 </style>

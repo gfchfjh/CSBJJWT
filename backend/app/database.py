@@ -95,6 +95,11 @@ class Database:
                 CREATE INDEX IF NOT EXISTS idx_channel_mappings_platform 
                 ON channel_mappings(target_platform)
             """)
+            # v1.7.2新增：复合索引优化联表查询
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_mapping_bot_platform 
+                ON channel_mappings(target_bot_id, target_platform)
+            """)
             
             # 过滤规则表
             cursor.execute("""
@@ -141,6 +146,15 @@ class Database:
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_message_logs_channel 
                 ON message_logs(kook_channel_id, created_at DESC)
+            """)
+            # v1.7.2新增：复合索引优化联合查询
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_logs_channel_status 
+                ON message_logs(kook_channel_id, status, created_at DESC)
+            """)
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_logs_platform_status 
+                ON message_logs(target_platform, status, created_at DESC)
             """)
             
             # 失败消息队列
