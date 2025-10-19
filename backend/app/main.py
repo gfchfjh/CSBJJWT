@@ -14,7 +14,7 @@ from .utils.auth import verify_api_token, generate_api_token
 from .utils.scheduler import setup_scheduled_tasks, shutdown_scheduled_tasks
 from .utils.health import health_checker
 from .utils.update_checker import update_checker
-from .utils.redis_manager import redis_manager
+from .utils.redis_manager_enhanced import redis_manager  # v1.8.1使用增强版
 from .config import settings
 import asyncio
 
@@ -38,13 +38,14 @@ async def lifespan(app: FastAPI):
     background_tasks = []
     
     try:
-        # 启动嵌入式Redis服务（如果需要）
-        logger.info("检查Redis服务...")
-        redis_started = redis_manager.start(settings.redis_host, settings.redis_port)
-        if redis_started:
-            logger.info("✅ Redis服务已就绪")
+        # 启动嵌入式Redis服务（v1.8.1增强版）
+        logger.info("🔍 检查Redis服务...")
+        redis_success, redis_msg = await redis_manager.start()
+        if redis_success:
+            logger.info(f"✅ {redis_msg}")
         else:
-            logger.warning("⚠️ Redis服务启动失败，尝试连接外部Redis...")
+            logger.warning(f"⚠️ {redis_msg}")
+            logger.warning("⚠️ 尝试连接外部Redis...")
         
         # 初始化验证码求解器
         if settings.captcha_2captcha_api_key:
