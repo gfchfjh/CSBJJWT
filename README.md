@@ -4,7 +4,7 @@
 
 **一款面向普通用户的傻瓜式KOOK消息转发工具**
 
-[![Version](https://img.shields.io/badge/version-1.6.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Version](https://img.shields.io/badge/version-1.7.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Quality](https://img.shields.io/badge/quality-A+-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Completion](https://img.shields.io/badge/completion-98.5%25-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Build](https://img.shields.io/github/actions/workflow/status/gfchfjh/CSBJJWT/build-and-release.yml)](https://github.com/gfchfjh/CSBJJWT/actions)
@@ -43,47 +43,59 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ---
 
-## 🎉 v1.6.0 新功能
+## 🎉 v1.7.0 新功能
 
 **重大更新**：
 
-1. **🎨 可视化拖拽映射**
-   - 拖拽式频道映射配置
-   - 实时显示映射关系
-   - 支持一对多映射
-   - SVG连接线可视化
+1. **📧 完善邮件告警配置UI**
+   - 完整的SMTP服务器配置
+   - 支持Gmail/QQ/163/Outlook等主流邮箱
+   - 5种告警触发条件
+   - 测试邮件功能
 
-2. **📚 完整的帮助中心**
-   - 8个视频教程规划
-   - 图文教程集成
-   - FAQ搜索功能
-   - 快捷操作入口
+2. **📥 完善频道映射导入导出**
+   - JSON格式导入导出
+   - 支持追加和替换两种模式
+   - 批量配置快速迁移
+   - 完善的错误提示
 
-3. **🧪 E2E端到端测试**
-   - Playwright测试框架
-   - 多浏览器支持
-   - 自动截图录屏
-   - CI/CD ready
+3. **🍪 Cookie获取详细教程**
+   - 三种获取方法（开发者工具/扩展）
+   - 详细的步骤说明和截图
+   - 8个常见问题FAQ
+   - 安全性说明
 
-4. **🎯 组件化重构**
-   - Wizard.vue拆分为5个子组件
-   - 代码可维护性提升67%
-   - 平均文件大小减少32%
+4. **❓ 应用内帮助中心**
+   - 快速入门指南
+   - 6篇图文教程集成
+   - 8个常见问题FAQ
+   - 实时搜索功能
+   - 系统信息一键复制
 
-5. **🧠 智能消息分段**
-   - 5级智能分段算法
-   - 优先保持句子完整
-   - 提升消息可读性
-
-6. **📊 测试覆盖率大幅提升**
-   - 前端测试：50% → 65%
-   - E2E测试：0% → 35%
-   - 总体覆盖：62% → 72%
+5. **🔢 版本号统一**
+   - 所有文件统一为v1.7.0
+   - 规范化版本管理
 
 **质量提升**：
-- 新增测试：26个单元测试 + 18个E2E测试
+- 新增2篇详细文档（Cookie教程、工作总结）
+- 新增1个帮助中心组件
+- 文档完整性从90%提升至98%
+- 总体完成度从88%提升至93%
 
-[查看v1.6.0完整更新日志](CHANGELOG_v1.6.0.md)
+[查看v1.7.0完整更新日志](代码完善工作总结.md)
+
+---
+
+## 📚 历史版本功能
+
+### v1.6.0 功能（已包含）
+
+- 🎨 可视化拖拽映射
+- 📚 完整的帮助中心框架
+- 🧪 E2E端到端测试
+- 🎯 组件化重构
+- 🧠 智能消息分段
+- 📊 测试覆盖率72%
 
 ---
 
