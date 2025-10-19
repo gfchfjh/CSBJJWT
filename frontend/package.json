@@ -1,6 +1,6 @@
 {
   "name": "kook-forwarder-frontend",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "KOOK消息转发系统 - 前端应用",
   "main": "electron/main.js",
   "scripts": {

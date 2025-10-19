@@ -289,11 +289,14 @@ class MessageWorker:
                 logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
                 return None
             
+            # 获取Cookie（用于下载防盗链附件）
+            cookies = message_data.get('cookies', {})
+            
             # 下载附件
             local_path = await attachment_processor.download_attachment(
                 url=url,
                 filename=filename,
-                cookies=None,  # TODO: 从消息中获取Cookie
+                cookies=cookies,  # ✅ 传递Cookie解决防盗链问题
                 referer='https://www.kookapp.cn'
             )
             
