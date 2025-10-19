@@ -289,7 +289,14 @@ class MessageFormatter:
     @staticmethod
     def split_long_message(text: str, max_length: int) -> list:
         """
-        分割超长消息
+        智能分割超长消息
+        
+        优先级：
+        1. 段落边界（双换行）
+        2. 句子边界（。！？）
+        3. 子句边界（，；：）
+        4. 单词边界（空格）
+        5. 强制字符截断
         
         Args:
             text: 原始文本
@@ -302,30 +309,191 @@ class MessageFormatter:
             return [text]
         
         messages = []
+        
+        # 首先尝试按段落分割（双换行）
+        paragraphs = re.split(r'\n\n+', text)
         current = ""
         
-        # 按行分割，尽量保持完整性
-        lines = text.split('\n')
-        
-        for line in lines:
-            if len(current) + len(line) + 1 <= max_length:
-                current += line + '\n'
-            else:
+        for para in paragraphs:
+            # 如果当前累积内容+段落不超长，继续累积
+            if len(current) + len(para) + 2 <= max_length:
                 if current:
-                    messages.append(current.rstrip())
+                    current += '\n\n' + para
+                else:
+                    current = para
+            else:
+                # 保存当前累积内容
+                if current:
+                    messages.append(current)
                     current = ""
                 
-                # 如果单行就超长，强制分割
-                if len(line) > max_length:
-                    for i in range(0, len(line), max_length):
-                        messages.append(line[i:i + max_length])
+                # 如果单个段落就超长，需要进一步分割
+                if len(para) > max_length:
+                    # 尝试按句子分割
+                    sentences = Formatter._split_by_sentences(para, max_length)
+                    for i, sent in enumerate(sentences):
+                        if i < len(sentences) - 1:
+                            messages.append(sent)
+                        else:
+                            current = sent
                 else:
-                    current = line + '\n'
+                    current = para
         
         if current:
-            messages.append(current.rstrip())
+            messages.append(current)
         
         return messages
+    
+    @staticmethod
+    def _split_by_sentences(text: str, max_length: int) -> list:
+        """
+        按句子边界分割文本
+        
+        Args:
+            text: 待分割文本
+            max_length: 最大长度
+            
+        Returns:
+            分割后的文本列表
+        """
+        if len(text) <= max_length:
+            return [text]
+        
+        # 句子边界正则：。！？后面可选空格
+        sentence_pattern = r'([。！？!?]+\s*)'
+        parts = re.split(sentence_pattern, text)
+        
+        # 重新组合（分隔符要和前一句合并）
+        sentences = []
+        for i in range(0, len(parts), 2):
+            if i + 1 < len(parts):
+                sentences.append(parts[i] + parts[i + 1])
+            else:
+                sentences.append(parts[i])
+        
+        # 按句子累积
+        result = []
+        current = ""
+        
+        for sent in sentences:
+            if len(current) + len(sent) <= max_length:
+                current += sent
+            else:
+                if current:
+                    result.append(current)
+                    current = ""
+                
+                # 如果单个句子就超长，按子句分割
+                if len(sent) > max_length:
+                    sub_parts = Formatter._split_by_clauses(sent, max_length)
+                    result.extend(sub_parts[:-1])
+                    if sub_parts:
+                        current = sub_parts[-1]
+                else:
+                    current = sent
+        
+        if current:
+            result.append(current)
+        
+        return result
+    
+    @staticmethod
+    def _split_by_clauses(text: str, max_length: int) -> list:
+        """
+        按子句边界分割文本（逗号、分号等）
+        
+        Args:
+            text: 待分割文本
+            max_length: 最大长度
+            
+        Returns:
+            分割后的文本列表
+        """
+        if len(text) <= max_length:
+            return [text]
+        
+        # 子句边界正则
+        clause_pattern = r'([，,；;：:]+\s*)'
+        parts = re.split(clause_pattern, text)
+        
+        # 重新组合
+        clauses = []
+        for i in range(0, len(parts), 2):
+            if i + 1 < len(parts):
+                clauses.append(parts[i] + parts[i + 1])
+            else:
+                clauses.append(parts[i])
+        
+        # 按子句累积
+        result = []
+        current = ""
+        
+        for clause in clauses:
+            if len(current) + len(clause) <= max_length:
+                current += clause
+            else:
+                if current:
+                    result.append(current)
+                    current = ""
+                
+                # 如果单个子句就超长，按单词分割
+                if len(clause) > max_length:
+                    word_parts = Formatter._split_by_words(clause, max_length)
+                    result.extend(word_parts[:-1])
+                    if word_parts:
+                        current = word_parts[-1]
+                else:
+                    current = clause
+        
+        if current:
+            result.append(current)
+        
+        return result
+    
+    @staticmethod
+    def _split_by_words(text: str, max_length: int) -> list:
+        """
+        按单词边界分割文本
+        
+        Args:
+            text: 待分割文本
+            max_length: 最大长度
+            
+        Returns:
+            分割后的文本列表
+        """
+        if len(text) <= max_length:
+            return [text]
+        
+        # 按空格分割单词
+        words = text.split()
+        
+        result = []
+        current = ""
+        
+        for word in words:
+            if len(current) + len(word) + 1 <= max_length:
+                current += (" " if current else "") + word
+            else:
+                if current:
+                    result.append(current)
+                    current = ""
+                
+                # 如果单个单词就超长，强制截断
+                if len(word) > max_length:
+                    for i in range(0, len(word), max_length):
+                        chunk = word[i:i + max_length]
+                        if i + max_length < len(word):
+                            result.append(chunk)
+                        else:
+                            current = chunk
+                else:
+                    current = word
+        
+        if current:
+            result.append(current)
+        
+        return result
     
     @staticmethod
     def format_mention(user_id: str, username: str, platform: str) -> str:
