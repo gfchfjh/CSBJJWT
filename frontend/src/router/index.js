@@ -8,6 +8,7 @@ import Filter from '../views/Filter.vue'
 import Logs from '../views/Logs.vue'
 import Settings from '../views/Settings.vue'
 import Advanced from '../views/Advanced.vue'
+import Help from '../views/Help.vue'
 import Wizard from '../views/Wizard.vue'
 import Login from '../views/Login.vue'
 
@@ -77,6 +78,12 @@ const routes = [
         name: 'Advanced',
         component: Advanced,
         meta: { title: '高级功能' }
+      },
+      {
+        path: '/help',
+        name: 'Help',
+        component: Help,
+        meta: { title: '帮助中心' }
       }
     ]
   }
