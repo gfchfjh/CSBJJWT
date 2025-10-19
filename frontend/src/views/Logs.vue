@@ -241,6 +241,10 @@ import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
 import api from '../api'
 import { getLogsWS } from '../utils/websocket'
+import { useMappingsStore } from '../store/mappings'
+
+// 导入映射store用于获取频道名称
+const mappingsStore = useMappingsStore()
 
 const logs = ref([])
 const stats = ref({
@@ -420,10 +424,19 @@ const formatChartTime = (time) => {
   return `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`
 }
 
-// 获取频道名称
+// 获取频道名称（✅ 已修复：从映射表获取友好名称）
 const getChannelName = (channelId) => {
-  // TODO: 从映射表中获取频道名称
-  return channelId ? channelId.substring(0, 8) : '-'
+  if (!channelId) return '-'
+  
+  // 从映射store中查找对应的频道名称
+  const mapping = mappingsStore.mappings.find(m => m.kook_channel_id === channelId)
+  
+  if (mapping && mapping.kook_channel_name) {
+    return mapping.kook_channel_name
+  }
+  
+  // 如果未找到映射，返回频道ID的简短版本
+  return channelId.length > 8 ? `${channelId.substring(0, 8)}...` : channelId
 }
 
 // 获取消息类型名称
