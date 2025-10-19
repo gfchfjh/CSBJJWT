@@ -383,12 +383,44 @@ async def health_check_task():
         # 检查是否有异常
         if not health_status['healthy']:
             logger.warning(f"⚠️ 系统健康检查发现问题:")
+            
+            # 收集问题详情
+            problem_details = []
             for check, status in health_status['checks'].items():
                 if not status.get('healthy', False):
-                    logger.warning(f"  - {check}: {status.get('message', '未知错误')}")
+                    problem_msg = f"{check}: {status.get('message', '未知错误')}"
+                    logger.warning(f"  - {problem_msg}")
+                    problem_details.append(problem_msg)
             
-            # 发送通知（如果配置了）
-            # TODO: 集成通知系统
+            # ✅ 集成通知系统
+            try:
+                # 尝试导入通知管理器
+                try:
+                    from ..utils.notification_manager import notification_manager
+                    has_notification_manager = True
+                except ImportError:
+                    has_notification_manager = False
+                    logger.debug("通知管理器模块未找到，跳过通知")
+                
+                if has_notification_manager and problem_details:
+                    # 构建通知消息
+                    from datetime import datetime
+                    message = f"⚠️ 系统健康检查发现{len(problem_details)}个问题：\n\n"
+                    message += "\n".join(f"- {detail}" for detail in problem_details)
+                    message += f"\n\n检查时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    
+                    # 发送多渠道通知
+                    await notification_manager.notify(
+                        level='warning',
+                        title='健康检查警告',
+                        message=message,
+                        methods=['log', 'email', 'desktop']  # 日志+邮件+桌面通知
+                    )
+                    
+                    logger.info(f"✅ 已发送健康检查警告通知")
+                
+            except Exception as notify_error:
+                logger.error(f"发送健康检查通知失败: {str(notify_error)}")
         
     except Exception as e:
         logger.error(f"❌ 健康检查任务失败: {str(e)}")

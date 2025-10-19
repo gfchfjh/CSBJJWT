@@ -279,6 +279,9 @@ class KookScraper:
                         'content': quote_data.get('content')
                     }
                 
+                # 获取当前Cookie（用于下载图片和附件）
+                cookies_dict = await self._get_cookies_dict()
+                
                 message = {
                     'message_id': message_data.get('id'),
                     'channel_id': message_data.get('channel_id'),
@@ -295,6 +298,7 @@ class KookScraper:
                     'mentions': mentions,
                     'mention_all': mention_all,
                     'quote': quote,
+                    'cookies': cookies_dict,  # ✅ 新增：传递Cookie用于下载防盗链资源
                 }
                 
                 logger.debug(f"收到新消息: {message['message_id']}")
@@ -558,20 +562,96 @@ class KookScraper:
         return None
     
     async def _check_login_status(self) -> bool:
-        """检查登录状态"""
+        """
+        检查登录状态（多种检查方式）
+        
+        Returns:
+            是否已登录
+        """
         try:
-            # 检查页面URL是否包含/app
+            logger.info("开始检查登录状态...")
+            
+            # 方式1: 检查URL是否包含app（登录后会跳转到/app）
             current_url = self.page.url
-            if '/app' in current_url:
+            logger.debug(f"当前URL: {current_url}")
+            
+            if '/app' in current_url and 'login' not in current_url:
+                logger.info("✅ 检测到已跳转到主页，登录成功")
                 return True
             
-            # 或者检查特定元素是否存在
-            # TODO: 根据实际页面调整选择器
+            # 方式2: 检查是否存在登录表单（如果仍在登录页）
+            try:
+                login_form = await self.page.query_selector('form[class*="login"], input[type="password"]')
+                if login_form:
+                    logger.warning("⚠️ 仍在登录页面，登录可能失败")
+                    return False
+            except:
+                pass
             
+            # 方式3: 检查用户信息元素（使用多个可能的选择器）
+            user_selectors = [
+                '.user-panel',
+                '[data-user-info]',
+                '.current-user',
+                '.user-avatar',
+                '[class*="user"]',
+                '[class*="profile"]',
+            ]
+            
+            for selector in user_selectors:
+                try:
+                    element = await self.page.query_selector(selector)
+                    if element:
+                        logger.info(f"✅ 检测到用户信息元素: {selector}")
+                        return True
+                except:
+                    continue
+            
+            # 方式4: 等待3秒后再次检查URL（给页面更多加载时间）
+            logger.debug("等待3秒后再次检查...")
+            await asyncio.sleep(3)
+            
+            current_url = self.page.url
+            if '/app' in current_url and 'login' not in current_url:
+                logger.info("✅ 延迟检查：已跳转到主页")
+                return True
+            
+            # 方式5: 检查localStorage中是否有token（如果KOOK使用localStorage）
+            try:
+                has_token = await self.page.evaluate('''() => {
+                    return localStorage.getItem('token') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('user_token');
+                }''')
+                if has_token:
+                    logger.info("✅ 检测到localStorage中的token")
+                    return True
+            except:
+                pass
+            
+            # 方式6: 检查Cookie中是否有关键字段
+            try:
+                cookies = await self.context.cookies()
+                cookie_names = [c['name'].lower() for c in cookies]
+                
+                # 检查是否有常见的认证Cookie
+                auth_cookie_keywords = ['token', 'session', 'auth', 'user', 'sid']
+                has_auth_cookie = any(
+                    any(keyword in name for keyword in auth_cookie_keywords)
+                    for name in cookie_names
+                )
+                
+                if has_auth_cookie and len(cookies) > 3:
+                    logger.info(f"✅ 检测到认证Cookie（共{len(cookies)}个）")
+                    return True
+            except:
+                pass
+            
+            logger.error("❌ 所有登录状态检查均失败")
             return False
             
         except Exception as e:
-            logger.error(f"检查登录状态失败: {str(e)}")
+            logger.error(f"检查登录状态异常: {str(e)}")
             return False
     
     async def _reconnect(self):
