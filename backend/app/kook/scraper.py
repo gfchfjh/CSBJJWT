@@ -713,7 +713,7 @@ class KookScraper:
                 logger.info("截图已保存到: debug_servers_page.png")
             
             # 执行JavaScript获取服务器列表（使用更通用的方法）
-            servers = await self.page.evaluate("""
+            servers = await self.page.evaluate(r"""
                 () => {
                     const servers = [];
                     
@@ -862,7 +862,7 @@ class KookScraper:
             logger.debug(f"频道列表截图已保存: debug_channels_{server_id}.png")
             
             # 执行JavaScript获取频道列表（使用更通用的方法）
-            channels = await self.page.evaluate("""
+            channels = await self.page.evaluate(r"""
                 (serverId) => {
                     const channels = [];
                     

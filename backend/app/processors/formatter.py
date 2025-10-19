@@ -330,7 +330,7 @@ class MessageFormatter:
                 # 如果单个段落就超长，需要进一步分割
                 if len(para) > max_length:
                     # 尝试按句子分割
-                    sentences = Formatter._split_by_sentences(para, max_length)
+                    sentences = MessageFormatter._split_by_sentences(para, max_length)
                     for i, sent in enumerate(sentences):
                         if i < len(sentences) - 1:
                             messages.append(sent)
@@ -385,7 +385,7 @@ class MessageFormatter:
                 
                 # 如果单个句子就超长，按子句分割
                 if len(sent) > max_length:
-                    sub_parts = Formatter._split_by_clauses(sent, max_length)
+                    sub_parts = MessageFormatter._split_by_clauses(sent, max_length)
                     result.extend(sub_parts[:-1])
                     if sub_parts:
                         current = sub_parts[-1]
@@ -438,7 +438,7 @@ class MessageFormatter:
                 
                 # 如果单个子句就超长，按单词分割
                 if len(clause) > max_length:
-                    word_parts = Formatter._split_by_words(clause, max_length)
+                    word_parts = MessageFormatter._split_by_words(clause, max_length)
                     result.extend(word_parts[:-1])
                     if word_parts:
                         current = word_parts[-1]

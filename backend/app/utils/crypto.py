@@ -5,7 +5,7 @@ import base64
 import hashlib
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import uuid
 
@@ -41,7 +41,7 @@ class CryptoManager:
     
     def _derive_key_from_device_id(self, device_id: str) -> bytes:
         """从设备ID派生密钥"""
-        kdf = PBKDF2(
+        kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=b'kook_forwarder_salt',  # 固定盐值
