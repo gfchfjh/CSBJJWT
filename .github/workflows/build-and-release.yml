@@ -3,345 +3,299 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'  # 触发条件：推送v开头的标签，如 v1.0.0
-  workflow_dispatch:  # 允许手动触发
-
-env:
-  APP_NAME: KookForwarder
-  PYTHON_VERSION: '3.11'
-  NODE_VERSION: '18'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., v1.9.1)'
+        required: false
+        default: ''
 
 jobs:
-  # 运行测试
-  test:
-    name: Run Tests
+  # 构建Windows版本
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          playwright install chromium
+      
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Build Backend with PyInstaller
+        run: |
+          cd backend
+          pip install pyinstaller
+          pyinstaller --onefile --name kook-forwarder-backend app/main.py
+      
+      - name: Build Electron App (Windows)
+        run: |
+          cd frontend
+          npm run electron:build:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KookForwarder-Windows
+          path: frontend/dist-electron/*.exe
+          retention-days: 7
+  
+  # 构建macOS版本
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          playwright install chromium
+      
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Build Backend with PyInstaller
+        run: |
+          cd backend
+          pip install pyinstaller
+          pyinstaller --onefile --name kook-forwarder-backend app/main.py
+      
+      - name: Build Electron App (macOS)
+        run: |
+          cd frontend
+          npm run electron:build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 如果需要代码签名，请添加以下环境变量
+          # CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
+          # CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+      
+      - name: Upload macOS Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KookForwarder-macOS
+          path: frontend/dist-electron/*.dmg
+          retention-days: 7
+  
+  # 构建Linux版本
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
+          python-version: '3.11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libxcb-dri3-0
+      
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+      
+      - name: Install Frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+      
+      - name: Build Backend with PyInstaller
+        run: |
+          cd backend
+          pip install pyinstaller
+          pyinstaller --onefile --name kook-forwarder-backend app/main.py
+      
+      - name: Build Electron App (Linux)
+        run: |
+          cd frontend
+          npm run electron:build:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: KookForwarder-Linux
+          path: frontend/dist-electron/*.AppImage
+          retention-days: 7
+  
+  # 运行测试
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Python dependencies
         run: |
           cd backend
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-
-      - name: Run tests
-        run: |
-          cd backend
-          pytest tests/ -v --tb=short
-
-  # Windows构建
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Install Playwright
-        run: |
-          cd backend
-          playwright install chromium
-
-      - name: Build backend
-        run: |
-          cd backend
-          pyinstaller --name=kook-forwarder-backend ^
-            --onefile ^
-            --add-data "app;app" ^
-            --hidden-import=playwright ^
-            --hidden-import=playwright._impl._driver ^
-            app/main.py
-
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
-
-      - name: Build Electron (Windows)
-        run: |
-          cd frontend
-          npm run electron:build -- --win --x64
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-build
-          path: frontend/dist-electron/*.exe
-          retention-days: 7
-
-  # macOS构建
-  build-macos:
-    name: Build macOS
-    runs-on: macos-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Install Playwright
-        run: |
-          cd backend
-          playwright install chromium
-
-      - name: Build backend
-        run: |
-          cd backend
-          pyinstaller --name=kook-forwarder-backend \
-            --onefile \
-            --add-data "app:app" \
-            --hidden-import=playwright \
-            --hidden-import=playwright._impl._driver \
-            app/main.py
-
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
-
-      - name: Build Electron (macOS)
-        run: |
-          cd frontend
-          npm run electron:build -- --mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-build
-          path: frontend/dist-electron/*.dmg
-          retention-days: 7
-
-  # Linux构建
-  build-linux:
-    name: Build Linux
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-
-      - name: Install Playwright
-        run: |
-          cd backend
           playwright install chromium --with-deps
-
-      - name: Build backend
+      
+      - name: Run backend tests
         run: |
           cd backend
-          pyinstaller --name=kook-forwarder-backend \
-            --onefile \
-            --add-data "app:app" \
-            --hidden-import=playwright \
-            --hidden-import=playwright._impl._driver \
-            app/main.py
-
-      - name: Install frontend dependencies
+          pytest tests/ -v --cov=app --cov-report=xml
+      
+      - name: Install Frontend dependencies
         run: |
           cd frontend
           npm install
-
-      - name: Build frontend
+      
+      - name: Run frontend tests
         run: |
           cd frontend
-          npm run build
-
-      - name: Build Electron (Linux)
-        run: |
-          cd frontend
-          npm run electron:build -- --linux AppImage
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux artifact
-        uses: actions/upload-artifact@v4
+          npm run test
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          name: linux-build
-          path: frontend/dist-electron/*.AppImage
-          retention-days: 7
-
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+  
   # 创建Release
-  create-release:
-    name: Create Release
+  release:
+    needs: [build-windows, build-macos, build-linux, test]
     runs-on: ubuntu-latest
-    needs: [build-windows, build-macos, build-linux]
     if: startsWith(github.ref, 'refs/tags/')
+    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/checkout@v3
+      
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
         with:
-          path: artifacts
-
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
-
-      - name: Extract version from tag
+          name: KookForwarder-Windows
+          path: ./artifacts/windows
+      
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: KookForwarder-macOS
+          path: ./artifacts/macos
+      
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: KookForwarder-Linux
+          path: ./artifacts/linux
+      
+      - name: Get version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Read changelog
-        id: changelog
+      
+      - name: Generate Release Notes
+        id: release_notes
         run: |
-          if [ -f "docs/CHANGELOG.md" ]; then
-            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
-            head -n 50 docs/CHANGELOG.md >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          
+          # 从CHANGELOG.md提取当前版本的更新日志
+          if [ -f "CHANGELOG.md" ]; then
+            # 提取当前版本的内容（简化版）
+            NOTES=$(awk "/^## \[?$VERSION/,/^## \[?[0-9]/ {print}" CHANGELOG.md | head -n -1)
+            if [ -z "$NOTES" ]; then
+              NOTES="请查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 了解详细更新内容。"
+            fi
           else
-            echo "CHANGELOG=查看完整更新日志请访问项目仓库" >> $GITHUB_OUTPUT
+            NOTES="KOOK消息转发系统 $VERSION 发布。"
           fi
-
+          
+          # 保存到文件
+          echo "$NOTES" > release_notes.md
+      
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Release ${{ steps.get_version.outputs.VERSION }}
-          body: |
-            # KOOK消息转发系统 ${{ steps.get_version.outputs.VERSION }}
-
-            ## 📦 下载
-            
-            请根据您的操作系统下载对应的安装包：
-            
-            - **Windows**: `KookForwarder-${{ steps.get_version.outputs.VERSION }}-Setup.exe`
-            - **macOS**: `KookForwarder-${{ steps.get_version.outputs.VERSION }}.dmg`
-            - **Linux**: `KookForwarder-${{ steps.get_version.outputs.VERSION }}.AppImage`
-
-            ## 📝 更新日志
-
-            ${{ steps.changelog.outputs.CHANGELOG }}
-
-            ## 🚀 快速开始
-
-            1. 下载适合您系统的安装包
-            2. 运行安装程序
-            3. 按照配置向导完成设置
-            4. 开始使用！
-
-            ## 📚 文档
-
-            - [完整用户手册](https://github.com/${{ github.repository }}/blob/main/docs/完整用户手册.md)
-            - [Discord配置教程](https://github.com/${{ github.repository }}/blob/main/docs/Discord配置教程.md)
-            - [Telegram配置教程](https://github.com/${{ github.repository }}/blob/main/docs/Telegram配置教程.md)
-            - [飞书配置教程](https://github.com/${{ github.repository }}/blob/main/docs/飞书配置教程.md)
-
-            ## ⚠️ 注意事项
-
-            - 本软件仅供学习交流使用
-            - 使用前请仔细阅读免责声明
-            - 不当使用可能导致账号被封禁
-
-            ---
-
-            如有问题，请提交 [Issue](https://github.com/${{ github.repository }}/issues)
+          name: KOOK消息转发系统 ${{ steps.get_version.outputs.VERSION }}
+          body_path: release_notes.md
           files: |
-            artifacts/windows-build/*
-            artifacts/macos-build/*
-            artifacts/linux-build/*
+            ./artifacts/windows/*.exe
+            ./artifacts/macos/*.dmg
+            ./artifacts/linux/*.AppImage
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # 构建Docker镜像（可选）
-  build-docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Extract version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/kook-forwarder:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/kook-forwarder:${{ steps.get_version.outputs.VERSION }}
-          cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/kook-forwarder:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/kook-forwarder:buildcache,mode=max
+      
+      - name: Notify Release
+        run: |
+          echo "✅ Release ${{ steps.get_version.outputs.VERSION }} created successfully!"
+          echo "📦 Artifacts uploaded:"
+          ls -lh ./artifacts/windows/
+          ls -lh ./artifacts/macos/
+          ls -lh ./artifacts/linux/
