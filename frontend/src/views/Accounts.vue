@@ -125,16 +125,74 @@
         </el-form-item>
         
         <el-form-item v-if="accountForm.loginType === 'cookie'" label="Cookie" prop="cookie">
+          <!-- Cookie导入方式选择 -->
+          <el-radio-group v-model="cookieImportMethod" size="small" style="margin-bottom: 10px">
+            <el-radio-button label="paste">粘贴文本</el-radio-button>
+            <el-radio-button label="file">上传文件</el-radio-button>
+          </el-radio-group>
+          
+          <!-- 方式1：粘贴文本 -->
           <el-input
+            v-if="cookieImportMethod === 'paste'"
             v-model="accountForm.cookie"
             type="textarea"
             :rows="6"
             placeholder='请粘贴Cookie JSON数组，格式如：
-[{"name":"token","value":"xxx","domain":".kookapp.cn"}]'
+[{"name":"token","value":"xxx","domain":".kookapp.cn"}]
+
+支持以下格式：
+1. JSON数组格式（推荐）
+2. Netscape格式（浏览器导出）
+3. 浏览器扩展导出格式'
           />
+          
+          <!-- 方式2：上传文件 -->
+          <el-upload
+            v-if="cookieImportMethod === 'file'"
+            class="cookie-upload"
+            drag
+            action="#"
+            :auto-upload="false"
+            :on-change="handleCookieFileChange"
+            :file-list="cookieFileList"
+            accept=".json,.txt"
+          >
+            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+            <div class="el-upload__text">
+              将Cookie文件拖到此处，或<em>点击上传</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                支持 .json 和 .txt 文件，文件大小不超过1MB
+              </div>
+            </template>
+          </el-upload>
+          
+          <!-- Cookie格式检测结果 -->
+          <el-alert
+            v-if="cookieValidationResult"
+            :title="cookieValidationResult.title"
+            :type="cookieValidationResult.type"
+            :closable="false"
+            style="margin-top: 10px"
+          >
+            <div v-if="cookieValidationResult.details">
+              <p>{{ cookieValidationResult.details }}</p>
+              <ul v-if="cookieValidationResult.items" style="margin: 5px 0; padding-left: 20px;">
+                <li v-for="(item, index) in cookieValidationResult.items" :key="index">
+                  {{ item }}
+                </li>
+              </ul>
+            </div>
+          </el-alert>
+          
           <div class="form-help-text">
             💡 <el-link type="primary" @click="openCookieTutorial">
               如何获取Cookie？查看详细教程
+            </el-link>
+            <el-divider direction="vertical" />
+            <el-link type="primary" @click="showCookieFormatHelp">
+              支持的Cookie格式说明
             </el-link>
           </div>
         </el-form-item>
@@ -167,6 +225,11 @@ const showAddDialog = ref(false)
 const showCaptchaDialog = ref(false)
 const isAdding = ref(false)
 const accountFormRef = ref(null)
+
+// Cookie导入相关
+const cookieImportMethod = ref('paste') // 'paste' | 'file'
+const cookieFileList = ref([])
+const cookieValidationResult = ref(null)
 
 const accountForm = ref({
   email: '',
@@ -317,6 +380,140 @@ const openCookieTutorial = () => {
       }
     }
   )
+}
+
+// Cookie文件上传处理
+const handleCookieFileChange = (file, fileList) => {
+  cookieFileList.value = fileList
+  
+  if (file.raw) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target.result
+        const parsed = parseCookieContent(content)
+        
+        if (parsed.success) {
+          accountForm.value.cookie = JSON.stringify(parsed.cookies, null, 2)
+          cookieValidationResult.value = {
+            type: 'success',
+            title: '✅ Cookie文件解析成功',
+            details: `共解析出 ${parsed.cookies.length} 个Cookie`,
+            items: parsed.cookies.map(c => `${c.name} (${c.domain || '无域名'})`)
+          }
+        } else {
+          cookieValidationResult.value = {
+            type: 'error',
+            title: '❌ Cookie文件解析失败',
+            details: parsed.error
+          }
+        }
+      } catch (error) {
+        cookieValidationResult.value = {
+          type: 'error',
+          title: '❌ 文件读取失败',
+          details: error.message
+        }
+      }
+    }
+    reader.readAsText(file.raw)
+  }
+}
+
+// 解析Cookie内容（支持多种格式）
+const parseCookieContent = (content) => {
+  try {
+    // 尝试JSON格式
+    const jsonParsed = JSON.parse(content)
+    
+    // 如果是数组，直接返回
+    if (Array.isArray(jsonParsed)) {
+      return { success: true, cookies: jsonParsed }
+    }
+    
+    // 如果是对象，看看是否是浏览器扩展格式
+    if (jsonParsed.cookies && Array.isArray(jsonParsed.cookies)) {
+      return { success: true, cookies: jsonParsed.cookies }
+    }
+    
+    return {
+      success: false,
+      error: 'JSON格式不正确，应该是Cookie数组'
+    }
+  } catch (e) {
+    // 尝试Netscape格式（每行一个Cookie）
+    const lines = content.split('\n')
+    const cookies = []
+    
+    for (const line of lines) {
+      const trimmed = line.trim()
+      // 跳过注释和空行
+      if (!trimmed || trimmed.startsWith('#')) continue
+      
+      // Netscape格式：domain\tflag\tpath\tsecure\texpiration\tname\tvalue
+      const parts = trimmed.split('\t')
+      if (parts.length >= 7) {
+        cookies.push({
+          name: parts[5],
+          value: parts[6],
+          domain: parts[0],
+          path: parts[2],
+          secure: parts[3] === 'TRUE',
+          httpOnly: false
+        })
+      }
+    }
+    
+    if (cookies.length > 0) {
+      return { success: true, cookies }
+    }
+    
+    return {
+      success: false,
+      error: '无法识别的Cookie格式。支持的格式：JSON数组、Netscape格式'
+    }
+  }
+}
+
+// 显示Cookie格式帮助
+const showCookieFormatHelp = () => {
+  ElMessageBox.alert(`
+    <div style="text-align: left;">
+      <h3>支持的Cookie格式</h3>
+      
+      <h4>1. JSON数组格式（推荐）</h4>
+      <pre style="background: #f5f7fa; padding: 10px; border-radius: 4px;">
+[
+  {
+    "name": "token",
+    "value": "your_token_value",
+    "domain": ".kookapp.cn",
+    "path": "/",
+    "secure": true
+  }
+]</pre>
+      
+      <h4>2. 浏览器扩展导出格式</h4>
+      <pre style="background: #f5f7fa; padding: 10px; border-radius: 4px;">
+{
+  "cookies": [
+    {"name": "token", "value": "xxx", ...}
+  ]
+}</pre>
+      
+      <h4>3. Netscape格式</h4>
+      <pre style="background: #f5f7fa; padding: 10px; border-radius: 4px;">
+# Netscape HTTP Cookie File
+.kookapp.cn  TRUE  /  TRUE  0  token  value</pre>
+      
+      <p style="color: #909399; margin-top: 15px;">
+        💡 推荐使用浏览器扩展（如EditThisCookie）直接导出JSON格式
+      </p>
+    </div>
+  `, 'Cookie格式说明', {
+    dangerouslyUseHTMLString: true,
+    confirmButtonText: '关闭'
+  })
 }
 
 const startAccount = async (accountId) => {

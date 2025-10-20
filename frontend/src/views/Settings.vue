@@ -216,6 +216,78 @@
           </el-form>
         </el-tab-pane>
 
+        <!-- 消息同步设置 -->
+        <el-tab-pane label="🔄 消息同步" name="sync">
+          <el-form :model="settings" label-width="180px">
+            <el-alert
+              title="历史消息同步"
+              type="info"
+              :closable="false"
+              style="margin-bottom: 20px"
+            >
+              <p>启动服务时，可以选择同步最近一段时间的历史消息。</p>
+              <p style="margin-top: 10px; color: #E6A23C;">
+                <strong>注意：</strong>同步时间过长可能导致大量消息重复转发，请谨慎设置。
+              </p>
+            </el-alert>
+
+            <el-form-item label="启用历史消息同步">
+              <el-switch v-model="settings.enableHistorySync" />
+              <span class="help-text">启动服务时同步历史消息</span>
+            </el-form-item>
+
+            <template v-if="settings.enableHistorySync">
+              <el-form-item label="同步时间范围">
+                <el-input-number
+                  v-model="settings.historySyncMinutes"
+                  :min="1"
+                  :max="1440"
+                  :step="5"
+                />
+                <span style="margin-left: 10px">分钟</span>
+                <div class="help-text">同步最近N分钟的历史消息（建议不超过60分钟）</div>
+              </el-form-item>
+
+              <el-form-item label="快捷选择">
+                <el-radio-group v-model="settings.historySyncMinutes">
+                  <el-radio :label="5">最近5分钟</el-radio>
+                  <el-radio :label="10">最近10分钟</el-radio>
+                  <el-radio :label="30">最近30分钟</el-radio>
+                  <el-radio :label="60">最近1小时</el-radio>
+                </el-radio-group>
+              </el-form-item>
+
+              <el-form-item label="仅同步已映射频道">
+                <el-switch v-model="settings.historySyncMappedOnly" />
+                <span class="help-text">仅同步已配置映射关系的频道</span>
+              </el-form-item>
+            </template>
+
+            <el-divider content-position="left">消息去重</el-divider>
+
+            <el-form-item label="去重缓存大小">
+              <el-input-number
+                v-model="settings.dedupCacheSize"
+                :min="1000"
+                :max="100000"
+                :step="1000"
+              />
+              <span style="margin-left: 10px">条</span>
+              <div class="help-text">内存中保存的消息ID数量（越大越能避免重复）</div>
+            </el-form-item>
+
+            <el-form-item label="Redis去重保留时间">
+              <el-input-number
+                v-model="settings.dedupRedisDays"
+                :min="1"
+                :max="30"
+              />
+              <span style="margin-left: 10px">天</span>
+              <div class="help-text">Redis中保存的消息ID过期时间</div>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
         <!-- 通知设置 -->
         <el-tab-pane label="🔔 通知设置" name="notification">
           <el-form :model="settings" label-width="150px">
@@ -504,6 +576,13 @@ const settings = ref({
   // 日志
   logLevel: 'INFO',
   logRetentionDays: 3,
+  
+  // 消息同步（新增）
+  enableHistorySync: false,
+  historySyncMinutes: 10,
+  historySyncMappedOnly: true,
+  dedupCacheSize: 10000,
+  dedupRedisDays: 7,
   
   // 通知
   notifyOnError: true,

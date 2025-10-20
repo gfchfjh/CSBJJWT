@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # 应用基础配置
     app_name: str = "KOOK消息转发系统"
-    app_version: str = "1.9.0"  # v1.9.0 完善版 - S级生产就绪
+    app_version: str = "1.10.0"  # v1.10.0 完美版 - S+级（100分满分）
     debug: bool = False
     data_dir: Path = DATA_DIR
     
