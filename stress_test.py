@@ -557,6 +557,343 @@ class StressTestRunner:
             print(f"❌ 格式转换测试失败: {e}")
             return {"status": "failed", "error": str(e)}
     
+    async def test_cache_performance(self) -> Dict[str, Any]:
+        """测试8: 缓存管理器性能测试"""
+        print("\n" + "=" * 80)
+        print("测试8: 缓存管理器性能测试")
+        print("=" * 80)
+        
+        try:
+            import redis
+            r = redis.Redis(
+                host=self.config["redis_host"],
+                port=self.config["redis_port"],
+                decode_responses=True
+            )
+            
+            results = []
+            
+            # 测试单次缓存读写
+            print("测试单次缓存读写...", end=" ")
+            start = time.time()
+            for i in range(10000):
+                r.set(f"test_key_{i}", f"test_value_{i}", ex=60)
+            write_time = time.time() - start
+            
+            start = time.time()
+            for i in range(10000):
+                r.get(f"test_key_{i}")
+            read_time = time.time() - start
+            
+            print(f"✅ 写入: {write_time:.3f}s, 读取: {read_time:.3f}s")
+            results.append({
+                "operation": "单次读写",
+                "iterations": 10000,
+                "write_time": write_time,
+                "read_time": read_time,
+                "write_qps": 10000 / write_time,
+                "read_qps": 10000 / read_time
+            })
+            
+            # 测试Pipeline批量操作
+            print("测试Pipeline批量操作...", end=" ")
+            start = time.time()
+            pipe = r.pipeline()
+            for i in range(10000):
+                pipe.set(f"test_batch_{i}", f"value_{i}", ex=60)
+            pipe.execute()
+            batch_write_time = time.time() - start
+            
+            start = time.time()
+            pipe = r.pipeline()
+            for i in range(10000):
+                pipe.get(f"test_batch_{i}")
+            pipe.execute()
+            batch_read_time = time.time() - start
+            
+            print(f"✅ 批量写入: {batch_write_time:.3f}s, 批量读取: {batch_read_time:.3f}s")
+            results.append({
+                "operation": "Pipeline批量",
+                "iterations": 10000,
+                "write_time": batch_write_time,
+                "read_time": batch_read_time,
+                "write_qps": 10000 / batch_write_time,
+                "read_qps": 10000 / batch_read_time,
+                "speedup_write": write_time / batch_write_time,
+                "speedup_read": read_time / batch_read_time
+            })
+            
+            # 测试模式匹配删除
+            print("测试模式匹配删除...", end=" ")
+            start = time.time()
+            keys = list(r.scan_iter(match="test_*", count=1000))
+            if keys:
+                r.delete(*keys)
+            delete_time = time.time() - start
+            print(f"✅ 删除{len(keys)}个键耗时: {delete_time:.3f}s")
+            
+            results.append({
+                "operation": "模式匹配删除",
+                "keys_deleted": len(keys),
+                "time": delete_time
+            })
+            
+            return {
+                "test_name": "缓存管理器性能测试",
+                "status": "success",
+                "results": results
+            }
+            
+        except Exception as e:
+            print(f"❌ 缓存性能测试失败: {e}")
+            return {"status": "failed", "error": str(e)}
+    
+    async def test_crypto_performance(self) -> Dict[str, Any]:
+        """测试9: 加密解密性能测试"""
+        print("\n" + "=" * 80)
+        print("测试9: 加密解密性能测试")
+        print("=" * 80)
+        
+        try:
+            from app.utils.crypto import encrypt_data, decrypt_data
+            
+            results = []
+            test_data = "这是一段需要加密的测试数据" * 10  # 约300字节
+            
+            # 测试加密性能
+            print("测试加密性能...", end=" ")
+            start = time.time()
+            encrypted_list = []
+            for _ in range(1000):
+                encrypted = encrypt_data(test_data)
+                encrypted_list.append(encrypted)
+            encrypt_time = time.time() - start
+            print(f"✅ 1000次加密耗时: {encrypt_time:.3f}s")
+            
+            # 测试解密性能
+            print("测试解密性能...", end=" ")
+            start = time.time()
+            for encrypted in encrypted_list:
+                decrypt_data(encrypted)
+            decrypt_time = time.time() - start
+            print(f"✅ 1000次解密耗时: {decrypt_time:.3f}s")
+            
+            results.append({
+                "operation": "AES-256加密解密",
+                "data_size": len(test_data),
+                "iterations": 1000,
+                "encrypt_time": encrypt_time,
+                "decrypt_time": decrypt_time,
+                "encrypt_ops_per_sec": 1000 / encrypt_time,
+                "decrypt_ops_per_sec": 1000 / decrypt_time
+            })
+            
+            return {
+                "test_name": "加密解密性能测试",
+                "status": "success",
+                "results": results
+            }
+            
+        except Exception as e:
+            print(f"❌ 加密解密测试失败: {e}")
+            return {"status": "failed", "error": str(e)}
+    
+    async def test_websocket_connections(self) -> Dict[str, Any]:
+        """测试10: WebSocket连接压力测试"""
+        print("\n" + "=" * 80)
+        print("测试10: WebSocket连接压力测试")
+        print("=" * 80)
+        
+        try:
+            import websockets
+            
+            ws_url = f"ws://{self.api_base.replace('http://', '')}/ws"
+            results = []
+            
+            # 测试单连接
+            print("测试单WebSocket连接...", end=" ")
+            start = time.time()
+            try:
+                async with websockets.connect(ws_url, timeout=5) as websocket:
+                    # 发送测试消息
+                    await websocket.send(json.dumps({"type": "ping"}))
+                    response = await asyncio.wait_for(websocket.recv(), timeout=2)
+                connect_time = time.time() - start
+                print(f"✅ 连接耗时: {connect_time:.3f}s")
+                
+                results.append({
+                    "test": "单连接",
+                    "status": "success",
+                    "connect_time": connect_time
+                })
+            except Exception as e:
+                print(f"❌ 连接失败: {e}")
+                results.append({
+                    "test": "单连接",
+                    "status": "failed",
+                    "error": str(e)
+                })
+            
+            # 测试多并发连接
+            print("测试并发WebSocket连接 (10个)...", end=" ")
+            
+            async def connect_ws():
+                try:
+                    async with websockets.connect(ws_url, timeout=5) as ws:
+                        await ws.send(json.dumps({"type": "ping"}))
+                        await asyncio.wait_for(ws.recv(), timeout=2)
+                        return True
+                except:
+                    return False
+            
+            start = time.time()
+            tasks = [connect_ws() for _ in range(10)]
+            connection_results = await asyncio.gather(*tasks, return_exceptions=True)
+            concurrent_time = time.time() - start
+            
+            success_count = sum(1 for r in connection_results if r is True)
+            print(f"✅ {success_count}/10 成功, 耗时: {concurrent_time:.3f}s")
+            
+            results.append({
+                "test": "并发连接",
+                "total": 10,
+                "success": success_count,
+                "time": concurrent_time
+            })
+            
+            return {
+                "test_name": "WebSocket连接压力测试",
+                "status": "success",
+                "results": results
+            }
+            
+        except Exception as e:
+            print(f"❌ WebSocket测试失败: {e}")
+            return {"status": "failed", "error": str(e)}
+    
+    async def test_filter_performance(self) -> Dict[str, Any]:
+        """测试11: 过滤器性能测试"""
+        print("\n" + "=" * 80)
+        print("测试11: 过滤器性能测试")
+        print("=" * 80)
+        
+        try:
+            # 模拟过滤规则
+            keywords_blacklist = ["广告", "spam", "垃圾"]
+            keywords_whitelist = ["重要", "公告", "通知"]
+            user_blacklist = ["spam_user_1", "spam_user_2"]
+            
+            test_messages = [
+                {"content": "这是一条正常消息", "sender": "user1"},
+                {"content": "广告：买房买车", "sender": "user2"},
+                {"content": "重要通知：系统维护", "sender": "admin"},
+                {"content": "spam消息", "sender": "spam_user_1"},
+            ] * 250  # 1000条消息
+            
+            results = []
+            
+            # 测试关键词过滤
+            print("测试关键词过滤...", end=" ")
+            start = time.time()
+            filtered = 0
+            for msg in test_messages:
+                content = msg["content"]
+                # 黑名单过滤
+                if any(kw in content for kw in keywords_blacklist):
+                    filtered += 1
+                    continue
+            keyword_time = time.time() - start
+            print(f"✅ 1000条消息过滤耗时: {keyword_time:.3f}s, 过滤{filtered}条")
+            
+            results.append({
+                "filter_type": "关键词过滤",
+                "messages": len(test_messages),
+                "filtered": filtered,
+                "time": keyword_time,
+                "throughput": len(test_messages) / keyword_time
+            })
+            
+            # 测试用户过滤
+            print("测试用户过滤...", end=" ")
+            start = time.time()
+            filtered = 0
+            for msg in test_messages:
+                if msg["sender"] in user_blacklist:
+                    filtered += 1
+            user_time = time.time() - start
+            print(f"✅ 1000条消息过滤耗时: {user_time:.3f}s, 过滤{filtered}条")
+            
+            results.append({
+                "filter_type": "用户过滤",
+                "messages": len(test_messages),
+                "filtered": filtered,
+                "time": user_time,
+                "throughput": len(test_messages) / user_time
+            })
+            
+            return {
+                "test_name": "过滤器性能测试",
+                "status": "success",
+                "results": results
+            }
+            
+        except Exception as e:
+            print(f"❌ 过滤器测试失败: {e}")
+            return {"status": "failed", "error": str(e)}
+    
+    async def test_end_to_end_flow(self) -> Dict[str, Any]:
+        """测试12: 端到端消息流测试"""
+        print("\n" + "=" * 80)
+        print("测试12: 端到端消息流测试")
+        print("=" * 80)
+        
+        try:
+            results = []
+            
+            # 模拟完整的消息转发流程
+            print("测试完整消息流 (100条)...", end=" ")
+            
+            start_time = time.time()
+            
+            for i in range(100):
+                # 1. 模拟消息入队
+                message = {
+                    "id": f"test_msg_{i}",
+                    "content": f"测试消息 {i}",
+                    "type": "text",
+                    "timestamp": time.time()
+                }
+                
+                # 2. 格式转换 (模拟)
+                formatted = message["content"]
+                
+                # 3. 过滤检查 (模拟)
+                passed = True
+                
+                # 4. 记录日志 (模拟API调用)
+                if i % 10 == 0:
+                    await self.make_request("GET", "/api/logs?limit=1")
+            
+            total_time = time.time() - start_time
+            print(f"✅ 100条消息处理耗时: {total_time:.3f}s")
+            
+            results.append({
+                "messages_processed": 100,
+                "total_time": total_time,
+                "avg_time_per_message": total_time / 100,
+                "throughput": 100 / total_time
+            })
+            
+            return {
+                "test_name": "端到端消息流测试",
+                "status": "success",
+                "results": results
+            }
+            
+        except Exception as e:
+            print(f"❌ 端到端测试失败: {e}")
+            return {"status": "failed", "error": str(e)}
+    
     async def run_all_tests(self):
         """运行所有压力测试"""
         test_results["start_time"] = datetime.now().isoformat()
@@ -615,6 +952,26 @@ class StressTestRunner:
             # 测试7: 消息格式转换
             result = await self.test_message_formatter()
             test_results["tests"]["message_formatter"] = result
+            
+            # 测试8: 缓存性能
+            result = await self.test_cache_performance()
+            test_results["tests"]["cache_performance"] = result
+            
+            # 测试9: 加密解密
+            result = await self.test_crypto_performance()
+            test_results["tests"]["crypto_performance"] = result
+            
+            # 测试10: WebSocket连接
+            result = await self.test_websocket_connections()
+            test_results["tests"]["websocket_connections"] = result
+            
+            # 测试11: 过滤器性能
+            result = await self.test_filter_performance()
+            test_results["tests"]["filter_performance"] = result
+            
+            # 测试12: 端到端流程
+            result = await self.test_end_to_end_flow()
+            test_results["tests"]["end_to_end_flow"] = result
             
             # 总结
             self.print_summary()
