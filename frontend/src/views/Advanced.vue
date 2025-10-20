@@ -1,5 +1,22 @@
 <template>
   <div class="advanced-view">
+    <el-alert
+      title="高级功能"
+      type="info"
+      :closable="false"
+      style="margin-bottom: 20px"
+    >
+      <p>这些功能面向技术用户。如果您不熟悉相关技术，请谨慎修改。</p>
+      <p style="margin-top: 10px">
+        <el-button type="primary" size="small" @click="goToSelectors">
+          🔍 配置选择器
+        </el-button>
+        <span style="margin-left: 10px; color: #909399;">
+          （用于适配KOOK网页结构变化）
+        </span>
+      </p>
+    </el-alert>
+
     <el-tabs v-model="activeTab" type="border-card">
       <!-- 健康检查 -->
       <el-tab-pane label="🏥 健康检查" name="health">
