@@ -6,6 +6,7 @@ from datetime import datetime
 from collections import OrderedDict
 from typing import Dict, Any, List, Optional
 from ..utils.logger import logger
+from ..utils.error_diagnosis import ErrorDiagnostic, diagnostic_logger
 from ..database import db
 from ..processors.filter import message_filter
 from ..processors.formatter import formatter
@@ -598,9 +599,10 @@ class MessageWorker:
             )
             
             if success:
-                logger.info(f"消息转发成功: {platform} - {target_channel}")
+                logger.info(f"✅ 消息转发成功: {platform} - {target_channel}")
             else:
-                logger.error(f"消息转发失败: {platform} - {target_channel}")
+                logger.error(f"❌ 消息转发失败: {platform} - {target_channel}")
+                logger.warning("⚠️ 转发失败，但未抛出异常。可能是目标平台返回失败状态。")
                 
                 # 添加到失败消息队列，等待重试
                 with db.get_connection() as conn:
@@ -614,7 +616,78 @@ class MessageWorker:
                 logger.info(f"消息已添加到重试队列: log_id={log_id}")
                 
         except Exception as e:
-            logger.error(f"转发消息异常: {str(e)}")
+            # v1.11.0新增：详细错误诊断
+            logger.error(f"❌ 转发消息异常: {str(e)}")
+            
+            # 诊断错误
+            diagnosis = ErrorDiagnostic.diagnose(
+                error=e,
+                context={
+                    'platform': platform,
+                    'target_channel': target_channel,
+                    'message_type': message_type,
+                    'message_id': message.get('message_id'),
+                    'bot_id': bot_id
+                }
+            )
+            
+            # 记录诊断结果
+            diagnostic_logger.log_diagnosis(diagnosis)
+            
+            # 获取自动修复策略
+            fix_strategy = ErrorDiagnostic.get_auto_fix_strategy(diagnosis)
+            
+            if fix_strategy:
+                logger.info(f"🔧 尝试自动修复策略: {fix_strategy}")
+                
+                # 根据不同策略执行自动修复
+                if fix_strategy == 'retry':
+                    logger.info("⏰ 将在30秒后自动重试")
+                    await asyncio.sleep(30)
+                    await redis_queue.enqueue(message)
+                    
+                elif fix_strategy == 'auto_split':
+                    logger.info("✂️ 消息过长，已自动分段处理（由formatter处理）")
+                    
+                elif fix_strategy == 'switch_to_imgbed':
+                    logger.info("🖼️ 切换到图床模式重试")
+                    message['force_imgbed'] = True
+                    await redis_queue.enqueue(message)
+                    
+                elif fix_strategy == 'wait_and_retry':
+                    logger.info("⏰ API限流，等待60秒后重试")
+                    await asyncio.sleep(60)
+                    await redis_queue.enqueue(message)
+            else:
+                logger.warning("⚠️ 无法自动修复，需要人工介入")
+                logger.info("💡 建议解决方案:")
+                for i, suggestion in enumerate(diagnosis['suggestions'], 1):
+                    logger.info(f"  {i}. {suggestion}")
+            
+            # 记录失败日志到数据库
+            error_msg = f"{diagnosis['error_type']}: {diagnosis['solution']}"
+            log_id = db.add_message_log(
+                message.get('message_id', ''), 
+                message.get('channel_id', ''),
+                content[:200] if 'content' in locals() else '', 
+                message_type, 
+                sender_name if 'sender_name' in locals() else '',
+                platform, 
+                target_channel, 
+                'failed',
+                error_message=error_msg[:200]
+            )
+            
+            # 如果不是自动修复，添加到失败队列
+            if not fix_strategy:
+                with db.get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("""
+                        INSERT INTO failed_messages (message_log_id, retry_count)
+                        VALUES (?, 0)
+                    """, (log_id,))
+                    conn.commit()
+                logger.info(f"消息已添加到失败队列: log_id={log_id}")
 
 
 # 创建全局Worker实例

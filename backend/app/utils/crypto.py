@@ -143,3 +143,7 @@ def verify_password(password: str, hashed: str) -> bool:
         是否匹配
     """
     return CryptoManager.verify_password(password, hashed)
+
+
+# 创建全局加密管理器实例（v1.11.0新增）
+crypto_manager = CryptoManager()

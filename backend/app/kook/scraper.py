@@ -9,6 +9,7 @@ from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from ..utils.logger import logger
 from ..utils.captcha_solver import get_captcha_solver
 from ..utils.selector_manager import selector_manager
+from ..utils.crypto import crypto_manager
 from ..database import db
 
 
@@ -142,7 +143,12 @@ class KookScraper:
                     
                     self.reconnect_count += 1
                     logger.info(f"第{self.reconnect_count}次重连尝试（最多{self.max_reconnect}次）")
-                    await self._reconnect()
+                    
+                    # v1.11.0新增：先尝试自动重新登录
+                    relogin_success = await self._auto_relogin_if_expired()
+                    if not relogin_success:
+                        # 如果自动登录失败，使用常规重连
+                        await self._reconnect()
             
             return True
             
@@ -404,6 +410,20 @@ class KookScraper:
         except Exception as e:
             logger.error(f"账号密码登录失败: {str(e)}")
             return False
+    
+    async def _get_cookies_dict(self) -> Dict:
+        """
+        获取当前浏览器的Cookie字典
+        
+        Returns:
+            Cookie字典 {name: value}
+        """
+        try:
+            cookies = await self.context.cookies()
+            return {cookie['name']: cookie['value'] for cookie in cookies}
+        except Exception as e:
+            logger.error(f"获取Cookie失败: {str(e)}")
+            return {}
     
     async def _check_captcha_required(self) -> bool:
         """
@@ -679,6 +699,77 @@ class KookScraper:
             
         except Exception as e:
             logger.error(f"检查登录状态异常: {str(e)}")
+            return False
+    
+    async def _auto_relogin_if_expired(self) -> bool:
+        """
+        检测Cookie过期并自动重新登录（v1.11.0新增）
+        
+        Returns:
+            是否重新登录成功
+        """
+        try:
+            logger.info("🔍 检测到连接异常，检查是否需要重新登录...")
+            
+            # 检查当前登录状态
+            if await self._check_login_status():
+                logger.info("✅ 登录状态正常，无需重新登录")
+                return True
+            
+            logger.warning("❌ 检测到Cookie已过期或登录失效")
+            
+            # 从数据库获取账号信息
+            account = db.get_account(self.account_id)
+            if not account:
+                logger.error("无法获取账号信息")
+                return False
+            
+            # 检查是否有加密的密码
+            if not account.get('password_encrypted'):
+                logger.warning("⚠️ 未存储密码，无法自动重新登录，请手动登录")
+                db.update_account_status(self.account_id, 'offline')
+                return False
+            
+            try:
+                # 解密密码
+                password = crypto_manager.decrypt(account['password_encrypted'])
+                email = account['email']
+                
+                logger.info(f"🔑 正在使用存储的凭据自动重新登录: {email}")
+                
+                # 导航到登录页
+                await self.page.goto('https://www.kookapp.cn/app', wait_until='networkidle')
+                await asyncio.sleep(2)
+                
+                # 尝试重新登录
+                success = await self._login_with_password(email, password)
+                
+                if success:
+                    logger.info("✅ 自动重新登录成功")
+                    
+                    # 更新Cookie到数据库
+                    new_cookies = await self.context.cookies()
+                    db.update_account_cookie(self.account_id, json.dumps(new_cookies))
+                    db.update_account_status(self.account_id, 'online')
+                    
+                    # 重置重连计数器
+                    self.reconnect_count = 0
+                    
+                    logger.info("📝 已更新Cookie到数据库")
+                    return True
+                else:
+                    logger.error("❌ 自动重新登录失败")
+                    db.update_account_status(self.account_id, 'offline')
+                    return False
+                    
+            except Exception as decrypt_error:
+                logger.error(f"密码解密失败: {str(decrypt_error)}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"自动重新登录异常: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return False
     
     async def _reconnect(self):
