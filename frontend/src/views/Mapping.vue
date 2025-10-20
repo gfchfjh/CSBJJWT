@@ -13,6 +13,10 @@
               <el-icon><Upload /></el-icon>
               导入
             </el-button>
+            <el-button @click="showTemplateDialog = true">
+              <el-icon><Document /></el-icon>
+              使用模板
+            </el-button>
             <el-button type="success" @click="showSmartMappingDialog = true">
               <el-icon><MagicStick /></el-icon>
               智能映射
@@ -162,6 +166,121 @@
       </template>
     </el-dialog>
 
+    <!-- 模板选择对话框 v1.11.0新增 -->
+    <el-dialog
+      v-model="showTemplateDialog"
+      title="📄 使用映射模板"
+      width="700px"
+    >
+      <el-alert
+        title="模板说明"
+        type="info"
+        :closable="false"
+        style="margin-bottom: 20px"
+      >
+        <p style="margin: 0 0 10px 0;">选择一个预置模板快速创建频道映射配置。模板将根据你已配置的机器人自动调整。</p>
+        <p style="margin: 0; color: #E6A23C;">⚠️ 应用模板将替换当前所有映射配置</p>
+      </el-alert>
+
+      <el-row :gutter="20">
+        <!-- 游戏公告模板 -->
+        <el-col :span="8">
+          <el-card 
+            shadow="hover" 
+            class="template-card" 
+            :class="{ 'selected': selectedTemplate === 'gaming' }"
+            @click="selectedTemplate = 'gaming'"
+          >
+            <div class="template-header">
+              <el-icon size="32" color="#409EFF"><Tickets /></el-icon>
+              <h3>游戏公告模板</h3>
+            </div>
+            <div class="template-desc">
+              <p>适用场景：游戏公会、游戏社区</p>
+              <p><strong>包含频道：</strong></p>
+              <ul>
+                <li>📢 公告频道</li>
+                <li>🎉 活动频道</li>
+                <li>📝 更新日志</li>
+                <li>❓ 常见问题</li>
+              </ul>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 社区管理模板 -->
+        <el-col :span="8">
+          <el-card 
+            shadow="hover" 
+            class="template-card"
+            :class="{ 'selected': selectedTemplate === 'community' }"
+            @click="selectedTemplate = 'community'"
+          >
+            <div class="template-header">
+              <el-icon size="32" color="#67C23A"><User /></el-icon>
+              <h3>社区管理模板</h3>
+            </div>
+            <div class="template-desc">
+              <p>适用场景：社区管理、运营团队</p>
+              <p><strong>包含频道：</strong></p>
+              <ul>
+                <li>👮 管理员频道</li>
+                <li>💬 用户反馈</li>
+                <li>🚨 举报处理</li>
+                <li>📊 数据统计</li>
+              </ul>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 全镜像模板 -->
+        <el-col :span="8">
+          <el-card 
+            shadow="hover" 
+            class="template-card"
+            :class="{ 'selected': selectedTemplate === 'mirror' }"
+            @click="selectedTemplate = 'mirror'"
+          >
+            <div class="template-header">
+              <el-icon size="32" color="#F56C6C"><Connection /></el-icon>
+              <h3>跨平台镜像模板</h3>
+            </div>
+            <div class="template-desc">
+              <p>适用场景：多平台同步、备份</p>
+              <p><strong>包含频道：</strong></p>
+              <ul>
+                <li>🔄 全频道镜像</li>
+                <li>📤 自动同步</li>
+                <li>💾 完整备份</li>
+                <li>🌐 多平台覆盖</li>
+              </ul>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <div style="margin-top: 20px">
+        <el-alert
+          v-if="selectedTemplate"
+          :title="`已选择：${getTemplateName(selectedTemplate)}`"
+          type="success"
+          :closable="false"
+        />
+      </div>
+
+      <template #footer>
+        <el-button @click="showTemplateDialog = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          :disabled="!selectedTemplate"
+          :loading="applyingTemplate"
+          @click="applyTemplate"
+        >
+          应用模板
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- 导入映射对话框 -->
     <el-dialog
       v-model="showImportDialog"
@@ -240,14 +359,17 @@ import api from '../api'
 const showAddDialog = ref(false)
 const showSmartMappingDialog = ref(false)
 const showImportDialog = ref(false)
+const showTemplateDialog = ref(false)  // v1.11.0新增
 const mappings = ref([])
 const bots = ref([])
 const smartSuggestions = ref([])
 const loadingSuggestions = ref(false)
 const applyingMappings = ref(false)
+const applyingTemplate = ref(false)  // v1.11.0新增
 const importing = ref(false)
 const importFile = ref(null)
 const importReplaceExisting = ref(false)
+const selectedTemplate = ref(null)  // v1.11.0新增
 
 const mappingForm = ref({
   kook_server_id: '',
@@ -515,6 +637,210 @@ const readFileAsText = (file) => {
   })
 }
 
+// v1.11.0新增：获取模板名称
+const getTemplateName = (templateKey) => {
+  const names = {
+    'gaming': '游戏公告模板',
+    'community': '社区管理模板',
+    'mirror': '跨平台镜像模板'
+  }
+  return names[templateKey] || '未知模板'
+}
+
+// v1.11.0新增：应用模板
+const applyTemplate = async () => {
+  if (!selectedTemplate.value) {
+    ElMessage.warning('请先选择一个模板')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要应用「${getTemplateName(selectedTemplate.value)}」吗？这将替换当前所有映射配置。`,
+      '确认应用模板',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    applyingTemplate.value = true
+
+    // 获取模板配置
+    const template = getTemplate(selectedTemplate.value)
+
+    // 检查是否有配置的机器人
+    if (bots.value.length === 0) {
+      ElMessage.warning('请先配置至少一个机器人')
+      return
+    }
+
+    // 为模板分配机器人（使用第一个可用的机器人）
+    const discordBot = bots.value.find(b => b.platform === 'discord')
+    const telegramBot = bots.value.find(b => b.platform === 'telegram')
+    const feishuBot = bots.value.find(b => b.platform === 'feishu')
+
+    // 将模板转换为映射配置
+    const templateMappings = []
+    for (const channel of template.channels) {
+      // 为每个目标平台创建映射
+      if (channel.discord_channel && discordBot) {
+        templateMappings.push({
+          kook_server_id: channel.kook_server_id || 'template',
+          kook_channel_id: channel.kook_channel_id || `${channel.name}_id`,
+          kook_channel_name: channel.name,
+          target_platform: 'discord',
+          target_bot_id: discordBot.id,
+          target_channel_id: channel.discord_channel
+        })
+      }
+      
+      if (channel.telegram_channel && telegramBot) {
+        templateMappings.push({
+          kook_server_id: channel.kook_server_id || 'template',
+          kook_channel_id: channel.kook_channel_id || `${channel.name}_id`,
+          kook_channel_name: channel.name,
+          target_platform: 'telegram',
+          target_bot_id: telegramBot.id,
+          target_channel_id: channel.telegram_channel
+        })
+      }
+      
+      if (channel.feishu_channel && feishuBot) {
+        templateMappings.push({
+          kook_server_id: channel.kook_server_id || 'template',
+          kook_channel_id: channel.kook_channel_id || `${channel.name}_id`,
+          kook_channel_name: channel.name,
+          target_platform: 'feishu',
+          target_bot_id: feishuBot.id,
+          target_channel_id: channel.feishu_channel
+        })
+      }
+    }
+
+    // 使用导入API应用模板（replace_existing=true）
+    const result = await api.importMappings({
+      mappings: templateMappings,
+      replace_existing: true
+    })
+
+    ElMessage.success({
+      message: `模板应用成功！共创建 ${result.success_count} 条映射`,
+      duration: 3000
+    })
+
+    // 关闭对话框并刷新列表
+    showTemplateDialog.value = false
+    selectedTemplate.value = null
+    await fetchMappings()
+
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('应用模板失败:', error)
+      ElMessage.error('应用模板失败: ' + (error.response?.data?.detail || error.message))
+    }
+  } finally {
+    applyingTemplate.value = false
+  }
+}
+
+// v1.11.0新增：获取模板配置
+const getTemplate = (templateKey) => {
+  const templates = {
+    'gaming': {
+      name: '游戏公告模板',
+      description: '适用于游戏公会、游戏社区',
+      channels: [
+        {
+          name: '📢 公告频道',
+          kook_channel_id: 'announcements',
+          discord_channel: 'announcements',
+          telegram_channel: 'announcements',
+          feishu_channel: 'announcements'
+        },
+        {
+          name: '🎉 活动频道',
+          kook_channel_id: 'events',
+          discord_channel: 'events',
+          telegram_channel: 'events',
+          feishu_channel: 'events'
+        },
+        {
+          name: '📝 更新日志',
+          kook_channel_id: 'changelog',
+          discord_channel: 'changelog',
+          telegram_channel: 'changelog',
+          feishu_channel: 'changelog'
+        },
+        {
+          name: '❓ 常见问题',
+          kook_channel_id: 'faq',
+          discord_channel: 'faq',
+          telegram_channel: 'faq',
+          feishu_channel: 'faq'
+        }
+      ]
+    },
+    'community': {
+      name: '社区管理模板',
+      description: '适用于社区管理、运营团队',
+      channels: [
+        {
+          name: '👮 管理员频道',
+          kook_channel_id: 'admin',
+          discord_channel: 'admin',
+          telegram_channel: 'admin',
+          feishu_channel: 'admin'
+        },
+        {
+          name: '💬 用户反馈',
+          kook_channel_id: 'feedback',
+          discord_channel: 'feedback',
+          telegram_channel: 'feedback',
+          feishu_channel: 'feedback'
+        },
+        {
+          name: '🚨 举报处理',
+          kook_channel_id: 'reports',
+          discord_channel: 'reports',
+          telegram_channel: 'reports',
+          feishu_channel: 'reports'
+        },
+        {
+          name: '📊 数据统计',
+          kook_channel_id: 'analytics',
+          discord_channel: 'analytics',
+          telegram_channel: 'analytics',
+          feishu_channel: 'analytics'
+        }
+      ]
+    },
+    'mirror': {
+      name: '跨平台镜像模板',
+      description: '全频道镜像同步',
+      channels: [
+        {
+          name: '🔄 全频道镜像',
+          kook_channel_id: 'general',
+          discord_channel: 'general',
+          telegram_channel: 'general',
+          feishu_channel: 'general'
+        },
+        {
+          name: '📢 重要通知',
+          kook_channel_id: 'important',
+          discord_channel: 'important',
+          telegram_channel: 'important',
+          feishu_channel: 'important'
+        }
+      ]
+    }
+  }
+
+  return templates[templateKey] || templates['gaming']
+}
+
 watch(() => mappingForm.value.target_platform, () => {
   mappingForm.value.target_bot_id = null
 })
@@ -551,5 +877,55 @@ onMounted(() => {
 .el-upload__text em {
   color: #409EFF;
   font-style: normal;
+}
+
+/* v1.11.0新增：模板卡片样式 */
+.template-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  height: 100%;
+}
+
+.template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.template-card.selected {
+  border-color: #409EFF;
+  box-shadow: 0 0 12px rgba(64, 158, 255, 0.3);
+}
+
+.template-header {
+  text-align: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #EBEEF5;
+  margin-bottom: 16px;
+}
+
+.template-header h3 {
+  margin: 12px 0 0 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.template-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.template-desc p {
+  margin: 8px 0;
+}
+
+.template-desc ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.template-desc li {
+  margin: 4px 0;
 }
 </style>

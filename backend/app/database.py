@@ -197,6 +197,22 @@ class Database:
             cursor.execute("SELECT * FROM accounts")
             return [dict(row) for row in cursor.fetchall()]
     
+    def get_account(self, account_id: int) -> Optional[Dict[str, Any]]:
+        """
+        获取单个账号信息
+        
+        Args:
+            account_id: 账号ID
+            
+        Returns:
+            账号信息字典，不存在返回None
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM accounts WHERE id = ?", (account_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+    
     def update_account_status(self, account_id: int, status: str):
         """更新账号状态"""
         with self.get_connection() as conn:
@@ -206,6 +222,22 @@ class Database:
                 SET status = ?, last_active = ? 
                 WHERE id = ?
             """, (status, datetime.now(), account_id))
+    
+    def update_account_cookie(self, account_id: int, cookie: str):
+        """
+        更新账号Cookie
+        
+        Args:
+            account_id: 账号ID
+            cookie: Cookie字符串（JSON格式）
+        """
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE accounts 
+                SET cookie = ?, last_active = ? 
+                WHERE id = ?
+            """, (cookie, datetime.now(), account_id))
     
     def delete_account(self, account_id: int):
         """删除账号"""
