@@ -276,10 +276,26 @@ const handleAddBot = async (data, platform) => {
   }
 }
 
-// 处理跳过Bot配置
+// 处理跳过Bot配置（v1.12.0+ 优化：更友好的提示）
 const handleSkipBots = () => {
-  ElMessage.info('已跳过机器人配置，您可以稍后在"机器人配置"页面添加')
-  currentStep.value = 4  // 直接跳转到完成步骤
+  ElMessageBox.confirm(
+    '跳过Bot配置后，您将无法立即转发消息。建议至少配置一个目标平台Bot。',
+    '确认跳过？',
+    {
+      confirmButtonText: '确定跳过',
+      cancelButtonText: '返回配置',
+      type: 'warning',
+    }
+  ).then(() => {
+    ElMessage.info({
+      message: '已跳过机器人配置。您可以稍后在"机器人配置"页面添加Bot。',
+      duration: 5000,
+      showClose: true
+    })
+    currentStep.value = 4  // 直接跳转到完成步骤
+  }).catch(() => {
+    // 用户取消，不做任何操作
+  })
 }
 
 // 打开视频教程
@@ -288,11 +304,32 @@ const openVideoTutorial = (type) => {
   ElMessage.info(`打开${type}视频教程（功能开发中）`)
 }
 
-// 完成向导
+// 完成向导（v1.12.0+ 优化：根据配置情况给出不同提示）
 const finishWizard = () => {
   // 标记向导已完成
   localStorage.setItem('wizard_completed', 'true')
-  ElMessage.success('配置完成，欢迎使用！')
+  
+  // 检查配置完整性，给出相应提示
+  if (addedBots.value.length === 0) {
+    ElMessage.warning({
+      message: '提示：您还没有配置任何Bot，无法转发消息。建议进入"机器人配置"页面添加。',
+      duration: 8000,
+      showClose: true
+    })
+  } else if (selectedChannelsCount.value === 0) {
+    ElMessage.warning({
+      message: '提示：您还没有选择任何频道，建议进入"频道映射"页面配置映射关系。',
+      duration: 8000,
+      showClose: true
+    })
+  } else {
+    ElMessage.success({
+      message: '🎉 配置完成！现在可以开始使用消息转发功能了。',
+      duration: 5000,
+      showClose: true
+    })
+  }
+  
   router.push('/')
 }
 </script>

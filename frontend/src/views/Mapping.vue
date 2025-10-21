@@ -29,13 +29,79 @@
         </div>
       </template>
       
+      <!-- v1.12.0+ 优化：更醒目的快捷操作提示 -->
+      <el-row :gutter="20" style="margin-bottom: 20px" v-if="mappings.length === 0">
+        <el-col :span="24">
+          <el-alert
+            title="🎉 欢迎使用频道映射配置"
+            type="success"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              <p style="margin-bottom: 15px">
+                <strong>频道映射</strong>用于将KOOK频道的消息自动转发到Discord、Telegram或飞书。
+                您还没有配置任何映射，可以选择以下方式快速开始：
+              </p>
+              <el-row :gutter="15">
+                <el-col :span="8">
+                  <el-card shadow="hover" class="feature-card" @click="showSmartMappingDialog = true">
+                    <div class="feature-content">
+                      <div class="feature-icon">🧙</div>
+                      <h3>智能映射</h3>
+                      <p>自动匹配同名频道</p>
+                      <el-tag type="success" size="small">推荐</el-tag>
+                    </div>
+                  </el-card>
+                </el-col>
+                <el-col :span="8">
+                  <el-card shadow="hover" class="feature-card" @click="showTemplateDialog = true">
+                    <div class="feature-content">
+                      <div class="feature-icon">📋</div>
+                      <h3>使用模板</h3>
+                      <p>预置配置，一键导入</p>
+                      <el-tag type="primary" size="small">快速</el-tag>
+                    </div>
+                  </el-card>
+                </el-col>
+                <el-col :span="8">
+                  <el-card shadow="hover" class="feature-card" @click="showAddDialog = true">
+                    <div class="feature-content">
+                      <div class="feature-icon">✏️</div>
+                      <h3>手动配置</h3>
+                      <p>逐个添加映射</p>
+                      <el-tag type="info" size="small">精确</el-tag>
+                    </div>
+                  </el-card>
+                </el-col>
+              </el-row>
+            </template>
+          </el-alert>
+        </el-col>
+      </el-row>
+      
+      <!-- 已有映射时的常规提示 -->
       <el-alert
-        title="提示"
+        v-else
+        title="💡 提示"
         type="info"
-        description="频道映射用于将KOOK频道的消息转发到目标平台。一个KOOK频道可以同时转发到多个目标。使用智能映射可以快速匹配同名频道。"
         :closable="false"
         style="margin-bottom: 20px"
-      />
+      >
+        <template #default>
+          <p>频道映射用于将KOOK频道的消息转发到目标平台。一个KOOK频道可以同时转发到多个目标。</p>
+          <div style="margin-top: 10px">
+            <el-button size="small" type="primary" @click="showSmartMappingDialog = true">
+              <el-icon><MagicStick /></el-icon>
+              使用智能映射快速添加
+            </el-button>
+            <el-button size="small" type="success" @click="showTemplateDialog = true">
+              <el-icon><Document /></el-icon>
+              从模板导入
+            </el-button>
+          </div>
+        </template>
+      </el-alert>
       
       <el-table :data="mappings" border style="width: 100%">
         <el-table-column prop="kook_channel_name" label="KOOK频道" width="200" />

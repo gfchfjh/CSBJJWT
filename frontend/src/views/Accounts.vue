@@ -136,15 +136,61 @@
             v-if="cookieImportMethod === 'paste'"
             v-model="accountForm.cookie"
             type="textarea"
-            :rows="6"
-            placeholder='请粘贴Cookie JSON数组，格式如：
-[{"name":"token","value":"xxx","domain":".kookapp.cn"}]
-
-支持以下格式：
-1. JSON数组格式（推荐）
-2. Netscape格式（浏览器导出）
-3. 浏览器扩展导出格式'
+            :rows="8"
+            :placeholder="cookiePlaceholder"
           />
+          
+          <!-- v1.12.0+ 新增：Cookie格式帮助 -->
+          <el-collapse v-if="cookieImportMethod === 'paste'" style="margin-top: 10px">
+            <el-collapse-item title="📖 支持的Cookie格式说明（点击展开）" name="1">
+              <div class="format-examples">
+                <el-alert
+                  title="✨ v1.12.0新特性：自动识别多种Cookie格式"
+                  type="success"
+                  :closable="false"
+                  show-icon
+                  style="margin-bottom: 15px"
+                >
+                  无需担心格式，程序会自动识别并转换！
+                </el-alert>
+                
+                <h4>✅ 格式1: JSON数组（推荐）</h4>
+                <el-input
+                  type="textarea"
+                  :rows="2"
+                  readonly
+                  value='[{"name":"token","value":"abc123","domain":".kookapp.cn"}]'
+                />
+                
+                <h4>✅ 格式2: Netscape格式（浏览器扩展导出）</h4>
+                <el-input
+                  type="textarea"
+                  :rows="3"
+                  readonly
+                  value='# Netscape HTTP Cookie File
+.kookapp.cn	TRUE	/	FALSE	1234567890	token	abc123
+.kookapp.cn	TRUE	/	FALSE	1234567890	session	xyz789'
+                />
+                
+                <h4>✅ 格式3: 键值对格式（最简单）</h4>
+                <el-input
+                  type="textarea"
+                  :rows="1"
+                  readonly
+                  value='token=abc123; session=xyz789; user_id=12345'
+                />
+                
+                <h4>✅ 格式4: 开发者工具格式（制表符分隔）</h4>
+                <el-input
+                  type="textarea"
+                  :rows="2"
+                  readonly
+                  value='token	abc123	.kookapp.cn	/
+session	xyz789	.kookapp.cn	/'
+                />
+              </div>
+            </el-collapse-item>
+          </el-collapse>
           
           <!-- 方式2：上传文件 -->
           <el-upload

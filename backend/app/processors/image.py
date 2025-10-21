@@ -27,8 +27,13 @@ class ImageProcessor:
         self.storage_path = Path(settings.data_dir) / "images"
         self.storage_path.mkdir(parents=True, exist_ok=True)
         
-        # 图片URL映射（文件路径 -> Token）
-        self.url_tokens: Dict[str, str] = {}
+        # 图片URL映射（文件路径 -> Token信息）
+        # v1.12.0+ 修改：存储Token和过期时间
+        # 格式: {filepath: {'token': 'abc123', 'expire_at': timestamp}}
+        self.url_tokens: Dict[str, Dict[str, Any]] = {}
+        
+        # Token有效期（默认2小时 = 7200秒）
+        self.token_ttl = 7200
         
         # 多进程池（CPU核心数-1，至少1个）
         max_workers = max(1, multiprocessing.cpu_count() - 1)
@@ -40,7 +45,9 @@ class ImageProcessor:
             'total_processed': 0,
             'total_compressed_mb': 0,
             'total_saved_mb': 0,
-            'parallel_count': 0
+            'parallel_count': 0,
+            'tokens_generated': 0,
+            'tokens_expired': 0
         }
     
     async def download_image(self, url: str, 
