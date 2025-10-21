@@ -74,22 +74,30 @@ class KookScraper:
                 )
                 self.use_shared = False
             
-            # 如果提供了Cookie，加载Cookie
+            # 如果提供了Cookie，加载Cookie（v1.12.0+ 支持多种格式）
             if cookie:
                 try:
-                    # 验证Cookie格式
-                    if not self._validate_cookies(cookie):
-                        logger.error("Cookie格式验证失败")
+                    from ..utils.cookie_parser import cookie_parser
+                    
+                    # 解析Cookie（自动识别格式）
+                    cookies = cookie_parser.parse(cookie)
+                    
+                    # 验证Cookie
+                    if not cookie_parser.validate(cookies):
+                        logger.error("Cookie验证失败")
                         return False
                     
-                    cookies = json.loads(cookie)
+                    # 加载Cookie到浏览器
                     await self.context.add_cookies(cookies)
-                    logger.info("已加载Cookie")
-                except json.JSONDecodeError as e:
-                    logger.error(f"Cookie JSON解析失败: {str(e)}")
+                    logger.info(f"✅ 已加载Cookie，共{len(cookies)}条")
+                    
+                except ValueError as e:
+                    logger.error(f"Cookie格式错误: {str(e)}")
                     return False
                 except Exception as e:
                     logger.error(f"加载Cookie失败: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
                     return False
             
             # 创建页面
@@ -195,7 +203,7 @@ class KookScraper:
     
     def _validate_cookies(self, cookie_str: str) -> bool:
         """
-        验证Cookie格式
+        验证Cookie格式（v1.12.0+ 支持多种格式自动识别）
         
         Args:
             cookie_str: Cookie字符串
@@ -204,41 +212,17 @@ class KookScraper:
             是否有效
         """
         try:
-            cookies = json.loads(cookie_str)
+            # 使用新的Cookie解析器（支持多种格式）
+            from ..utils.cookie_parser import cookie_parser
             
-            # 检查是否为列表
-            if not isinstance(cookies, list):
-                logger.error("Cookie必须是列表格式")
-                return False
+            # 尝试解析Cookie
+            cookies = cookie_parser.parse(cookie_str)
             
-            # 检查列表不为空
-            if len(cookies) == 0:
-                logger.error("Cookie列表不能为空")
-                return False
+            # 验证Cookie
+            return cookie_parser.validate(cookies)
             
-            # 检查每个Cookie必需字段
-            for i, cookie in enumerate(cookies):
-                if not isinstance(cookie, dict):
-                    logger.error(f"Cookie[{i}]必须是字典格式")
-                    return False
-                
-                # 必需字段：name, value, domain
-                if 'name' not in cookie:
-                    logger.error(f"Cookie[{i}]缺少name字段")
-                    return False
-                if 'value' not in cookie:
-                    logger.error(f"Cookie[{i}]缺少value字段")
-                    return False
-                
-                # domain字段建议但非必需
-                if 'domain' not in cookie:
-                    logger.warning(f"Cookie[{i}]建议包含domain字段")
-            
-            logger.info(f"Cookie格式验证通过，共{len(cookies)}条")
-            return True
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Cookie不是有效的JSON格式: {str(e)}")
+        except ValueError as e:
+            logger.error(f"Cookie格式错误: {str(e)}")
             return False
         except Exception as e:
             logger.error(f"Cookie验证异常: {str(e)}")

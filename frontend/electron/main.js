@@ -11,23 +11,86 @@ let mainWindow = null
 let backendProcess = null
 let tray = null
 
-// 配置开机自启
+// 配置开机自启（v1.12.0+ 优化：增强Linux兼容性）
 const autoLauncher = new AutoLaunch({
   name: 'KOOK消息转发系统',
   path: app.getPath('exe'),
+  // Linux特定配置
+  ...(process.platform === 'linux' && {
+    isHidden: false,  // Linux下不隐藏窗口
+  })
 })
 
-// 检查并设置开机自启
+// 检查并设置开机自启（v1.12.0+ 优化：增强错误处理）
 async function setupAutoLaunch() {
-  const isEnabled = await autoLauncher.isEnabled()
+  try {
+    const isEnabled = await autoLauncher.isEnabled()
+    
+    // 可以通过配置文件控制
+    const shouldEnable = app.getLoginItemSettings().openAtLogin
+    
+    if (shouldEnable && !isEnabled) {
+      await autoLauncher.enable()
+      console.log('✅ 开机自启已启用')
+    } else if (!shouldEnable && isEnabled) {
+      await autoLauncher.disable()
+      console.log('✅ 开机自启已禁用')
+    }
+  } catch (error) {
+    console.error('⚠️  设置开机自启失败:', error.message)
+    
+    // Linux平台特殊处理：尝试手动创建.desktop文件
+    if (process.platform === 'linux') {
+      try {
+        await setupLinuxAutoStart()
+      } catch (linuxError) {
+        console.error('❌ Linux开机自启设置失败:', linuxError.message)
+      }
+    }
+  }
+}
+
+// Linux平台特殊处理：手动创建.desktop文件
+async function setupLinuxAutoStart() {
+  if (process.platform !== 'linux') return
   
-  // 可以通过配置文件控制
+  const fs = require('fs')
+  const os = require('os')
+  const path = require('path')
+  
+  // 创建autostart目录
+  const autostartDir = path.join(os.homedir(), '.config', 'autostart')
+  if (!fs.existsSync(autostartDir)) {
+    fs.mkdirSync(autostartDir, { recursive: true })
+  }
+  
+  // .desktop文件路径
+  const desktopFilePath = path.join(autostartDir, 'kook-forwarder.desktop')
+  
+  // 检查是否应该启用
   const shouldEnable = app.getLoginItemSettings().openAtLogin
   
-  if (shouldEnable && !isEnabled) {
-    await autoLauncher.enable()
-  } else if (!shouldEnable && isEnabled) {
-    await autoLauncher.disable()
+  if (shouldEnable) {
+    // 创建.desktop文件
+    const desktopContent = `[Desktop Entry]
+Type=Application
+Name=KOOK消息转发系统
+Comment=开机自动启动KOOK消息转发系统
+Exec=${app.getPath('exe')}
+Icon=kook-forwarder
+Terminal=false
+Categories=Network;
+X-GNOME-Autostart-enabled=true
+`
+    
+    fs.writeFileSync(desktopFilePath, desktopContent, 'utf8')
+    console.log('✅ Linux开机自启已启用（.desktop文件）')
+  } else {
+    // 删除.desktop文件
+    if (fs.existsSync(desktopFilePath)) {
+      fs.unlinkSync(desktopFilePath)
+      console.log('✅ Linux开机自启已禁用（删除.desktop文件）')
+    }
   }
 }
 
@@ -113,15 +176,38 @@ function createTray() {
             label: '开机自启',
             type: 'checkbox',
             checked: app.getLoginItemSettings().openAtLogin,
-            click: (menuItem) => {
+            click: async (menuItem) => {
               app.setLoginItemSettings({
                 openAtLogin: menuItem.checked
               })
-              // 更新AutoLauncher
-              if (menuItem.checked) {
-                autoLauncher.enable().catch(console.error)
-              } else {
-                autoLauncher.disable().catch(console.error)
+              
+              // v1.12.0+ 优化：更新AutoLauncher，增强错误处理
+              try {
+                if (menuItem.checked) {
+                  await autoLauncher.enable()
+                  console.log('✅ 开机自启已启用')
+                } else {
+                  await autoLauncher.disable()
+                  console.log('✅ 开机自启已禁用')
+                }
+              } catch (error) {
+                console.error('⚠️  AutoLauncher操作失败:', error.message)
+                
+                // Linux平台特殊处理
+                if (process.platform === 'linux') {
+                  try {
+                    await setupLinuxAutoStart()
+                  } catch (linuxError) {
+                    console.error('❌ Linux开机自启设置失败:', linuxError.message)
+                    // 通知用户
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                      mainWindow.webContents.send('show-error', {
+                        title: '开机自启设置失败',
+                        message: '请检查系统权限或手动配置开机自启'
+                      })
+                    }
+                  }
+                }
               }
             }
           },
