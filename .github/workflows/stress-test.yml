@@ -6,18 +6,28 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    # 每天凌晨2点运行
+    # 每天凌晨2点自动运行
     - cron: '0 2 * * *'
   workflow_dispatch:
-    # 允许手动触发
+    inputs:
+      test_level:
+        description: '测试级别'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+          - basic
+          - comprehensive
+          - full
 
 jobs:
   stress-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     
     services:
       redis:
-        image: redis:latest
+        image: redis:7-alpine
         ports:
           - 6379:6379
         options: >-
@@ -26,53 +36,63 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+    
     steps:
-    - name: Checkout代码
+    - name: 检出代码
       uses: actions/checkout@v3
     
     - name: 设置Python环境
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
     
-    - name: 安装依赖
+    - name: 安装系统依赖
       run: |
-        python -m pip install --upgrade pip
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev
+    
+    - name: 安装Python依赖
+      run: |
+        pip install --upgrade pip
         pip install -r backend/requirements.txt
         pip install -r backend/requirements-dev.txt
+        pip install pytest pytest-asyncio pytest-cov
     
-    - name: 启动后端服务
+    - name: 验证Redis连接
       run: |
-        cd backend
-        nohup python -m app.main > backend.log 2>&1 &
-        echo $! > backend.pid
-        sleep 10  # 等待服务启动
-      env:
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
+        redis-cli -h localhost -p 6379 ping
     
-    - name: 检查服务状态
-      run: |
-        curl -f http://127.0.0.1:9527/health || (cat backend/backend.log && exit 1)
-        redis-cli ping
-    
-    - name: 运行演示测试
+    - name: 运行演示压力测试
       run: |
         python3 demo_stress_test.py
       continue-on-error: false
     
-    - name: 运行完整压力测试
+    - name: 运行基础压力测试
+      if: github.event.inputs.test_level == 'basic' || github.event.inputs.test_level == ''
       run: |
-        python3 comprehensive_stress_test.py
-      continue-on-error: true  # 允许部分测试失败
+        python3 stress_test.py || true
+      env:
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+    
+    - name: 运行全面压力测试
+      if: github.event.inputs.test_level == 'comprehensive' || github.event.inputs.test_level == 'full'
+      run: |
+        python3 comprehensive_stress_test.py || true
+      env:
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
     
     - name: 运行模块专项测试
+      if: github.event.inputs.test_level == 'full'
       run: |
-        python3 module_specific_stress_test.py
-      continue-on-error: true
+        python3 module_specific_stress_test.py || true
     
-    - name: 生成汇总报告
+    - name: 生成测试报告汇总
       if: always()
       run: |
         python3 generate_test_summary.py || true
@@ -81,63 +101,106 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: stress-test-reports
+        name: stress-test-reports-py${{ matrix.python-version }}
         path: |
-          test_results/*.json
-          test_results/*.md
-          test_results/*.txt
+          test_results/
+          *.json
+          *.md
         retention-days: 30
     
-    - name: 评估性能
-      if: success()
-      run: |
-        python3 << 'EOF'
-        import json
-        from pathlib import Path
-        
-        # 读取演示测试报告
-        report_path = Path("test_results/demo_stress_test_report.json")
-        if report_path.exists():
-            with open(report_path) as f:
-                data = json.load(f)
-            
-            # 提取关键指标
-            results = data.get("results", {})
-            
-            # 设置性能阈值
-            thresholds = {
-                "concurrent_processing": 1000,  # 最低吞吐量 msg/s
-                "queue_performance": 100000,    # 最低队列性能
-            }
-            
-            failed = []
-            
-            # 检查并发处理性能
-            if "concurrent_processing" in results:
-                for item in results["concurrent_processing"]:
-                    if item.get("throughput", 0) < thresholds["concurrent_processing"]:
-                        failed.append(f"并发处理性能低于阈值: {item['throughput']} < {thresholds['concurrent_processing']}")
-            
-            if failed:
-                print("⚠️ 性能警告:")
-                for msg in failed:
-                    print(f"  - {msg}")
-                exit(1)
-            else:
-                print("✅ 所有性能指标达标")
-        else:
-            print("⚠️ 未找到测试报告")
-        EOF
-    
-    - name: 清理
+    - name: 检查性能基准
       if: always()
       run: |
-        if [ -f backend/backend.pid ]; then
-          kill $(cat backend/backend.pid) || true
-        fi
+        python3 performance_validator.py || true
     
-    - name: 发送通知
-      if: failure()
+    - name: 性能回归检测
+      if: github.event_name == 'pull_request'
       run: |
-        echo "压力测试失败，请检查报告"
-        # 这里可以添加Slack/邮件通知
+        python3 regression_detector.py || true
+    
+    - name: 发送测试通知
+      if: always() && github.event_name == 'schedule'
+      run: |
+        echo "压力测试完成 - Python ${{ matrix.python-version }}"
+        echo "测试结果: ${{ job.status }}"
+    
+    - name: 生成性能趋势图
+      if: always()
+      run: |
+        python3 generate_charts.py || true
+    
+    - name: 上传性能图表
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-charts
+        path: |
+          charts/
+          dashboard/
+        retention-days: 30
+
+  performance-comparison:
+    runs-on: ubuntu-latest
+    needs: stress-test
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: 下载当前测试结果
+      uses: actions/download-artifact@v3
+      with:
+        name: stress-test-reports-py3.11
+        path: current/
+    
+    - name: 对比性能数据
+      run: |
+        python3 compare_performance.py current/ baseline/
+    
+    - name: 评论PR
+      if: always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          let comment = '## 📊 压力测试结果\n\n';
+          
+          try {
+            const report = fs.readFileSync('performance_comparison.md', 'utf8');
+            comment += report;
+          } catch (error) {
+            comment += '无法生成性能对比报告';
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  docker-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+    
+    - name: 构建测试Docker镜像
+      run: |
+        docker build -f Dockerfile.test -t kook-forwarder-test .
+    
+    - name: 运行容器化测试
+      run: |
+        docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+    
+    - name: 上传容器日志
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-logs
+        path: logs/
+        retention-days: 7

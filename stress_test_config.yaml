@@ -1,0 +1,317 @@
+# KOOK消息转发系统 - 压力测试配置文件
+
+# 基础配置
+basic:
+  api_base_url: "http://127.0.0.1:9527"
+  redis_host: "127.0.0.1"
+  redis_port: 6379
+  redis_db: 0
+  redis_password: null
+  
+  # 测试超时设置（秒）
+  timeout:
+    default: 30
+    long_running: 300
+  
+  # 日志配置
+  logging:
+    level: "INFO"
+    file: "test_results/stress_test.log"
+    max_size: "10MB"
+    backup_count: 5
+
+# API测试配置
+api_tests:
+  # 并发级别
+  concurrent_levels: [1, 5, 10, 20, 50, 100, 200]
+  
+  # 测试端点
+  endpoints:
+    - method: "GET"
+      path: "/health"
+      name: "健康检查"
+      timeout: 5
+    
+    - method: "GET"
+      path: "/api/system/status"
+      name: "系统状态"
+      timeout: 10
+    
+    - method: "GET"
+      path: "/api/accounts"
+      name: "账号列表"
+      timeout: 15
+    
+    - method: "GET"
+      path: "/api/bots"
+      name: "Bot列表"
+      timeout: 15
+    
+    - method: "GET"
+      path: "/api/mappings"
+      name: "映射列表"
+      timeout: 15
+  
+  # 性能要求
+  requirements:
+    min_qps: 500  # 最小QPS（并发100时）
+    max_avg_latency_ms: 100  # 最大平均延迟
+    max_p99_latency_ms: 500  # 最大P99延迟
+    min_success_rate: 95  # 最小成功率（%）
+
+# 消息处理测试配置
+message_processing:
+  # 格式转换迭代次数
+  formatter_iterations: [1000, 5000, 10000, 50000]
+  
+  # 测试文本样本
+  test_texts:
+    - "**粗体** *斜体* `代码`"
+    - "(emj)开心(emj) (emj)笑(emj) @用户名"
+    - "这是一段很长的文本，用于测试性能"
+    - "[链接](https://example.com) ~~删除线~~"
+  
+  # 性能要求
+  requirements:
+    discord_min_ops: 10000  # Discord转换最小ops/s
+    telegram_min_ops: 8000  # Telegram转换最小ops/s
+    feishu_min_ops: 8000    # 飞书转换最小ops/s
+
+# Redis队列测试配置
+redis_queue:
+  # 批量大小
+  batch_sizes: [10, 50, 100, 500, 1000, 5000]
+  
+  # 测试队列名称
+  test_queue_prefix: "stress_test_queue_"
+  
+  # 性能要求
+  requirements:
+    min_enqueue_qps: 5000  # 最小入队QPS
+    min_dequeue_qps: 5000  # 最小出队QPS
+    min_batch_qps: 10000   # 批量操作最小QPS
+
+# 限流器测试配置
+rate_limiter:
+  # 测试配置
+  configs:
+    - calls: 5
+      period: 5
+      name: "Discord限流（5请求/5秒）"
+    
+    - calls: 30
+      period: 1
+      name: "Telegram限流（30请求/1秒）"
+    
+    - calls: 20
+      period: 1
+      name: "飞书限流（20请求/1秒）"
+    
+    - calls: 100
+      period: 10
+      name: "自定义限流（100请求/10秒）"
+  
+  # 准确度要求
+  requirements:
+    min_accuracy: 95  # 最小准确度（%）
+
+# 数据库测试配置
+database:
+  # 操作数量
+  operations: [100, 500, 1000, 5000, 10000]
+  
+  # 数据库路径
+  db_path: "backend/data/kook_forwarder.db"
+  
+  # 性能要求
+  requirements:
+    min_simple_query_qps: 1000  # 简单查询最小QPS
+    min_insert_qps: 500         # 插入最小QPS
+    min_complex_query_qps: 100  # 复杂查询最小QPS
+
+# 图片处理测试配置
+image_processing:
+  # 测试尺寸
+  sizes:
+    - width: 800
+      height: 600
+      name: "小图"
+    
+    - width: 1920
+      height: 1080
+      name: "中图"
+    
+    - width: 3840
+      height: 2160
+      name: "4K图"
+    
+    - width: 7680
+      height: 4320
+      name: "8K图"
+  
+  # 压缩质量
+  jpeg_qualities: [95, 85, 75, 60]
+  
+  # 批量大小
+  batch_size: 20
+  
+  # 性能要求
+  requirements:
+    max_compress_time_s: 1.0  # 最大压缩时间（小图）
+    max_resize_time_s: 0.5    # 最大缩放时间
+
+# 端到端测试配置
+end_to_end:
+  # 测试消息数量
+  message_counts: [10, 50, 100, 500]
+  
+  # 性能要求
+  requirements:
+    max_latency_ms: 50      # 最大单条延迟
+    min_throughput: 100     # 最小吞吐量（msg/s）
+    min_success_rate: 95    # 最小成功率（%）
+
+# 模块专项测试配置
+module_tests:
+  # 消息验证器
+  validator:
+    test_count: 1000
+    requirements:
+      min_qps: 10000
+  
+  # 过滤器
+  filter:
+    test_count: 1500
+    blacklist_keywords: ["广告", "代练", "外挂", "辅助", "刷钻"]
+    requirements:
+      min_qps: 100000
+  
+  # 加密解密
+  crypto:
+    test_count: 1000
+    data_lengths: [10, 50, 100, 500, 1000]
+    requirements:
+      min_encrypt_qps: 50000
+      min_decrypt_qps: 50000
+      min_accuracy: 100
+  
+  # 日志系统
+  logger:
+    test_count: 1000
+    requirements:
+      min_qps: 10000
+  
+  # 缓存系统
+  cache:
+    max_size: 10000
+    test_operations: 10000
+    requirements:
+      min_write_qps: 100000
+      min_read_qps: 500000
+
+# 报告配置
+reporting:
+  # 报告格式
+  formats:
+    - json
+    - markdown
+    - html
+    - text
+  
+  # 报告存储
+  output_dir: "test_results"
+  
+  # 历史数据
+  history:
+    enabled: true
+    max_records: 100
+    storage_path: "test_results/history"
+  
+  # 图表生成
+  charts:
+    enabled: true
+    output_dir: "charts"
+    formats: ["png", "html"]
+  
+  # 仪表板
+  dashboard:
+    enabled: true
+    output_dir: "dashboard"
+    auto_refresh: true
+
+# 性能基准
+benchmarks:
+  # API基准
+  api:
+    qps_100_concurrent: 500
+    avg_latency_ms: 100
+    p99_latency_ms: 500
+  
+  # 消息处理基准
+  message_processing:
+    format_conversion_ops: 10000
+    queue_throughput: 5000
+  
+  # 数据库基准
+  database:
+    simple_query_qps: 1000
+    insert_qps: 500
+  
+  # 等级划分
+  grades:
+    excellent: 120  # 120%以上为优秀
+    good: 100       # 100-120%为良好
+    acceptable: 80  # 80-100%为及格
+    poor: 0         # 80%以下为差
+
+# 告警配置
+alerts:
+  # 启用告警
+  enabled: true
+  
+  # 告警阈值
+  thresholds:
+    success_rate_min: 90     # 成功率低于90%告警
+    qps_drop_percent: 20     # QPS下降20%告警
+    latency_spike_percent: 50  # 延迟上升50%告警
+  
+  # 告警方式
+  methods:
+    - console  # 控制台输出
+    - file     # 写入文件
+    # - email  # 邮件通知（需配置）
+    # - webhook  # Webhook通知（需配置）
+  
+  # 邮件配置（可选）
+  email:
+    enabled: false
+    smtp_server: "smtp.example.com"
+    smtp_port: 587
+    username: "alerts@example.com"
+    password: "your_password"
+    recipients: ["admin@example.com"]
+
+# 高级选项
+advanced:
+  # 并行测试
+  parallel_execution: true
+  max_workers: 4
+  
+  # 数据清理
+  auto_cleanup: true
+  cleanup_after_test: true
+  
+  # 错误处理
+  continue_on_error: true
+  max_retries: 3
+  retry_delay: 5
+  
+  # 调试模式
+  debug_mode: false
+  verbose_output: false
+  
+  # 性能采样
+  sampling:
+    enabled: true
+    interval_seconds: 1
+    metrics: ["cpu", "memory", "network"]
