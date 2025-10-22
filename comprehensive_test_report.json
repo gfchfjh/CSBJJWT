@@ -1,0 +1,1241 @@
+{
+  "test_time": "2025-10-22T09:15:10.654120",
+  "total_tests": 51,
+  "passed": 49,
+  "failed": 2,
+  "skipped": 0,
+  "modules": {
+    "消息抓取模块": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "test_cases": [
+        {
+          "name": "Playwright浏览器集成",
+          "description": "检查是否正确集成Playwright",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "playwright",
+            "chromium",
+            "browser"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "playwright",
+              "chromium",
+              "browser"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "Cookie多格式支持",
+          "description": "检查Cookie解析器支持多种格式",
+          "check": "backend/app/utils/cookie_parser.py",
+          "keywords": [
+            "JSON",
+            "Netscape",
+            "parse"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "JSON",
+              "Netscape",
+              "parse"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/cookie_parser.py"
+          }
+        },
+        {
+          "name": "验证码处理（本地OCR）",
+          "description": "检查ddddocr本地OCR集成",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "ddddocr",
+            "captcha",
+            "OCR"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "ddddocr",
+              "captcha",
+              "OCR"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "WebSocket消息监听",
+          "description": "检查WebSocket消息处理",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "websocket",
+            "_handle_websocket",
+            "MESSAGE_CREATE"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "websocket",
+              "_handle_websocket",
+              "MESSAGE_CREATE"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "多账号管理（共享浏览器）",
+          "description": "检查ScraperManager和共享浏览器上下文",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "ScraperManager",
+            "shared_browser",
+            "shared_context"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "ScraperManager",
+              "shared_browser",
+              "shared_context"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "支持的消息类型",
+          "description": "检查支持文本、图片、表情、@提及、引用等",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "message_type",
+            "attachments",
+            "mentions",
+            "quote"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "message_type",
+              "attachments",
+              "mentions",
+              "quote"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "自动重新登录机制",
+          "description": "检查Cookie过期自动重登录",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "_auto_relogin_if_expired",
+            "password_encrypted",
+            "decrypt"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "_auto_relogin_if_expired",
+              "password_encrypted",
+              "decrypt"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        },
+        {
+          "name": "历史消息同步",
+          "description": "检查启动时同步历史消息",
+          "check": "backend/app/kook/scraper.py",
+          "keywords": [
+            "sync_history_messages",
+            "sync_history_minutes"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "sync_history_messages",
+              "sync_history_minutes"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/kook/scraper.py"
+          }
+        }
+      ]
+    },
+    "消息处理模块": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "test_cases": [
+        {
+          "name": "Redis队列集成",
+          "description": "检查Redis客户端和消息队列",
+          "check": "backend/app/queue/redis_client.py",
+          "keywords": [
+            "redis",
+            "enqueue",
+            "dequeue",
+            "RedisQueue"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "redis",
+              "enqueue",
+              "dequeue",
+              "RedisQueue"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/queue/redis_client.py"
+          }
+        },
+        {
+          "name": "消息Worker",
+          "description": "检查消息消费Worker",
+          "check": "backend/app/queue/worker.py",
+          "keywords": [
+            "MessageWorker",
+            "process_message",
+            "start",
+            "stop"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "MessageWorker",
+              "process_message",
+              "start",
+              "stop"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/queue/worker.py"
+          }
+        },
+        {
+          "name": "格式转换（Discord）",
+          "description": "检查KMarkdown到Discord Markdown转换",
+          "check": "backend/app/processors/formatter.py",
+          "keywords": [
+            "kmarkdown_to_discord",
+            "EMOJI_MAP"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "kmarkdown_to_discord",
+              "EMOJI_MAP"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/processors/formatter.py"
+          }
+        },
+        {
+          "name": "格式转换（Telegram）",
+          "description": "检查KMarkdown到Telegram HTML转换",
+          "check": "backend/app/processors/formatter.py",
+          "keywords": [
+            "kmarkdown_to_telegram_html",
+            "<b>",
+            "<i>",
+            "<code>"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "kmarkdown_to_telegram_html",
+              "<b>",
+              "<i>",
+              "<code>"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/processors/formatter.py"
+          }
+        },
+        {
+          "name": "格式转换（飞书）",
+          "description": "检查KMarkdown到飞书文本转换",
+          "check": "backend/app/processors/formatter.py",
+          "keywords": [
+            "kmarkdown_to_feishu_text"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "kmarkdown_to_feishu_text"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/processors/formatter.py"
+          }
+        },
+        {
+          "name": "图片处理",
+          "description": "检查图片下载、压缩、上传",
+          "check": "backend/app/processors/image.py",
+          "keywords": [
+            "ImageProcessor",
+            "download_image",
+            "compress_image",
+            "upload"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "ImageProcessor",
+              "download_image",
+              "compress_image"
+            ],
+            "missing_keywords": [
+              "upload"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/processors/image.py"
+          }
+        },
+        {
+          "name": "图床服务器",
+          "description": "检查内置图床HTTP服务器",
+          "check": "backend/app/image_server.py",
+          "keywords": [
+            "start_image_server",
+            "serve_image",
+            "token"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "start_image_server",
+              "token"
+            ],
+            "missing_keywords": [
+              "serve_image"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/image_server.py"
+          }
+        },
+        {
+          "name": "消息去重",
+          "description": "检查消息ID去重机制",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "kook_message_id",
+            "UNIQUE",
+            "IntegrityError"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "kook_message_id",
+              "UNIQUE",
+              "IntegrityError"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "限流器",
+          "description": "检查限流保护机制",
+          "check": "backend/app/utils/rate_limiter.py",
+          "keywords": [
+            "RateLimiter",
+            "acquire",
+            "calls",
+            "period"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "RateLimiter",
+              "acquire",
+              "calls",
+              "period"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/rate_limiter.py"
+          }
+        },
+        {
+          "name": "智能消息分段",
+          "description": "检查超长消息智能分割",
+          "check": "backend/app/processors/formatter.py",
+          "keywords": [
+            "split_long_message",
+            "_split_by_sentences",
+            "_split_by_clauses"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "split_long_message",
+              "_split_by_sentences",
+              "_split_by_clauses"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/processors/formatter.py"
+          }
+        }
+      ]
+    },
+    "转发模块": {
+      "total": 5,
+      "passed": 4,
+      "failed": 1,
+      "test_cases": [
+        {
+          "name": "Discord转发器",
+          "description": "检查Discord Webhook转发",
+          "check": "backend/app/forwarders/discord.py",
+          "keywords": [
+            "DiscordForwarder",
+            "send_message",
+            "DiscordWebhook",
+            "DiscordEmbed"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "DiscordForwarder",
+              "send_message",
+              "DiscordWebhook",
+              "DiscordEmbed"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/forwarders/discord.py"
+          }
+        },
+        {
+          "name": "Discord转发器池",
+          "description": "检查多Webhook负载均衡",
+          "check": "backend/app/forwarders/discord.py",
+          "keywords": [
+            "DiscordForwarderPool",
+            "webhook_urls",
+            "_get_next_webhook"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "DiscordForwarderPool",
+              "webhook_urls",
+              "_get_next_webhook"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/forwarders/discord.py"
+          }
+        },
+        {
+          "name": "Telegram转发器",
+          "description": "检查Telegram Bot转发",
+          "check": "backend/app/forwarders/telegram.py",
+          "keywords": [
+            "TelegramForwarder",
+            "send_message",
+            "Bot",
+            "chat_id"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "TelegramForwarder",
+              "send_message",
+              "Bot",
+              "chat_id"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/forwarders/telegram.py"
+          }
+        },
+        {
+          "name": "飞书转发器",
+          "description": "检查飞书应用转发",
+          "check": "backend/app/forwarders/feishu.py",
+          "keywords": [
+            "FeishuForwarder",
+            "send_message",
+            "app_id",
+            "app_secret"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "FeishuForwarder",
+              "send_message",
+              "app_id",
+              "app_secret"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/forwarders/feishu.py"
+          }
+        },
+        {
+          "name": "转发器池管理",
+          "description": "检查转发器池管理器",
+          "check": "backend/app/forwarders/pools.py",
+          "keywords": [
+            "ForwarderPool",
+            "get_forwarder",
+            "load_balance"
+          ],
+          "status": "FAILED",
+          "details": {
+            "found": false,
+            "matched_keywords": [
+              "ForwarderPool"
+            ],
+            "missing_keywords": [
+              "get_forwarder",
+              "load_balance"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/forwarders/pools.py"
+          }
+        }
+      ]
+    },
+    "UI管理界面": {
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "test_cases": [
+        {
+          "name": "账号管理页面",
+          "description": "检查账号管理Vue组件",
+          "check": "frontend/src/views/Accounts.vue",
+          "keywords": [
+            "template",
+            "script",
+            "accounts",
+            "add",
+            "delete"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "accounts",
+              "add",
+              "delete"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Accounts.vue"
+          }
+        },
+        {
+          "name": "Bot配置页面",
+          "description": "检查Bot配置Vue组件",
+          "check": "frontend/src/views/Bots.vue",
+          "keywords": [
+            "template",
+            "script",
+            "platform",
+            "webhook",
+            "test"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "platform",
+              "webhook",
+              "test"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Bots.vue"
+          }
+        },
+        {
+          "name": "频道映射页面",
+          "description": "检查频道映射配置页面",
+          "check": "frontend/src/views/Mapping.vue",
+          "keywords": [
+            "template",
+            "script",
+            "mapping",
+            "kook_channel",
+            "target"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "mapping",
+              "kook_channel",
+              "target"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Mapping.vue"
+          }
+        },
+        {
+          "name": "实时日志页面",
+          "description": "检查实时日志监控页面",
+          "check": "frontend/src/views/Logs.vue",
+          "keywords": [
+            "template",
+            "script",
+            "logs",
+            "message",
+            "status"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "logs",
+              "message",
+              "status"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Logs.vue"
+          }
+        },
+        {
+          "name": "系统设置页面",
+          "description": "检查系统设置页面",
+          "check": "frontend/src/views/Settings.vue",
+          "keywords": [
+            "template",
+            "script",
+            "settings",
+            "config"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "settings"
+            ],
+            "missing_keywords": [
+              "config"
+            ],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Settings.vue"
+          }
+        },
+        {
+          "name": "配置向导",
+          "description": "检查首次启动配置向导",
+          "check": "frontend/src/views/Wizard.vue",
+          "keywords": [
+            "template",
+            "script",
+            "wizard",
+            "steps"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "wizard",
+              "steps"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/views/Wizard.vue"
+          }
+        },
+        {
+          "name": "WebSocket通信",
+          "description": "检查WebSocket实时通信",
+          "check": "frontend/src/composables/useWebSocket.js",
+          "keywords": [
+            "WebSocket",
+            "connect",
+            "onmessage",
+            "send"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "WebSocket",
+              "connect",
+              "onmessage",
+              "send"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/composables/useWebSocket.js"
+          }
+        },
+        {
+          "name": "帮助中心",
+          "description": "检查内置帮助中心",
+          "check": "frontend/src/components/HelpCenter.vue",
+          "keywords": [
+            "template",
+            "script",
+            "help",
+            "tutorial"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "tutorial"
+            ],
+            "missing_keywords": [
+              "help"
+            ],
+            "file_exists": true,
+            "file_path": "frontend/src/components/HelpCenter.vue"
+          }
+        },
+        {
+          "name": "性能监控面板",
+          "description": "检查性能监控组件",
+          "check": "frontend/src/components/PerformanceMonitor.vue",
+          "keywords": [
+            "template",
+            "script",
+            "performance",
+            "chart"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "template",
+              "script",
+              "performance",
+              "chart"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/components/PerformanceMonitor.vue"
+          }
+        },
+        {
+          "name": "主题切换",
+          "description": "检查深色/浅色主题切换",
+          "check": "frontend/src/composables/useTheme.js",
+          "keywords": [
+            "theme",
+            "dark",
+            "light",
+            "toggle"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "theme",
+              "dark",
+              "light",
+              "toggle"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/composables/useTheme.js"
+          }
+        }
+      ]
+    },
+    "数据库和持久化": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "test_cases": [
+        {
+          "name": "accounts表",
+          "description": "检查账号表结构",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "accounts",
+            "email",
+            "password_encrypted",
+            "cookie"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "accounts",
+              "email",
+              "password_encrypted",
+              "cookie"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "bot_configs表",
+          "description": "检查Bot配置表",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "bot_configs",
+            "platform",
+            "config"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "bot_configs",
+              "platform",
+              "config"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "channel_mappings表",
+          "description": "检查频道映射表",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "channel_mappings",
+            "kook_channel_id",
+            "target_platform"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "channel_mappings",
+              "kook_channel_id",
+              "target_platform"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "message_logs表",
+          "description": "检查消息日志表",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "message_logs",
+            "kook_message_id",
+            "status",
+            "latency"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "message_logs",
+              "kook_message_id",
+              "status",
+              "latency"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "filter_rules表",
+          "description": "检查过滤规则表",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "filter_rules",
+            "rule_type",
+            "rule_value"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "filter_rules",
+              "rule_type",
+              "rule_value"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "system_config表",
+          "description": "检查系统配置表",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE TABLE",
+            "system_config",
+            "key",
+            "value"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE TABLE",
+              "system_config",
+              "key",
+              "value"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "数据库索引优化",
+          "description": "检查是否创建了性能优化索引",
+          "check": "backend/app/database.py",
+          "keywords": [
+            "CREATE INDEX",
+            "idx_",
+            "ON"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "CREATE INDEX",
+              "idx_",
+              "ON"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/database.py"
+          }
+        },
+        {
+          "name": "数据加密",
+          "description": "检查敏感数据加密",
+          "check": "backend/app/utils/crypto.py",
+          "keywords": [
+            "encrypt",
+            "decrypt",
+            "AES",
+            "Fernet"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "encrypt",
+              "decrypt",
+              "Fernet"
+            ],
+            "missing_keywords": [
+              "AES"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/utils/crypto.py"
+          }
+        }
+      ]
+    },
+    "高级功能": {
+      "total": 10,
+      "passed": 9,
+      "failed": 1,
+      "test_cases": [
+        {
+          "name": "错误诊断系统",
+          "description": "检查智能错误诊断和解决方案",
+          "check": "backend/app/utils/error_diagnosis.py",
+          "keywords": [
+            "diagnose_error",
+            "error_solutions",
+            "auto_fix"
+          ],
+          "status": "FAILED",
+          "details": {
+            "found": false,
+            "matched_keywords": [
+              "auto_fix"
+            ],
+            "missing_keywords": [
+              "diagnose_error",
+              "error_solutions"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/utils/error_diagnosis.py"
+          }
+        },
+        {
+          "name": "重试Worker",
+          "description": "检查失败消息自动重试",
+          "check": "backend/app/queue/retry_worker.py",
+          "keywords": [
+            "RetryWorker",
+            "retry",
+            "failed_messages"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "RetryWorker",
+              "retry",
+              "failed_messages"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/queue/retry_worker.py"
+          }
+        },
+        {
+          "name": "健康检查器",
+          "description": "检查系统健康检查",
+          "check": "backend/app/utils/health.py",
+          "keywords": [
+            "HealthChecker",
+            "check_",
+            "status"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "HealthChecker",
+              "check_",
+              "status"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/health.py"
+          }
+        },
+        {
+          "name": "邮件告警",
+          "description": "检查SMTP邮件发送",
+          "check": "backend/app/utils/email_sender.py",
+          "keywords": [
+            "EmailSender",
+            "send_email",
+            "smtp"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "EmailSender",
+              "send_email",
+              "smtp"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/email_sender.py"
+          }
+        },
+        {
+          "name": "主密码保护",
+          "description": "检查密码管理和验证",
+          "check": "backend/app/utils/password_manager.py",
+          "keywords": [
+            "PasswordManager",
+            "verify",
+            "hash_password",
+            "SHA"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "PasswordManager",
+              "verify",
+              "hash_password",
+              "SHA"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/password_manager.py"
+          }
+        },
+        {
+          "name": "国际化（i18n）",
+          "description": "检查多语言支持",
+          "check": "frontend/src/i18n/index.js",
+          "keywords": [
+            "i18n",
+            "createI18n",
+            "locale",
+            "messages"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "i18n",
+              "createI18n",
+              "locale",
+              "messages"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/i18n/index.js"
+          }
+        },
+        {
+          "name": "中文语言包",
+          "description": "检查中文翻译",
+          "check": "frontend/src/i18n/locales/zh-CN.json",
+          "keywords": [
+            "{",
+            "}",
+            "\""
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "{",
+              "}",
+              "\""
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/i18n/locales/zh-CN.json"
+          }
+        },
+        {
+          "name": "英文语言包",
+          "description": "检查英文翻译",
+          "check": "frontend/src/i18n/locales/en-US.json",
+          "keywords": [
+            "{",
+            "}",
+            "\""
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "{",
+              "}",
+              "\""
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "frontend/src/i18n/locales/en-US.json"
+          }
+        },
+        {
+          "name": "定时任务调度",
+          "description": "检查APScheduler集成",
+          "check": "backend/app/utils/scheduler.py",
+          "keywords": [
+            "scheduler",
+            "setup_scheduled_tasks",
+            "job"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "scheduler",
+              "setup_scheduled_tasks",
+              "job"
+            ],
+            "missing_keywords": [],
+            "file_exists": true,
+            "file_path": "backend/app/utils/scheduler.py"
+          }
+        },
+        {
+          "name": "审计日志",
+          "description": "检查操作审计日志",
+          "check": "backend/app/utils/audit_logger.py",
+          "keywords": [
+            "AuditLogger",
+            "log_action",
+            "audit"
+          ],
+          "status": "PASSED",
+          "details": {
+            "found": true,
+            "matched_keywords": [
+              "AuditLogger",
+              "audit"
+            ],
+            "missing_keywords": [
+              "log_action"
+            ],
+            "file_exists": true,
+            "file_path": "backend/app/utils/audit_logger.py"
+          }
+        }
+      ]
+    }
+  }
+}
