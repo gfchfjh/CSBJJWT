@@ -30,7 +30,7 @@
 cd /workspace
 
 # 运行一键发布脚本
-./release.sh v1.13.0
+./release.sh v1.13.1
 
 # 脚本会自动完成：
 # 1. ✅ 检查工作区状态
@@ -58,14 +58,14 @@ cd /workspace
 ```bash
 # 1. 提交所有更改
 git add .
-git commit -m "chore: prepare for v1.13.0 release"
+git commit -m "chore: prepare for v1.13.1 release"
 
 # 2. 创建Tag
-git tag -a v1.13.0 -m "Release v1.13.0 - S+级易用优化版"
+git tag -a v1.13.1 -m "Release v1.13.1 - S+级易用优化版"
 
 # 3. 推送到GitHub
 git push origin main
-git push origin v1.13.0
+git push origin v1.13.1
 
 # 完成！GitHub Actions会自动开始构建
 ```
@@ -83,9 +83,9 @@ git push origin v1.13.0
 
 | 平台 | 文件名 | 大小 | 说明 |
 |------|--------|------|------|
-| Windows | `KookForwarder-Setup-1.13.0.exe` | ~450MB | 支持Win 10/11 x64 |
-| macOS | `KookForwarder-1.13.0.dmg` | ~480MB | 支持10.15+（Intel/M1/M2） |
-| Linux | `KookForwarder-1.13.0.AppImage` | ~420MB | 支持Ubuntu 20.04+ |
+| Windows | `KookForwarder-Setup-1.13.1.exe` | ~450MB | 支持Win 10/11 x64 |
+| macOS | `KookForwarder-1.13.1.dmg` | ~480MB | 支持10.15+（Intel/M1/M2） |
+| Linux | `KookForwarder-1.13.1.AppImage` | ~420MB | 支持Ubuntu 20.04+ |
 
 **安装包包含**:
 - ✅ Python 3.11运行环境
@@ -110,17 +110,17 @@ git push origin v1.13.0
 
 ### 1. 编辑GitHub Release页面
 
-访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.0
+访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.1
 
 **Release标题**:
 ```
-v1.13.0 - S+级易用优化版（93.8分）
+v1.13.1 - S+级易用优化版（93.8分）
 ```
 
 **Release说明**（复制以下内容）:
 
 ```markdown
-## 🚀 v1.13.0 - S+级易用优化版
+## 🚀 v1.13.1 - S+级易用优化版
 
 ### 🎯 核心特性
 
@@ -150,7 +150,7 @@ v1.13.0 - S+级易用优化版（93.8分）
 - [快速开始指南](QUICK_START.md)
 - [安装指南](INSTALLATION_GUIDE.md)
 - [用户手册](docs/用户手册.md)
-- [完整更新日志](CHANGELOG_v1.13.0.md)
+- [完整更新日志](CHANGELOG_v1.13.1.md)
 
 ### 🏆 项目质量
 
@@ -186,13 +186,13 @@ v1.13.0 - S+级易用优化版（93.8分）
 ```markdown
 ## 📥 快速下载
 
-### 最新版本: v1.13.0 ⭐ S+级易用优化版
+### 最新版本: v1.13.1 ⭐ S+级易用优化版
 
 | 平台 | 下载链接 | 大小 | 说明 |
 |------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.0/KookForwarder-Setup-1.13.0.exe) | ~450MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.0/KookForwarder-1.13.0.dmg) | ~480MB | 10.15+ (Intel/M1/M2) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.0/KookForwarder-1.13.0.AppImage) | ~420MB | Ubuntu 20.04+ |
+| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-Setup-1.13.1.exe) | ~450MB | Win 10/11 x64 |
+| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-1.13.1.dmg) | ~480MB | 10.15+ (Intel/M1/M2) |
+| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-1.13.1.AppImage) | ~420MB | Ubuntu 20.04+ |
 
 [查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases) | [安装指南](INSTALLATION_GUIDE.md) | [快速开始](QUICK_START.md)
 
@@ -204,7 +204,7 @@ v1.13.0 - S+级易用优化版（93.8分）
 **Twitter/微博/论坛**:
 
 ```
-🎉 KOOK消息转发系统 v1.13.0 正式发布！
+🎉 KOOK消息转发系统 v1.13.1 正式发布！
 
 ✨ 主要特性：
 • 零代码配置，5分钟上手
@@ -214,7 +214,7 @@ v1.13.0 - S+级易用优化版（93.8分）
 • 93.8分综合评分（S+级）
 
 📥 立即下载：
-https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.0
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.1
 
 #KOOK #消息转发 #开源项目
 ```
@@ -295,8 +295,8 @@ https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.0
 **A**: 
 ```bash
 # 删除错误的Tag
-git tag -d v1.13.0
-git push origin :refs/tags/v1.13.0
+git tag -d v1.13.1
+git push origin :refs/tags/v1.13.1
 
 # 从GitHub删除Release
 # 访问Releases页面，点击Delete
@@ -347,7 +347,7 @@ git push origin :refs/tags/v1.13.0
 **如果都已确认，执行以下命令**:
 
 ```bash
-./release.sh v1.13.0
+./release.sh v1.13.1
 ```
 
 **然后坐下来，喝杯咖啡，等待构建完成！☕**

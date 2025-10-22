@@ -26,19 +26,19 @@
 
 #### Windows (Win 10/11 x64)
 ```
-下载: KookForwarder-Setup-1.13.0.exe (~450MB)
+下载: KookForwarder-Setup-1.13.1.exe (~450MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
 #### macOS (10.15+, Intel/M1/M2)
 ```
-下载: KookForwarder-1.13.0.dmg (~480MB)
+下载: KookForwarder-1.13.1.dmg (~480MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
 #### Linux (Ubuntu 20.04+)
 ```
-下载: KookForwarder-1.13.0.AppImage (~420MB)
+下载: KookForwarder-1.13.1.AppImage (~420MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
@@ -68,14 +68,14 @@
 #### Linux
 ```bash
 # 1. 赋予执行权限
-chmod +x KookForwarder-1.13.0.AppImage
+chmod +x KookForwarder-1.13.1.AppImage
 
 # 2. 运行
-./KookForwarder-1.13.0.AppImage
+./KookForwarder-1.13.1.AppImage
 
 # 3. （可选）添加到应用菜单
 # Ubuntu/Debian:
-./KookForwarder-1.13.0.AppImage --appimage-extract
+./KookForwarder-1.13.1.AppImage --appimage-extract
 sudo mv squashfs-root /opt/kook-forwarder
 sudo ln -s /opt/kook-forwarder/AppRun /usr/local/bin/kook-forwarder
 
