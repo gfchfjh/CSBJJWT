@@ -4,7 +4,7 @@
 
 **一款面向普通用户的傻瓜式KOOK消息转发工具**
 
-[![Version](https://img.shields.io/badge/version-1.13.1-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Version](https://img.shields.io/badge/version-1.13.2-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Quality](https://img.shields.io/badge/quality-S+%20Grade%20(100/100)-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Performance](https://img.shields.io/badge/performance-+800%25-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Completion](https://img.shields.io/badge/completion-104%25-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
@@ -24,13 +24,13 @@
 
 ## 📥 快速下载（一键安装）
 
-### 最新版本: v1.13.1 ⭐ S+级优化完善版（100/100）
+### 最新版本: v1.13.2 ⭐ S+级优化完善版（100/100）
 
 | 平台 | 下载链接 | 大小 | 说明 |
 |------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.1.exe) | ~89MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.1-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.1.AppImage) | ~124MB | Ubuntu 20.04+ |
+| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.2.exe) | ~89MB | Win 10/11 x64 |
+| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.2-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
+| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.2.AppImage) | ~124MB | Ubuntu 20.04+ |
 
 **包含一切**: Python + Node.js + Chromium + Redis + 所有依赖 - 真正的下载即用！
 
@@ -66,13 +66,13 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ---
 
-## 🚀 v1.13.1+ 完美发布版（最新）⭐⭐⭐⭐⭐
+## 🚀 v1.13.2+ 完美发布版（最新）⭐⭐⭐⭐⭐
 
-### 🎯 v1.13.1+ 核心完成
+### 🎯 v1.13.2+ 核心完成
 
 本版本实现了**真正的一键安装使用**，从95%提升到100%，达到S+级完美标准。
 
-#### 七大核心完成（v1.13.1基础 + 发布完善）
+#### 七大核心完成（v1.13.2基础 + 发布完善）
 
 1. **✅ 真正的"下载即用"**（零依赖安装）
    - Chromium浏览器完全打包（约170MB）
@@ -126,7 +126,7 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
    - 50,000+字详尽说明
    - 真正达到"下载即用"标准
 
-[查看完整更新说明](./CHANGELOG_v1.13.1.md) | [发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md) | [立即部署](./DEPLOY_NOW.md)
+[查看完整更新说明](./CHANGELOG_v1.13.2.md) | [发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md) | [立即部署](./DEPLOY_NOW.md)
 
 ---
 
@@ -580,7 +580,7 @@ curl http://localhost:9527/api/cache/stats
 
 ---
 
-## 🏆 项目质量评估（v1.13.1+）
+## 🏆 项目质量评估（v1.13.2+）
 
 | 维度 | 评分 | 说明 |
 |------|------|------|
@@ -597,13 +597,13 @@ curl http://localhost:9527/api/cache/stats
 | **部署就绪度** | S+ (100/100) | 一键安装，真正下载即用 🆕 +15分 |
 | **生产就绪度** | **S+级** | 达到企业级生产就绪标准 |
 
-**综合评分**: **⭐⭐⭐⭐⭐ 100/100 (S+级 - 完美)** 🏆 🆕 v1.13.1+ +6.2分
+**综合评分**: **⭐⭐⭐⭐⭐ 100/100 (S+级 - 完美)** 🏆 🆕 v1.13.2+ +6.2分
 
 ---
 
 ## 📚 历史版本功能
 
-### v1.13.1 功能（最新）⭐⭐⭐⭐⭐
+### v1.13.2 功能（最新）⭐⭐⭐⭐⭐
 - 🎯 Chromium浏览器自动打包
 - 🎯 Redis服务自动打包
 - 🔍 智能环境检查系统
@@ -612,7 +612,7 @@ curl http://localhost:9527/api/cache/stats
 - 🔐 本地OCR验证码识别
 - 📦 完善PyInstaller配置
 
-[查看v1.13.1详细更新](./CHANGELOG_v1.13.1.md)
+[查看v1.13.2详细更新](./CHANGELOG_v1.13.2.md)
 
 ### v1.7.1 功能（已包含）
 - 🔧 修复Cookie传递问题
@@ -1170,15 +1170,15 @@ git push origin v1.14.0
 如果觉得这个项目有帮助，请给个 ⭐ Star 支持一下！
 
 **项目亮点**：
-- ✅ 40,000+行高质量代码（v2.0 +6,455行，v1.13.1 +865行，v1.13.1+ +3,000行）
+- ✅ 40,000+行高质量代码（v2.0 +6,455行，v1.13.2 +865行，v1.13.2+ +3,000行）
 - ✅ 262+个测试用例，88%覆盖率 🆕 v2.0
-- ✅ 104%功能完成度（超出预期）🆕 v1.13.1+ +6%
-- ✅ 125%文档完整度（50+个文档文件）🆕 v1.13.1+ +25%
+- ✅ 104%功能完成度（超出预期）🆕 v1.13.2+ +6%
+- ✅ 125%文档完整度（50+个文档文件）🆕 v1.13.2+ +25%
 - ✅ 100%国际化（中英双语）
 - ✅ **企业级压力测试系统** 🆕 v2.0 🔥
 - ✅ S+级生产就绪标准
 - ✅ 21+个版本持续迭代
-- ✅ **100分综合评分（满分100）**🏆 🆕 v1.13.1+ +6.2分
+- ✅ **100分综合评分（满分100）**🏆 🆕 v1.13.2+ +6.2分
 - ✅ CI/CD全自动化
 - ✅ 选择器配置UI（v1.10.0）⭐
 - ✅ 智能错误诊断（v1.11.0）⭐
@@ -1188,14 +1188,14 @@ git push origin v1.14.0
 - ✅ **PyInstaller打包**（v1.12.0）⭐
 - ✅ **Docker三套环境**（v1.12.0）⭐
 - ✅ **完整视频脚本**（v1.12.0）⭐
-- ✅ **Chromium/Redis自动打包**（v1.13.1）🔥
-- ✅ **智能环境检查**（v1.13.1）🔥
-- ✅ **一键构建脚本**（v1.13.1）🔥
-- ✅ **本地OCR识别**（v1.13.1）🔥
-- ✅ **用户友好界面**（v1.13.1）🔥
-- ✅ **一键发布流程**（v1.13.1+）🆕 🔥
-- ✅ **完整文档体系**（v1.13.1+）🆕 🔥
-- ✅ **真正一键安装**（v1.13.1+）🆕 🔥
+- ✅ **Chromium/Redis自动打包**（v1.13.2）🔥
+- ✅ **智能环境检查**（v1.13.2）🔥
+- ✅ **一键构建脚本**（v1.13.2）🔥
+- ✅ **本地OCR识别**（v1.13.2）🔥
+- ✅ **用户友好界面**（v1.13.2）🔥
+- ✅ **一键发布流程**（v1.13.2+）🆕 🔥
+- ✅ **完整文档体系**（v1.13.2+）🆕 🔥
+- ✅ **真正一键安装**（v1.13.2+）🆕 🔥
 
 ---
 

@@ -380,8 +380,14 @@ app.whenReady().then(async () => {
   // 设置开机自启
   await setupAutoLaunch()
   
-  // 创建系统托盘
-  createTray()
+  // 创建系统托盘（允许失败，不影响主应用）
+  try {
+    createTray()
+    console.log('✅ 系统托盘创建成功')
+  } catch (error) {
+    console.warn('⚠️ 系统托盘创建失败，但不影响主应用运行:', error.message)
+    // 托盘创建失败不应该阻止应用启动
+  }
   
   // 启动后端服务
   startBackend()
