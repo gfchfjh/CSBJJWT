@@ -149,7 +149,7 @@ jobs:
         run: |
           cd backend
           pip install -r requirements.txt
-          playwright install chromium --with-deps
+          playwright install chromium
       
       - name: Install Frontend dependencies
         run: |
@@ -203,7 +203,7 @@ jobs:
           cd backend
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          playwright install chromium --with-deps
+          playwright install chromium
       
       - name: Run backend tests
         run: |
