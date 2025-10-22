@@ -482,9 +482,42 @@ class KookScraper:
                 else:
                     logger.warning(f"⚠️ 2Captcha余额不足: ${balance or 0:.2f}，切换到手动模式")
             else:
-                logger.info("📝 2Captcha未配置，使用手动输入模式")
+                logger.info("📝 2Captcha未配置，将尝试本地OCR识别")
             
-            # 如果自动识别失败，使用手动输入
+            # ✅ v1.13.0新增：如果2Captcha失败，尝试本地OCR（P1-1优化）
+            if not captcha_code:
+                try:
+                    logger.info("🔍 尝试使用本地OCR识别验证码...")
+                    
+                    import ddddocr
+                    import aiohttp
+                    
+                    # 下载验证码图片到内存
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(captcha_image_url) as resp:
+                            if resp.status == 200:
+                                image_bytes = await resp.read()
+                                
+                                # 使用ddddocr识别
+                                ocr = ddddocr.DdddOcr(show_ad=False)
+                                captcha_code = ocr.classification(image_bytes)
+                                
+                                if captcha_code and len(captcha_code) > 0:
+                                    logger.info(f"✅ 本地OCR识别成功: {captcha_code}")
+                                else:
+                                    logger.warning("⚠️ 本地OCR识别结果为空")
+                                    captcha_code = None
+                            else:
+                                logger.warning(f"⚠️ 下载验证码图片失败: HTTP {resp.status}")
+                    
+                except ImportError:
+                    logger.warning("⚠️ ddddocr未安装，跳过本地OCR识别")
+                    logger.info("💡 提示：可以通过 pip install ddddocr 安装本地OCR支持")
+                    
+                except Exception as ocr_error:
+                    logger.warning(f"⚠️ 本地OCR识别失败: {str(ocr_error)}")
+            
+            # 如果自动识别和本地OCR都失败，使用手动输入
             if not captcha_code:
                 logger.info("等待用户手动输入验证码...")
                 
