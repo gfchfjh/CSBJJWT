@@ -63,7 +63,15 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "electron/**/*",
+      "public/icon.*"
+    ],
+    "extraResources": [
+      {
+        "from": "public/icon.png",
+        "to": "icon.png",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
       "target": "nsis",
