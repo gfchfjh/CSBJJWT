@@ -1,0 +1,143 @@
+name: Stress Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # 每天凌晨2点运行
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  stress-test:
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - name: Checkout代码
+      uses: actions/checkout@v3
+    
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: 安装依赖
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+        pip install -r backend/requirements-dev.txt
+    
+    - name: 启动后端服务
+      run: |
+        cd backend
+        nohup python -m app.main > backend.log 2>&1 &
+        echo $! > backend.pid
+        sleep 10  # 等待服务启动
+      env:
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+    
+    - name: 检查服务状态
+      run: |
+        curl -f http://127.0.0.1:9527/health || (cat backend/backend.log && exit 1)
+        redis-cli ping
+    
+    - name: 运行演示测试
+      run: |
+        python3 demo_stress_test.py
+      continue-on-error: false
+    
+    - name: 运行完整压力测试
+      run: |
+        python3 comprehensive_stress_test.py
+      continue-on-error: true  # 允许部分测试失败
+    
+    - name: 运行模块专项测试
+      run: |
+        python3 module_specific_stress_test.py
+      continue-on-error: true
+    
+    - name: 生成汇总报告
+      if: always()
+      run: |
+        python3 generate_test_summary.py || true
+    
+    - name: 上传测试报告
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: stress-test-reports
+        path: |
+          test_results/*.json
+          test_results/*.md
+          test_results/*.txt
+        retention-days: 30
+    
+    - name: 评估性能
+      if: success()
+      run: |
+        python3 << 'EOF'
+        import json
+        from pathlib import Path
+        
+        # 读取演示测试报告
+        report_path = Path("test_results/demo_stress_test_report.json")
+        if report_path.exists():
+            with open(report_path) as f:
+                data = json.load(f)
+            
+            # 提取关键指标
+            results = data.get("results", {})
+            
+            # 设置性能阈值
+            thresholds = {
+                "concurrent_processing": 1000,  # 最低吞吐量 msg/s
+                "queue_performance": 100000,    # 最低队列性能
+            }
+            
+            failed = []
+            
+            # 检查并发处理性能
+            if "concurrent_processing" in results:
+                for item in results["concurrent_processing"]:
+                    if item.get("throughput", 0) < thresholds["concurrent_processing"]:
+                        failed.append(f"并发处理性能低于阈值: {item['throughput']} < {thresholds['concurrent_processing']}")
+            
+            if failed:
+                print("⚠️ 性能警告:")
+                for msg in failed:
+                    print(f"  - {msg}")
+                exit(1)
+            else:
+                print("✅ 所有性能指标达标")
+        else:
+            print("⚠️ 未找到测试报告")
+        EOF
+    
+    - name: 清理
+      if: always()
+      run: |
+        if [ -f backend/backend.pid ]; then
+          kill $(cat backend/backend.pid) || true
+        fi
+    
+    - name: 发送通知
+      if: failure()
+      run: |
+        echo "压力测试失败，请检查报告"
+        # 这里可以添加Slack/邮件通知

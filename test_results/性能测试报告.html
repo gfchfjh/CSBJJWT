@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOOK消息转发系统 - 压力测试报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 40px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .stat-card h3 {
+            color: #667eea;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .chart-container {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+        
+        .chart-box {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .chart-box h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        
+        .success-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .performance-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .indicator-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .excellent { color: #10b981; }
+        .good { color: #3b82f6; }
+        .warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 KOOK消息转发系统</h1>
+            <p>压力测试性能报告</p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                测试时间: 2025-10-22T02:43:13.159099
+                <span class="success-badge">✅ 测试通过</span>
+            </p>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>📊 测试通过率</h3>
+                <div class="stat-value excellent">6/6</div>
+                <div class="stat-label">100% 成功</div>
+                <div class="performance-indicator">
+                    <div class="indicator-dot"></div>
+                    <span>优秀</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>⚡ 格式转换性能</h3>
+                <div class="stat-value good">972.4K</div>
+                <div class="stat-label">ops/秒</div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>🔄 并发处理能力</h3>
+                <div class="stat-value good">4.8K</div>
+                <div class="stat-label">msg/秒</div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>📦 队列性能</h3>
+                <div class="stat-value excellent">695.6K</div>
+                <div class="stat-label">msg/秒</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <div class="chart-box">
+                <h2>📈 并发处理性能趋势</h2>
+                <div class="chart-wrapper">
+                    <canvas id="concurrentChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-box">
+                <h2>🔀 队列性能对比</h2>
+                <div class="chart-wrapper">
+                    <canvas id="queueChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-box">
+                <h2>⏱️ 限流器准确度</h2>
+                <div class="chart-wrapper">
+                    <canvas id="rateLimiterChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🎯 KOOK消息转发系统压力测试框架 v1.0.0</p>
+            <p style="margin-top: 10px; color: #999;">
+                生成时间: 2025-10-22 03:06:46
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // 并发处理性能图表
+        const concurrentData = {"labels": ["10\u5e76\u53d1", "50\u5e76\u53d1", "100\u5e76\u53d1", "200\u5e76\u53d1"], "data": [267.65, 1463.21, 2756.4, 4848.71]};
+        new Chart(document.getElementById('concurrentChart'), {
+            type: 'line',
+            data: {
+                labels: concurrentData.labels,
+                datasets: [{
+                    label: '吞吐量 (msg/s)',
+                    data: concurrentData.data,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // 队列性能对比图表
+        const queueData = {"labels": ["100", "500", "1000", "5000"], "enqueue": [1271.00121, 1688.52818, 1474.79044, 695.5728], "dequeue": [8224.12549, 6678.828030000001, 10082.461539999998, 892.67101]};
+        new Chart(document.getElementById('queueChart'), {
+            type: 'bar',
+            data: {
+                labels: queueData.labels,
+                datasets: [
+                    {
+                        label: '入队性能',
+                        data: queueData.enqueue,
+                        backgroundColor: '#10b981'
+                    },
+                    {
+                        label: '出队性能',
+                        data: queueData.dequeue,
+                        backgroundColor: '#3b82f6'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'QPS (msg/s)'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 限流器准确度图表
+        const rateLimiterData = {"labels": ["5\u8bf7\u6c42/\u79d2", "10\u8bf7\u6c42/\u79d2", "20\u8bf7\u6c42/2\u79d2"], "data": [99.85, 99.87, 99.88]};
+        new Chart(document.getElementById('rateLimiterChart'), {
+            type: 'doughnut',
+            data: {
+                labels: rateLimiterData.labels,
+                datasets: [{
+                    data: rateLimiterData.data,
+                    backgroundColor: [
+                        '#10b981',
+                        '#3b82f6',
+                        '#f59e0b'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
