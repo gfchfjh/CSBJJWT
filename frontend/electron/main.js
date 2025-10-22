@@ -120,8 +120,41 @@ function startBackend() {
 
 // 创建系统托盘
 function createTray() {
-  const iconPath = path.join(__dirname, '../public/icon.png')
-  tray = new Tray(iconPath)
+  // 修复：根据环境选择正确的图标路径
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'icon.png')  // 生产环境
+    : path.join(__dirname, '../public/icon.png')     // 开发环境
+  
+  // 检查图标文件是否存在
+  if (!fs.existsSync(iconPath)) {
+    console.warn('⚠️ 托盘图标文件不存在:', iconPath)
+    console.log('📍 尝试备用路径...')
+    
+    // 尝试多个可能的路径
+    const fallbackPaths = [
+      path.join(__dirname, '../public/icon.png'),
+      path.join(__dirname, '../../build/icon.png'),
+      path.join(app.getAppPath(), 'public/icon.png'),
+      path.join(app.getAppPath(), '../icon.png')
+    ]
+    
+    let found = false
+    for (const fallbackPath of fallbackPaths) {
+      if (fs.existsSync(fallbackPath)) {
+        console.log('✅ 找到图标:', fallbackPath)
+        tray = new Tray(fallbackPath)
+        found = true
+        break
+      }
+    }
+    
+    if (!found) {
+      console.error('❌ 所有图标路径都失败，跳过创建托盘')
+      return null  // 返回 null 表示托盘创建失败，但不影响主应用
+    }
+  } else {
+    tray = new Tray(iconPath)
+  }
   
   const updateTrayMenu = (stats = null) => {
     const contextMenu = Menu.buildFromTemplate([
