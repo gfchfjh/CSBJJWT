@@ -57,6 +57,7 @@
   "build": {
     "appId": "com.kookforwarder.app",
     "productName": "KOOK消息转发系统",
+    "publish": null,
     "directories": {
       "output": "dist-electron"
     },
