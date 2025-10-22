@@ -17,7 +17,10 @@ from .utils.health import health_checker
 from .utils.update_checker import update_checker
 from .utils.redis_manager_enhanced import redis_manager  # v1.8.1使用增强版
 from .config import settings
+from .database import db
 import asyncio
+import json
+from pathlib import Path
 
 
 @asynccontextmanager
@@ -39,8 +42,13 @@ async def lifespan(app: FastAPI):
     background_tasks = []
     
     try:
+        # ✅ v1.13.0新增：环境检查（P0-5优化）
+        env_ok = await check_environment()
+        if not env_ok:
+            logger.warning("⚠️ 环境检查发现严重问题，但将继续启动。请尽快解决这些问题以确保正常运行。")
+        
         # 启动嵌入式Redis服务（v1.8.1增强版）
-        logger.info("🔍 检查Redis服务...")
+        logger.info("🔍 启动Redis服务...")
         redis_success, redis_msg = await redis_manager.start()
         if redis_success:
             logger.info(f"✅ {redis_msg}")
