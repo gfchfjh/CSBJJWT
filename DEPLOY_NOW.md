@@ -30,7 +30,7 @@
 cd /workspace
 
 # 运行一键发布脚本
-./release.sh v1.13.1
+./release.sh v1.13.2
 
 # 脚本会自动完成：
 # 1. ✅ 检查工作区状态
@@ -110,17 +110,17 @@ git push origin v1.13.1
 
 ### 1. 编辑GitHub Release页面
 
-访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.1
+访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.2
 
 **Release标题**:
 ```
-v1.13.1 - S+级易用优化版（93.8分）
+v1.13.2 - 紧急修复启动崩溃问题
 ```
 
 **Release说明**（复制以下内容）:
 
 ```markdown
-## 🚀 v1.13.1 - S+级易用优化版
+## 🚀 v1.13.2 - 紧急修复启动崩溃问题
 
 ### 🎯 核心特性
 
@@ -214,7 +214,7 @@ v1.13.1 - S+级易用优化版（93.8分）
 • 93.8分综合评分（S+级）
 
 📥 立即下载：
-https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.1
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.2
 
 #KOOK #消息转发 #开源项目
 ```

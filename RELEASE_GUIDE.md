@@ -1,8 +1,8 @@
 # KOOK消息转发系统 - 发布指南
 
-> **版本**: v1.13.1  
+> **版本**: v1.13.2  
 > **更新日期**: 2025-10-22  
-> **状态**: 95% → 100% 完成
+> **状态**: 100% 完成（紧急修复版）
 
 ---
 
@@ -105,7 +105,7 @@ https://github.com/gfchfjh/CSBJJWT/actions/workflows/build-and-release.yml
 # 2. 点击"Run workflow"按钮
 
 # 3. 输入版本号（可选）
-Version: v1.13.1
+Version: v1.13.2
 
 # 4. 点击"Run workflow"开始构建
 
@@ -131,7 +131,7 @@ REM 2. 执行构建脚本
 build_installer.bat
 
 REM 3. 生成的安装包位置
-frontend\dist-electron\KookForwarder-Setup-1.13.1.exe
+frontend\dist-electron\KOOK.Setup.1.13.2.exe
 ```
 
 **Linux/macOS构建**:
@@ -145,8 +145,8 @@ node --version     # 需要 Node.js 18+
 ./build_installer.sh
 
 # 3. 生成的安装包位置
-# macOS: frontend/dist-electron/KookForwarder-1.13.1.dmg
-# Linux: frontend/dist-electron/KookForwarder-1.13.1.AppImage
+# macOS: frontend/dist-electron/KOOK.-1.13.2-arm64.dmg
+# Linux: frontend/dist-electron/KOOK.-1.13.2.AppImage
 ```
 
 **预计时间**: 10-20分钟
@@ -158,7 +158,7 @@ node --version     # 需要 Node.js 18+
 ### Windows .exe (~450MB)
 
 ```
-KookForwarder-Setup-1.13.1.exe
+KOOK.Setup.1.13.2.exe
 ├── 前端应用 (Electron)
 │   ├── Vue 3 界面
 │   ├── 8个核心页面
@@ -177,7 +177,7 @@ KookForwarder-Setup-1.13.1.exe
 ### macOS .dmg (~480MB)
 
 ```
-KookForwarder-1.13.1.dmg
+KOOK.-1.13.2-arm64.dmg
 └── 内容结构同Windows版本
     └── macOS特定：
         ├── .app应用包
@@ -188,7 +188,7 @@ KookForwarder-1.13.1.dmg
 ### Linux .AppImage (~420MB)
 
 ```
-KookForwarder-1.13.1.AppImage
+KOOK.-1.13.2.AppImage
 └── 内容结构同Windows版本
     └── Linux特定：
         ├── 所有依赖打包
@@ -240,9 +240,9 @@ v1.13.1 - S+级易用优化版（93.8分）
 
 | 平台 | 文件 | 大小 |
 |------|------|------|
-| Windows | KookForwarder-Setup-1.13.1.exe | ~450MB |
-| macOS | KookForwarder-1.13.1.dmg | ~480MB |
-| Linux | KookForwarder-1.13.1.AppImage | ~420MB |
+| Windows | KOOK.Setup.1.13.2.exe | ~450MB |
+| macOS | KOOK.-1.13.2-arm64.dmg | ~480MB |
+| Linux | KOOK.-1.13.2.AppImage | ~420MB |
 
 ### 快速开始
 
@@ -261,13 +261,13 @@ v1.13.1 - S+级易用优化版（93.8分）
 ```markdown
 ## 📥 下载安装
 
-### 最新版本: v1.13.1
+### 最新版本: v1.13.2
 
 | 平台 | 下载链接 | 大小 |
 |------|---------|------|
-| 🪟 Windows | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-Setup-1.13.1.exe) | ~450MB |
-| 🍎 macOS | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-1.13.1.dmg) | ~480MB |
-| 🐧 Linux | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.1/KookForwarder-1.13.1.AppImage) | ~420MB |
+| 🪟 Windows | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.2/KOOK.Setup.1.13.2.exe) | ~89MB |
+| 🍎 macOS | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.2/KOOK.-1.13.2-arm64.dmg) | ~114MB |
+| 🐧 Linux | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.2/KOOK.-1.13.2.AppImage) | ~124MB |
 
 [查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases)
 ```
@@ -426,3 +426,4 @@ v主版本.次版本.修订版本
 Made with ❤️ by KOOK Forwarder Team
 
 </div>
+div>
