@@ -1,0 +1,366 @@
+{
+  "test_time": "2025-10-22T05:34:47.142419",
+  "total_tests": 42,
+  "passed_tests": 17,
+  "failed_tests": 21,
+  "skipped_tests": 4,
+  "test_details": [
+    {
+      "module": "消息抓取",
+      "test_name": "Playwright库导入",
+      "status": "FAIL",
+      "message": "Playwright未安装: No module named 'playwright'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.142820"
+    },
+    {
+      "module": "消息抓取",
+      "test_name": "KookScraper类定义",
+      "status": "FAIL",
+      "message": "无法导入KookScraper: No module named 'playwright'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.157282"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "格式转换器",
+      "status": "PASS",
+      "message": "支持KMarkdown转Discord/Telegram/飞书",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.162725"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "智能消息分段",
+      "status": "PASS",
+      "message": "优先在段落/句子边界分割,保持内容完整性",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.163045"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "表情映射表",
+      "status": "PASS",
+      "message": "支持149+个常用表情转换",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.163062"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "限流器",
+      "status": "PASS",
+      "message": "支持Discord(5/5s)、Telegram(30/1s)、飞书(20/1s)",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.165229"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "图片处理器",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.173906"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "消息过滤器",
+      "status": "FAIL",
+      "message": "No module named 'pydantic_settings'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.193957"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "消息验证器",
+      "status": "FAIL",
+      "message": "No module named 'loguru'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.198632"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "Redis消息队列",
+      "status": "SKIP",
+      "message": "Redis未运行或未配置",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.201880"
+    },
+    {
+      "module": "消息处理",
+      "test_name": "Worker消费者",
+      "status": "FAIL",
+      "message": "No module named 'loguru'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.208965"
+    },
+    {
+      "module": "转发模块",
+      "test_name": "Discord转发器",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.212505"
+    },
+    {
+      "module": "转发模块",
+      "test_name": "Telegram转发器",
+      "status": "FAIL",
+      "message": "No module named 'telegram'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.214956"
+    },
+    {
+      "module": "转发模块",
+      "test_name": "飞书转发器",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.219430"
+    },
+    {
+      "module": "转发模块",
+      "test_name": "转发器池化",
+      "status": "SKIP",
+      "message": "池化管理器可选功能",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.224237"
+    },
+    {
+      "module": "数据库",
+      "test_name": "数据库模块",
+      "status": "FAIL",
+      "message": "No module named 'pydantic_settings'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.224949"
+    },
+    {
+      "module": "API接口",
+      "test_name": "API模块",
+      "status": "FAIL",
+      "message": "No module named 'fastapi'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.227914"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "错误诊断系统",
+      "status": "FAIL",
+      "message": "No module named 'loguru'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.230584"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "健康检查系统",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.234356"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "审计日志系统",
+      "status": "FAIL",
+      "message": "No module named 'loguru'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.237350"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "Redis缓存系统",
+      "status": "SKIP",
+      "message": "Redis未运行或未配置",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.245294"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "任务调度系统",
+      "status": "FAIL",
+      "message": "No module named 'apscheduler'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.249668"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "链接预览提取",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.253136"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "邮件告警系统",
+      "status": "FAIL",
+      "message": "No module named 'aiosmtplib'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.256324"
+    },
+    {
+      "module": "高级功能",
+      "test_name": "版本更新检查",
+      "status": "FAIL",
+      "message": "No module named 'aiohttp'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.259158"
+    },
+    {
+      "module": "配置管理",
+      "test_name": "配置文件",
+      "status": "FAIL",
+      "message": "No module named 'pydantic_settings'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.259538"
+    },
+    {
+      "module": "配置管理",
+      "test_name": "日志系统",
+      "status": "FAIL",
+      "message": "No module named 'loguru'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.259790"
+    },
+    {
+      "module": "配置管理",
+      "test_name": "图床服务器",
+      "status": "FAIL",
+      "message": "No module named 'fastapi'",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.261793"
+    },
+    {
+      "module": "配置管理",
+      "test_name": "Redis管理器",
+      "status": "SKIP",
+      "message": "Redis管理器可选",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.265623"
+    },
+    {
+      "module": "文档完善性",
+      "test_name": "核心文档",
+      "status": "PASS",
+      "message": "存在10/10个核心文档",
+      "details": {
+        "existing": [
+          "项目主文档",
+          "用户手册",
+          "架构设计文档",
+          "API文档",
+          "开发指南",
+          "Cookie教程",
+          "Discord教程",
+          "Telegram教程",
+          "飞书教程",
+          "快速开始指南"
+        ],
+        "missing": []
+      },
+      "timestamp": "2025-10-22T05:34:47.265850"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "核心页面组件",
+      "status": "PASS",
+      "message": "存在8个核心页面",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266001"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "配置向导",
+      "status": "PASS",
+      "message": "存在5步配置向导组件",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266066"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "国际化支持",
+      "status": "PASS",
+      "message": "支持2种语言",
+      "details": {
+        "languages": [
+          "zh-CN.json",
+          "en-US.json"
+        ]
+      },
+      "timestamp": "2025-10-22T05:34:47.266129"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "Electron桌面应用",
+      "status": "PASS",
+      "message": "主进程和预加载脚本已配置",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266170"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "E2E端到端测试",
+      "status": "PASS",
+      "message": "存在2个E2E测试文件",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266205"
+    },
+    {
+      "module": "前端功能",
+      "test_name": "前端单元测试",
+      "status": "PASS",
+      "message": "存在5个单元测试文件",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266376"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "Docker容器化",
+      "status": "PASS",
+      "message": "存在4个Docker配置文件",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266443"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "PyInstaller打包",
+      "status": "PASS",
+      "message": "打包配置文件已存在",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266460"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "一键安装脚本",
+      "status": "PASS",
+      "message": "存在6个安装/启动脚本",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266531"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "GitHub Actions CI/CD",
+      "status": "PASS",
+      "message": "存在3个工作流配置",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266559"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "Redis嵌入式打包",
+      "status": "PASS",
+      "message": "Redis服务已准备打包",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266579"
+    },
+    {
+      "module": "部署就绪",
+      "test_name": "应用图标",
+      "status": "PASS",
+      "message": "图标文件已存在",
+      "details": {},
+      "timestamp": "2025-10-22T05:34:47.266600"
+    }
+  ],
+  "pass_rate": 40.476190476190474,
+  "grade": "C (需大幅改进)"
+}
