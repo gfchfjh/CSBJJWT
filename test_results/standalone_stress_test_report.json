@@ -1,0 +1,154 @@
+{
+  "test_time": "2025-10-22T09:24:39.477096",
+  "test_type": "独立压力测试",
+  "total_tests": 25,
+  "passed": 25,
+  "failed": 0,
+  "performance_metrics": {
+    "message_formatting": [
+      {
+        "test": "Discord格式转换(1000次)",
+        "ops_per_second": 451182.3584778809,
+        "elapsed": 0.008865594863891602
+      },
+      {
+        "test": "Discord格式转换(5000次)",
+        "ops_per_second": 354600.55375900917,
+        "elapsed": 0.05640149116516113
+      },
+      {
+        "test": "Discord格式转换(10000次)",
+        "ops_per_second": 383968.9478237386,
+        "elapsed": 0.10417509078979492
+      },
+      {
+        "test": "Discord格式转换(50000次)",
+        "ops_per_second": 593959.022063681,
+        "elapsed": 0.33672356605529785
+      },
+      {
+        "test": "Discord格式转换(100000次)",
+        "ops_per_second": 507807.5810273641,
+        "elapsed": 0.7876999378204346
+      },
+      {
+        "test": "Telegram格式转换(10000次)",
+        "ops_per_second": 228201.51987301293,
+        "elapsed": 0.17528367042541504
+      },
+      {
+        "test": "Telegram格式转换(50000次)",
+        "ops_per_second": 143017.78386239373,
+        "elapsed": 1.3984274864196777
+      },
+      {
+        "test": "消息智能分段(10000次)",
+        "ops_per_second": 5364246.06727203,
+        "elapsed": 0.0018641948699951172
+      }
+    ],
+    "rate_limiter": [
+      {
+        "test": "Discord限流(5/1s)",
+        "expected": 1,
+        "actual": 2.0503997802734375e-05,
+        "accuracy": 100
+      },
+      {
+        "test": "Telegram限流(30/1s)",
+        "expected": 1,
+        "actual": 1.7404556274414062e-05,
+        "accuracy": 100
+      },
+      {
+        "test": "飞书限流(20/1s)",
+        "expected": 1,
+        "actual": 9.059906005859375e-06,
+        "accuracy": 100
+      },
+      {
+        "test": "自定义限流(100/5s)",
+        "expected": 5,
+        "actual": 7.033348083496094e-05,
+        "accuracy": 100
+      }
+    ],
+    "concurrent_processing": [
+      {
+        "concurrent_level": 10,
+        "throughput": 2222.9722281110876,
+        "elapsed": 0.004498481750488281,
+        "success_rate": 100.0
+      },
+      {
+        "concurrent_level": 50,
+        "throughput": 18816.97622252131,
+        "elapsed": 0.002657175064086914,
+        "success_rate": 100.0
+      },
+      {
+        "concurrent_level": 100,
+        "throughput": 20789.610904584883,
+        "elapsed": 0.0048100948333740234,
+        "success_rate": 100.0
+      },
+      {
+        "concurrent_level": 200,
+        "throughput": 30552.91375291375,
+        "elapsed": 0.0065460205078125,
+        "success_rate": 100.0
+      },
+      {
+        "concurrent_level": 500,
+        "throughput": 32686.79374678533,
+        "elapsed": 0.015296697616577148,
+        "success_rate": 100.0
+      },
+      {
+        "concurrent_level": 1000,
+        "throughput": 23566.683148289656,
+        "elapsed": 0.04243278503417969,
+        "success_rate": 100.0
+      }
+    ],
+    "queue_performance": [
+      {
+        "batch_size": 100,
+        "enqueue_qps": 301965.73074154067,
+        "dequeue_qps": 397941.5559772296
+      },
+      {
+        "batch_size": 500,
+        "enqueue_qps": 92814.8705465811,
+        "dequeue_qps": 455704.4763146458
+      },
+      {
+        "batch_size": 1000,
+        "enqueue_qps": 379850.0271689911,
+        "dequeue_qps": 455555.9900076029
+      },
+      {
+        "batch_size": 5000,
+        "enqueue_qps": 203033.37173616287,
+        "dequeue_qps": 208026.02864738324
+      },
+      {
+        "batch_size": 10000,
+        "enqueue_qps": 184489.89645738213,
+        "dequeue_qps": 245414.40666561347
+      },
+      {
+        "batch_size": 50000,
+        "enqueue_qps": 189708.53762234727,
+        "dequeue_qps": 276777.5764382614
+      }
+    ],
+    "json_serialization": [
+      {
+        "iterations": 100000,
+        "serialize_qps": 98029.02093775234,
+        "deserialize_qps": 155714.1541851921
+      }
+    ]
+  }
+}
