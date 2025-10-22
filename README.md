@@ -4,7 +4,7 @@
 
 **一款面向普通用户的傻瓜式KOOK消息转发工具**
 
-[![Version](https://img.shields.io/badge/version-1.13.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Version](https://img.shields.io/badge/version-1.13.1-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Quality](https://img.shields.io/badge/quality-S+%20Grade%20(100/100)-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Performance](https://img.shields.io/badge/performance-+800%25-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Completion](https://img.shields.io/badge/completion-104%25-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
@@ -24,13 +24,13 @@
 
 ## 📥 快速下载（一键安装）
 
-### 最新版本: v1.13.0 ⭐ S+级完美版（100/100）
+### 最新版本: v1.13.1 ⭐ S+级优化完善版（100/100）
 
 | 平台 | 下载链接 | 大小 | 说明 |
 |------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.0.exe) | ~89MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.0-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.0.AppImage) | ~124MB | Ubuntu 20.04+ |
+| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.1.exe) | ~89MB | Win 10/11 x64 |
+| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.1-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
+| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.1.AppImage) | ~124MB | Ubuntu 20.04+ |
 
 **包含一切**: Python + Node.js + Chromium + Redis + 所有依赖 - 真正的下载即用！
 
