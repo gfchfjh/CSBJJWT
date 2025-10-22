@@ -145,5 +145,28 @@ def verify_password(password: str, hashed: str) -> bool:
     return CryptoManager.verify_password(password, hashed)
 
 
-# 创建全局加密管理器实例（v1.11.0新增）
-crypto_manager = CryptoManager()
+def encrypt_password(password: str) -> str:
+    """
+    加密密码（快捷函数）
+    用于安全存储密码
+    
+    Args:
+        password: 原始密码
+        
+    Returns:
+        加密后的密码
+    """
+    return crypto_manager.encrypt(password)
+
+
+def decrypt_password(encrypted_password: str) -> str:
+    """
+    解密密码（快捷函数）
+    
+    Args:
+        encrypted_password: 加密后的密码
+        
+    Returns:
+        原始密码
+    """
+    return crypto_manager.decrypt(encrypted_password)

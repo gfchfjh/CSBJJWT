@@ -28,9 +28,9 @@
 
 | 平台 | 下载链接 | 大小 | 说明 |
 |------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KookForwarder-Setup-1.13.0.exe) | ~450MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KookForwarder-1.13.0.dmg) | ~480MB | 10.15+ (Intel/M1/M2) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KookForwarder-1.13.0.AppImage) | ~420MB | Ubuntu 20.04+ |
+| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.0.exe) | ~89MB | Win 10/11 x64 |
+| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.0-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
+| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.0.AppImage) | ~124MB | Ubuntu 20.04+ |
 
 **包含一切**: Python + Node.js + Chromium + Redis + 所有依赖 - 真正的下载即用！
 
@@ -1101,6 +1101,43 @@ Linux: /home/[用户名]/Documents/KookForwarder/data/logs/
 3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启Pull Request
+
+### 📦 开发者发布流程
+
+**发布新版本（自动化CI/CD）**:
+
+```bash
+# 1. 更新版本号
+# - frontend/package.json: "version": "1.14.0"
+# - README.md: 更新版本号和下载链接
+
+# 2. 提交更改
+git add .
+git commit -m "chore: bump version to v1.14.0"
+git push origin main
+
+# 3. 创建并推送 Git tag（触发自动构建）
+git tag -a v1.14.0 -m "Release v1.14.0"
+git push origin v1.14.0
+
+# 4. GitHub Actions 自动执行：
+#    ✅ 构建 Windows/macOS/Linux 安装包
+#    ✅ 运行测试套件
+#    ✅ 创建 GitHub Release
+#    ✅ 上传所有平台安装包
+#    ⏱️  预计耗时: 15-20 分钟
+```
+
+**检查构建状态**:
+- 访问: https://github.com/gfchfjh/CSBJJWT/actions
+- 查看 "Build and Release" workflow 运行状态
+- 构建成功后，Release 自动发布到: https://github.com/gfchfjh/CSBJJWT/releases
+
+**技术说明**:
+- CI/CD 配置: `.github/workflows/build-and-release.yml`
+- 构建脚本: `build_installer.sh` / `build_installer.bat`
+- Electron 配置: `frontend/package.json` → `build` 节点
+- 发布策略: 两阶段构建（build jobs → release job）
 
 ---
 

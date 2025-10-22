@@ -5,7 +5,7 @@ import pytest
 import asyncio
 import time
 from datetime import datetime
-from backend.app.utils.scheduler import TaskScheduler
+from app.utils.scheduler import TaskScheduler
 
 
 @pytest.fixture

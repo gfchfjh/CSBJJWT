@@ -5,7 +5,7 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-from backend.app.database import Database
+from app.database import Database
 
 
 @pytest.fixture

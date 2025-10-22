@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
-from backend.app.processors.image import ImageProcessor
+from app.processors.image import ImageProcessor
 
 
 @pytest.fixture
