@@ -1,0 +1,82 @@
+# Docker Compose配置 - 压力测试环境
+
+version: '3.8'
+
+services:
+  # Redis服务
+  redis:
+    image: redis:7-alpine
+    container_name: kook-test-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # 压力测试服务
+  stress-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: kook-stress-test
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./test_results:/app/test_results
+      - ./charts:/app/charts
+      - ./dashboard:/app/dashboard
+      - ./logs:/app/logs
+    networks:
+      - test-network
+    command: >
+      bash -c "
+        echo '开始压力测试...' &&
+        python3 demo_stress_test.py &&
+        echo '生成性能图表...' &&
+        python3 generate_charts.py &&
+        echo '验证性能基准...' &&
+        python3 performance_validator.py &&
+        echo '保存历史数据...' &&
+        python3 history_tracker.py &&
+        echo '测试完成！'
+      "
+
+  # 可选：后端服务（用于完整测试）
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kook-backend
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "9527:9527"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./backend/data:/app/data
+    networks:
+      - test-network
+    profiles:
+      - full-test  # 仅在完整测试时启动
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  redis-data:
