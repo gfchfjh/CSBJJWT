@@ -7,7 +7,7 @@ python-multipart==0.0.6
 # 异步和HTTP
 aiohttp==3.9.1
 asyncio==3.4.3
-httpx==0.26.0
+httpx==0.25.2
 
 # 浏览器自动化
 playwright==1.40.0
