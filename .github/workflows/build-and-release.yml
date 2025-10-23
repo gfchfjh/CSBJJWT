@@ -39,19 +39,23 @@ jobs:
       
       - name: Install Playwright browsers
         run: |
-          playwright install chromium
-          playwright install-deps chromium
+          playwright install chromium --with-deps
       
       - name: Build backend with PyInstaller
         run: |
           cd backend
           pyinstaller --clean --noconfirm build_backend.spec
+          
+      - name: Verify build output
+        run: |
+          ls -la dist/ || echo "No dist directory"
+          find . -name "KookForwarder*" -type f || echo "No KookForwarder files found"
       
       - name: Upload backend artifact
         uses: actions/upload-artifact@v4
         with:
           name: backend-${{ matrix.os }}
-          path: dist/backend/
+          path: backend/dist/
           retention-days: 1
 
   # Job 2: 构建Electron应用（Windows）
