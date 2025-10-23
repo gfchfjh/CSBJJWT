@@ -6,7 +6,7 @@
 
 ## 📥 第一步：选择安装方式（1-8分钟）
 
-### 🆕 方式A: Windows增强脚本（推荐Windows用户）⭐⭐⭐⭐⭐
+### 🆕 方式A: Windows增强脚本（推荐Windows用户）
 
 **全自动安装所有依赖，8分钟完成！**
 
@@ -29,7 +29,7 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 # 3分钟完成！
 ```
 
-### 🆕 方式C: Linux/macOS一键脚本⭐⭐⭐⭐
+### 🆕 方式C: Linux/macOS一键脚本
 
 ```bash
 # 一行命令安装：
@@ -39,7 +39,7 @@ cd CSBJJWT && ./start.sh
 # 7分钟完成！
 ```
 
-### 方式D: 预编译安装包（最简单）⭐⭐⭐⭐⭐
+### 方式D: 预编译安装包
 
 选择您的操作系统：
 
@@ -569,7 +569,7 @@ docker logs -f kook-forwarder
 
 <div align="center">
 
-**如果觉得有帮助，请给个 ⭐ Star 支持一下！**
+**如果觉得有帮助，请给个 Star 支持一下！**
 
 Made with ❤️ by KOOK Forwarder Team
 
