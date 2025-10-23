@@ -16,7 +16,22 @@
 
 ## 📥 一键安装（4种方式）🆕
 
-### 🆕 方式1: Windows增强脚本（推荐Windows用户）
+### 🆕 方式1: Docker一键部署（⭐推荐所有用户）
+
+**最简单、最稳定的安装方式**
+
+```bash
+# Linux/macOS/服务器，一行命令：
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install.sh | bash
+```
+
+✅ 预计时间: 3分钟  
+✅ 优点: 容器化部署、自动重启、数据持久化  
+✅ 适合: 所有用户，尤其是服务器部署
+
+---
+
+### 🆕 方式2: Windows增强脚本（⭐推荐Windows用户）
 
 **全自动安装所有依赖**
 
@@ -26,20 +41,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; `
 iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install_enhanced.bat'))
 ```
 
-预计时间: 8分钟
-
----
-
-### 🆕 方式2: Docker一键部署（推荐服务器用户）
-
-**快速部署**
-
-```bash
-# Linux/macOS服务器，一行命令：
-curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install.sh | bash
-```
-
-预计时间: 3分钟
+✅ 预计时间: 5-10分钟  
+✅ 优点: 全自动安装Python、Node.js、创建桌面快捷方式  
+✅ 适合: Windows桌面用户
 
 ---
 
@@ -50,21 +54,25 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.sh | b
 cd CSBJJWT && ./start.sh
 ```
 
-预计时间: 7分钟
+✅ 预计时间: 5-10分钟  
+✅ 优点: 自动安装依赖、支持多种Linux发行版  
+✅ 适合: Linux/macOS桌面用户
 
 ---
 
-### 方式4: 预编译安装包
+### 方式4: 预编译安装包 🔜
 
-| 平台 | 下载链接 | 大小 | 说明 |
-|------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~450MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~480MB | 10.15+ (Intel/M1/M2) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~420MB | Ubuntu 20.04+ |
+**状态**: 开发优化中，计划v1.14.0发布
 
-预计时间: 2分钟
+预编译安装包正在优化构建流程，当前推荐使用以上3种经过充分测试的安装方式。
 
-**📦 如何生成安装包**：运行 `./release_package.sh` 即可触发GitHub Actions自动构建
+| 平台 | 状态 | 说明 |
+|------|------|------|
+| 🪟 **Windows** | 🔜 优化中 | 计划v1.14.0 |
+| 🍎 **macOS** | 🔜 优化中 | 计划v1.14.0 |
+| 🐧 **Linux** | 🔜 优化中 | 计划v1.14.0 |
+
+💡 **推荐**: 在预编译包发布前，使用Docker或一键脚本安装（3-10分钟，同样简单）
 
 ---
 
