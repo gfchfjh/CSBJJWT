@@ -22,14 +22,20 @@ project_root = os.path.abspath(os.path.join(SPECPATH, '..'))
 # 收集所有需要的数据文件
 datas = []
 
-# 1. 添加Redis可执行文件
+# 1. 添加Redis可执行文件（仅当文件存在时）
 redis_dir = os.path.join(project_root, 'redis')
-if sys.platform == 'win32':
-    datas.append((os.path.join(redis_dir, 'redis-server.exe'), 'redis'))
-    datas.append((os.path.join(redis_dir, 'redis.conf'), 'redis'))
-else:
-    datas.append((os.path.join(redis_dir, 'redis-server'), 'redis'))
-    datas.append((os.path.join(redis_dir, 'redis.conf'), 'redis'))
+if os.path.exists(redis_dir):
+    if sys.platform == 'win32':
+        redis_server = os.path.join(redis_dir, 'redis-server.exe')
+        redis_conf = os.path.join(redis_dir, 'redis.conf')
+    else:
+        redis_server = os.path.join(redis_dir, 'redis-server')
+        redis_conf = os.path.join(redis_dir, 'redis.conf')
+    
+    if os.path.exists(redis_server):
+        datas.append((redis_server, 'redis'))
+    if os.path.exists(redis_conf):
+        datas.append((redis_conf, 'redis'))
 
 # 2. 添加选择器配置文件
 selectors_file = os.path.join(project_root, 'backend', 'data', 'selectors.yaml')
