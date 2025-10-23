@@ -1,6 +1,27 @@
 # 📥 KOOK消息转发系统 - 安装指南
 
-> **三种安装方式，满足不同用户需求**
+> **多种安装方式，满足不同用户需求**
+
+**当前版本：** v1.13.2  
+**最后更新：** 2025-10-23
+
+---
+
+## 🆕 v1.13.2 新增
+
+**完整构建工具链和文档体系**：
+
+- ✅ [START_HERE.md](START_HERE.md) - **新手入口，快速导航** ⭐
+- ✅ [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md) - **本地构建详细指南**（1182行）⭐⭐⭐⭐⭐
+- ✅ [QUICK_BUILD_REFERENCE.md](QUICK_BUILD_REFERENCE.md) - 快速命令参考
+- ✅ [BUILD_INDEX.md](BUILD_INDEX.md) - 文档导航索引
+- ✅ [BUILD_TOOLS_README.md](BUILD_TOOLS_README.md) - 工具使用说明
+
+**自动化工具**：
+- ✅ `build/verify_build.py` - 构建验证工具（7项检查）
+- ✅ `build/create_platform_icons.py` - 平台图标生成
+- ✅ `build/prepare_redis.py` - Redis自动准备
+- ✅ `BUILD_QUICKSTART.sh` - 一键快速启动
 
 ---
 
@@ -8,18 +29,20 @@
 
 | 方式 | 适合人群 | 时间 | 状态 |
 |------|---------|------|------|
-| **方式1: 预编译安装包** | 普通用户 | 2分钟 | ✅ 方案完成 |
+| **方式1: 预编译安装包** | 普通用户 | 2分钟 | ✅ 构建工具完成 |
 | **方式2: Windows增强脚本** | Windows用户 | 8分钟 | ✅ 可用 |
 | **方式3: Docker一键部署** | 服务器用户 | 3分钟 | ✅ 可用 |
 | **方式4: Linux/macOS脚本** | 技术用户 | 7分钟 | ✅ 可用 |
 | **方式5: 源码安装** | 开发者 | 15分钟 | ✅ 可用 |
 
-**🆕 新增**: 方式1预编译安装包构建方案完成！运行 `./release_package.sh` 即可生成
+**🔥 推荐使用方式1**：运行 `./release_package.sh` 触发GitHub Actions自动构建3个平台安装包
 
-**详细教程**: 
-- [一键安装完整指南](docs/一键安装指南.md)
-- [如何生成预编译安装包](如何生成预编译安装包.md) 🆕
-- [完整构建指南](BUILD_RELEASE_GUIDE.md) 🆕
+**📖 详细教程**: 
+- **[START_HERE.md](START_HERE.md)** - 新手入口 🌟
+- **[LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md)** - 本地构建详细指南（1182行）🌟
+- [QUICK_BUILD_REFERENCE.md](QUICK_BUILD_REFERENCE.md) - 命令速查表
+- [一键安装完整指南](docs/一键安装指南.md) - 4种安装方式详解
+- [BUILD_INDEX.md](BUILD_INDEX.md) - 完整文档导航
 
 ---
 
