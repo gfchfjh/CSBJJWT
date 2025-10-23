@@ -91,10 +91,29 @@ main() {
     cd ..
     print_success "前端依赖安装完成"
     
-    # 3. 准备Redis（跳过，使用系统Redis或后续打包）
-    print_header "3️⃣  准备Redis"
-    print_warning "Redis准备：将使用系统Redis或嵌入式Redis"
-    print_info "如需打包Redis，请运行: python build/prepare_redis.py"
+    # 3. 准备Chromium和Redis（v1.15.0新增：完整打包）
+    print_header "3️⃣  准备Chromium和Redis"
+    
+    print_info "准备Chromium浏览器..."
+    if [ -f "build/prepare_chromium.py" ]; then
+        # 自动选择策略1（创建首次下载脚本）
+        echo "1" | python3 build/prepare_chromium.py
+        print_success "Chromium准备完成（首次运行下载模式）"
+    else
+        print_warning "build/prepare_chromium.py不存在，跳过Chromium准备"
+    fi
+    
+    print_info "准备Redis服务..."
+    if [ -f "build/prepare_redis.py" ]; then
+        python3 build/prepare_redis.py
+        if [ $? -eq 0 ]; then
+            print_success "Redis准备完成"
+        else
+            print_warning "Redis准备失败，将使用系统Redis"
+        fi
+    else
+        print_warning "build/prepare_redis.py不存在，跳过Redis准备"
+    fi
     
     # 4. 构建后端
     print_header "4️⃣  构建Python后端"
