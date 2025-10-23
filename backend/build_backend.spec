@@ -140,7 +140,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='build/icon.ico' if sys.platform == 'win32' else 'build/icon.icns',  # 应用图标
+    icon=None,  # 暂时不使用图标
 )
 
 # Linux/macOS: 创建COLLECT（包含所有依赖）
