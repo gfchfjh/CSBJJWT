@@ -11,7 +11,6 @@
 
 **代码优化和文档完善**：
 
-- ✅ 项目全面评估（综合评分97.2/100）
 - ✅ GitHub Actions优化（artifact v3→v4）
 - ✅ Docker部署推荐（3分钟部署）
 - ✅ 预编译包状态明确（计划v1.14.0）
@@ -19,7 +18,7 @@
 **v1.13.2 构建工具链**：
 
 - ✅ [START_HERE.md](START_HERE.md) - **新手入口，快速导航** ⭐
-- ✅ [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md) - **本地构建详细指南**（1182行）⭐⭐⭐⭐⭐
+- ✅ [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md) - **本地构建详细指南**（1182行）
 - ✅ [QUICK_BUILD_REFERENCE.md](QUICK_BUILD_REFERENCE.md) - 快速命令参考
 - ✅ [BUILD_INDEX.md](BUILD_INDEX.md) - 文档导航索引
 - ✅ [BUILD_TOOLS_README.md](BUILD_TOOLS_README.md) - 工具使用说明

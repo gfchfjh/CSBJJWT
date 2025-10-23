@@ -11,7 +11,7 @@
 **完整的构建工具链和文档体系**，让发布变得更简单：
 
 ### 新增文档
-- ✅ **[LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md)** - 1182行详细构建指南 ⭐⭐⭐⭐⭐
+- ✅ **[LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md)** - 1182行详细构建指南 
   - Windows完整步骤（11步）
   - macOS完整步骤（10步）
   - Linux完整步骤（10步）
@@ -30,7 +30,7 @@
 
 ### 快速发布
 ```bash
-# 方式1: GitHub Actions自动构建（推荐）⭐⭐⭐⭐⭐
+# 方式1: GitHub Actions自动构建（推荐）
 ./release_package.sh
 # 等待15-20分钟，访问 GitHub Releases
 
@@ -92,7 +92,7 @@ cat LOCAL_BUILD_GUIDE.md  # 查看详细步骤
 
 ## 🚀 发布流程（三种方式）
 
-### 方式1: GitHub Actions自动发布（推荐）⭐⭐⭐⭐⭐
+### 方式1: GitHub Actions自动发布（推荐）
 
 **适用场景**: 正式版本发布
 
@@ -105,7 +105,6 @@ git add .
 git commit -m "chore: prepare for v1.13.3 release"
 
 # 2. 创建版本Tag
-git tag -a v1.13.3 -m "Release v1.13.3 - S+级易用优化版"
 
 # 3. 推送到GitHub
 git push origin main
@@ -130,7 +129,7 @@ git push origin v1.13.3
 
 **预计时间**: 30-60分钟
 
-### 方式2: 手动触发GitHub Actions ⭐⭐⭐⭐
+### 方式2: 手动触发GitHub Actions 
 
 **适用场景**: 测试构建、紧急发布
 
@@ -154,7 +153,7 @@ Version: v1.13.3
 
 **预计时间**: 30-60分钟
 
-### 方式3: 本地构建（开发者）⭐⭐⭐
+### 方式3: 本地构建（开发者）
 
 **适用场景**: 本地测试、特殊定制
 
@@ -244,7 +243,6 @@ KOOK.-1.13.3.AppImage
 
 **Release标题**:
 ```
-v1.13.3 - S+级易用优化版（93.8分）
 ```
 
 **Release说明** (从CHANGELOG复制):
@@ -322,7 +320,6 @@ v1.13.3 - S+级易用优化版（93.8分）
 • 支持Discord、Telegram、飞书
 • 完整的图形化界面
 • 性能优化800%
-• 93.8分综合评分（S+级）
 
 📥 立即下载：
 https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
