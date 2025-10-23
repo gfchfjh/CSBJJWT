@@ -93,9 +93,10 @@ hiddenimports = [
 ]
 
 # 分析入口文件
+# SPECPATH 是 build_backend.spec 所在的目录（即 backend/）
 a = Analysis(
-    ['backend/app/main.py'],
-    pathex=[project_root],
+    [os.path.join(SPECPATH, 'app', 'main.py')],
+    pathex=[SPECPATH],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
