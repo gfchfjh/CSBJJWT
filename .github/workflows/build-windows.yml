@@ -11,6 +11,10 @@ on:
         required: true
         default: 'v1.14.0'
 
+# 授予GitHub Actions必要的权限
+permissions:
+  contents: write    # 允许上传到Releases
+
 jobs:
   build-windows:
     name: Build Windows Installer

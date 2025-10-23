@@ -4,7 +4,7 @@ FROM python:3.11-slim
 # 设置工作目录
 WORKDIR /app
 
-# 安装系统依赖
+# 安装系统依赖（包括编译工具，用于构建psutil等库）
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -33,6 +33,10 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     libxshmfence1 \
     redis-server \
+    gcc \
+    g++ \
+    python3-dev \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # 复制后端代码

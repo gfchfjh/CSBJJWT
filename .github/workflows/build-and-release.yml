@@ -12,6 +12,11 @@ on:
         required: true
         default: 'v1.13.2'
 
+# 授予GitHub Actions必要的权限
+permissions:
+  contents: write    # 允许创建和上传到Releases
+  packages: write    # 允许推送Docker镜像
+
 jobs:
   # Job 1: 构建后端
   build-backend:
