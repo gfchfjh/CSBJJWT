@@ -163,8 +163,8 @@
 
 - [ ] Git Tag准备（可选）
   ```bash
-  git tag v1.13.3
-  git push origin v1.13.3
+  git tag v1.14.0
+  git push origin v1.14.0
   ```
 
 ---
@@ -227,8 +227,8 @@ build_all.bat
 ./release_package.sh
 
 # 或手动创建Tag
-git tag v1.13.3
-git push origin v1.13.3
+git tag v1.14.0
+git push origin v1.14.0
 ```
 
 **GitHub Actions将自动：**

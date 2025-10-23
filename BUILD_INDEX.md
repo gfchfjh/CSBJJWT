@@ -291,5 +291,5 @@ python3 build/verify_build.py
 **建议：** 将本文档添加到浏览器书签，随时查阅！
 
 **最后更新：** 2025-10-23  
-**版本：** v1.13.3  
+**版本：** v1.14.0  
 **维护：** KOOK Forwarder Team

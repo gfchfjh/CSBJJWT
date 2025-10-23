@@ -57,7 +57,7 @@ bash release_package.sh
 编辑 `frontend/package.json`:
 ```json
 {
-  "version": "1.13.3"
+  "version": "1.14.0"
 }
 ```
 
@@ -65,7 +65,7 @@ bash release_package.sh
 
 ```bash
 git add frontend/package.json
-git commit -m "chore: bump version to v1.13.3"
+git commit -m "chore: bump version to v1.14.0"
 git push origin main
 ```
 
@@ -73,18 +73,18 @@ git push origin main
 
 ```bash
 # 创建带注释的标签
-git tag -a v1.13.3 -m "Release v1.13.3
+git tag -a v1.14.0 -m "Release v1.14.0
 
-🎉 KOOK消息转发系统 v1.13.3
+🎉 KOOK消息转发系统 v1.14.0
 
 ## 📦 安装包
-- Windows: KookForwarder-Setup-1.13.3.exe
-- macOS: KookForwarder-1.13.3.dmg
-- Linux: KookForwarder-1.13.3.AppImage
+- Windows: KookForwarder-Setup-1.14.0.exe
+- macOS: KookForwarder-1.14.0.dmg
+- Linux: KookForwarder-1.14.0.AppImage
 
 ## 🐳 Docker镜像
 \`\`\`bash
-docker pull ghcr.io/gfchfjh/csbjjwt:1.13.3
+docker pull ghcr.io/gfchfjh/csbjjwt:1.14.0
 \`\`\`
 
 ## 📚 文档
@@ -93,7 +93,7 @@ docker pull ghcr.io/gfchfjh/csbjjwt:1.13.3
 "
 
 # 推送标签到远程
-git push origin v1.13.3
+git push origin v1.14.0
 ```
 
 ### 步骤4: GitHub Actions 自动构建
@@ -156,13 +156,13 @@ https://github.com/gfchfjh/CSBJJWT/actions
 
 访问Release页面:
 ```
-https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.14.0
 ```
 
 **检查内容**:
-- ✅ Windows安装包 (KookForwarder-Setup-1.13.3.exe, ~450MB)
-- ✅ macOS安装包 (KookForwarder-1.13.3.dmg, ~480MB)
-- ✅ Linux安装包 (KookForwarder-1.13.3.AppImage, ~420MB)
+- ✅ Windows安装包 (KookForwarder-Setup-1.14.0.exe, ~450MB)
+- ✅ macOS安装包 (KookForwarder-1.14.0.dmg, ~480MB)
+- ✅ Linux安装包 (KookForwarder-1.14.0.AppImage, ~420MB)
 - ✅ 发布说明完整
 - ✅ Docker镜像已推送
 
@@ -238,9 +238,9 @@ npm run electron:build:linux
 安装包位置:
 ```
 frontend/dist-electron/
-├── KookForwarder-Setup-1.13.3.exe      # Windows
-├── KookForwarder-1.13.3.dmg            # macOS
-└── KookForwarder-1.13.3.AppImage       # Linux
+├── KookForwarder-Setup-1.14.0.exe      # Windows
+├── KookForwarder-1.14.0.dmg            # macOS
+└── KookForwarder-1.14.0.AppImage       # Linux
 ```
 
 ---
@@ -249,7 +249,7 @@ frontend/dist-electron/
 
 ### Windows (.exe)
 
-**文件名**: `KookForwarder-Setup-1.13.3.exe`  
+**文件名**: `KookForwarder-Setup-1.14.0.exe`  
 **大小**: ~450MB  
 **包含**:
 - Python 3.11 运行时
@@ -267,7 +267,7 @@ frontend/dist-electron/
 
 ### macOS (.dmg)
 
-**文件名**: `KookForwarder-1.13.3.dmg`  
+**文件名**: `KookForwarder-1.14.0.dmg`  
 **大小**: ~480MB  
 **包含**: 同Windows
 
@@ -279,17 +279,17 @@ frontend/dist-electron/
 
 ### Linux (.AppImage)
 
-**文件名**: `KookForwarder-1.13.3.AppImage`  
+**文件名**: `KookForwarder-1.14.0.AppImage`  
 **大小**: ~420MB  
 **包含**: 同Windows
 
 **使用方式**:
 ```bash
 # 赋予执行权限
-chmod +x KookForwarder-1.13.3.AppImage
+chmod +x KookForwarder-1.14.0.AppImage
 
 # 运行
-./KookForwarder-1.13.3.AppImage
+./KookForwarder-1.14.0.AppImage
 
 # （可选）安装到系统
 # Ubuntu/Debian
@@ -305,7 +305,7 @@ sudo apt install libfuse2
 **仓库**: `ghcr.io/gfchfjh/csbjjwt`  
 **标签**:
 - `latest` - 最新稳定版
-- `1.13.3` - 特定版本
+- `1.14.0` - 特定版本
 - `1.13` - 次版本
 - `1` - 主版本
 
@@ -316,7 +316,7 @@ sudo apt install libfuse2
 docker pull ghcr.io/gfchfjh/csbjjwt:latest
 
 # 拉取特定版本
-docker pull ghcr.io/gfchfjh/csbjjwt:1.13.3
+docker pull ghcr.io/gfchfjh/csbjjwt:1.14.0
 ```
 
 ### 运行镜像
@@ -348,7 +348,7 @@ docker-compose -f docker-compose.standalone.yml up -d
 **解决方法**:
 1. 检查Actions页面的错误日志
 2. 确认Tag已推送: `git ls-remote --tags origin`
-3. 重新推送Tag: `git push -f origin v1.13.3`
+3. 重新推送Tag: `git push -f origin v1.14.0`
 
 ### 问题2: 本地构建Chromium下载失败
 

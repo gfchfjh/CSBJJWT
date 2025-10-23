@@ -1,12 +1,12 @@
 # KOOK消息转发系统 - 发布指南
 
-> **当前版本**: v1.13.3  
+> **当前版本**: v1.14.0  
 > **最后更新**: 2025-10-23  
 > **状态**: 100% 完成（完整构建工具链）
 
 ---
 
-## 🆕 v1.13.3 重大更新
+## 🆕 v1.14.0 重大更新
 
 **完整的构建工具链和文档体系**，让发布变得更简单：
 
@@ -48,9 +48,9 @@ cat LOCAL_BUILD_GUIDE.md  # 查看详细步骤
 
 将KOOK消息转发系统打包为**三平台一键安装包**，实现真正的"下载即用"：
 
-- ✅ Windows: `KookForwarder_v1.13.3_Windows_x64.exe` (~450MB)
-- ✅ macOS: `KookForwarder_v1.13.3_macOS.dmg` (~480MB)
-- ✅ Linux: `KookForwarder_v1.13.3_Linux_x64.AppImage` (~420MB)
+- ✅ Windows: `KookForwarder_v1.14.0_Windows_x64.exe` (~450MB)
+- ✅ macOS: `KookForwarder_v1.14.0_macOS.dmg` (~480MB)
+- ✅ Linux: `KookForwarder_v1.14.0_Linux_x64.AppImage` (~420MB)
 
 ---
 
@@ -74,7 +74,7 @@ cat LOCAL_BUILD_GUIDE.md  # 查看详细步骤
 ### 3. 配置文件检查 ✅
 
 - [x] backend/requirements.txt (58个依赖)
-- [x] frontend/package.json (版本1.13.3)
+- [x] frontend/package.json (版本1.14.0)
 - [x] .github/workflows/build-and-release.yml
 - [x] backend/build_backend.spec
 - [x] build/electron-builder.yml
@@ -102,19 +102,19 @@ cat LOCAL_BUILD_GUIDE.md  # 查看详细步骤
 # 1. 确保所有改动已提交
 git status
 git add .
-git commit -m "chore: prepare for v1.13.3 release"
+git commit -m "chore: prepare for v1.14.0 release"
 
 # 2. 创建版本Tag
 
 # 3. 推送到GitHub
 git push origin main
-git push origin v1.13.3
+git push origin v1.14.0
 
 # 4. 等待GitHub Actions自动构建（约30-60分钟）
 # 访问: https://github.com/gfchfjh/CSBJJWT/actions
 
 # 5. 构建完成后，安装包会自动上传到Releases
-# 访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
+# 访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.14.0
 ```
 
 **GitHub Actions会自动完成**:
@@ -142,7 +142,7 @@ https://github.com/gfchfjh/CSBJJWT/actions/workflows/build-and-release.yml
 # 2. 点击"Run workflow"按钮
 
 # 3. 输入版本号（可选）
-Version: v1.13.3
+Version: v1.14.0
 
 # 4. 点击"Run workflow"开始构建
 
@@ -168,7 +168,7 @@ REM 2. 执行构建脚本
 build_installer.bat
 
 REM 3. 生成的安装包位置
-frontend\dist-electron\KOOK.Setup.1.13.3.exe
+frontend\dist-electron\KOOK.Setup.1.14.0.exe
 ```
 
 **Linux/macOS构建**:
@@ -183,7 +183,7 @@ node --version     # 需要 Node.js 18+
 
 # 3. 生成的安装包位置
 # macOS: frontend/dist-electron/KOOK.-1.13.2-arm64.dmg
-# Linux: frontend/dist-electron/KOOK.-1.13.3.AppImage
+# Linux: frontend/dist-electron/KOOK.-1.14.0.AppImage
 ```
 
 **预计时间**: 10-20分钟
@@ -195,7 +195,7 @@ node --version     # 需要 Node.js 18+
 ### Windows .exe (~450MB)
 
 ```
-KOOK.Setup.1.13.3.exe
+KOOK.Setup.1.14.0.exe
 ├── 前端应用 (Electron)
 │   ├── Vue 3 界面
 │   ├── 8个核心页面
@@ -225,7 +225,7 @@ KOOK.-1.13.2-arm64.dmg
 ### Linux .AppImage (~420MB)
 
 ```
-KOOK.-1.13.3.AppImage
+KOOK.-1.14.0.AppImage
 └── 内容结构同Windows版本
     └── Linux特定：
         ├── 所有依赖打包
@@ -247,7 +247,7 @@ KOOK.-1.13.3.AppImage
 
 **Release说明** (从CHANGELOG复制):
 ```markdown
-## 🚀 v1.13.3 易用性大幅优化版
+## 🚀 v1.14.0 易用性大幅优化版
 
 ### 核心改进
 
@@ -276,9 +276,9 @@ KOOK.-1.13.3.AppImage
 
 | 平台 | 文件 | 大小 |
 |------|------|------|
-| Windows | KOOK.Setup.1.13.3.exe | ~450MB |
+| Windows | KOOK.Setup.1.14.0.exe | ~450MB |
 | macOS | KOOK.-1.13.2-arm64.dmg | ~480MB |
-| Linux | KOOK.-1.13.3.AppImage | ~420MB |
+| Linux | KOOK.-1.14.0.AppImage | ~420MB |
 
 ### 快速开始
 
@@ -297,13 +297,13 @@ KOOK.-1.13.3.AppImage
 ```markdown
 ## 📥 下载安装
 
-### 最新版本: v1.13.3
+### 最新版本: v1.14.0
 
 | 平台 | 下载链接 | 大小 |
 |------|---------|------|
-| 🪟 Windows | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.3/KOOK.Setup.1.13.3.exe) | ~89MB |
-| 🍎 macOS | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.3/KOOK.-1.13.2-arm64.dmg) | ~114MB |
-| 🐧 Linux | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.13.3/KOOK.-1.13.3.AppImage) | ~124MB |
+| 🪟 Windows | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.14.0.exe) | ~89MB |
+| 🍎 macOS | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.-1.13.2-arm64.dmg) | ~114MB |
+| 🐧 Linux | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.-1.14.0.AppImage) | ~124MB |
 
 [查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases)
 ```
@@ -313,7 +313,7 @@ KOOK.-1.13.3.AppImage
 准备发布公告：
 
 ```markdown
-🎉 KOOK消息转发系统 v1.13.3 正式发布！
+🎉 KOOK消息转发系统 v1.14.0 正式发布！
 
 ✨ 主要特性：
 • 零代码配置，5分钟上手
@@ -322,7 +322,7 @@ KOOK.-1.13.3.AppImage
 • 性能优化800%
 
 📥 立即下载：
-https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.14.0
 
 #KOOK #消息转发 #开源项目
 ```
@@ -357,18 +357,18 @@ https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
 
 ```bash
 # 1. 修复bug并测试
-git checkout -b hotfix/v1.13.3
+git checkout -b hotfix/v1.14.0
 # ... 修复代码 ...
 git commit -m "fix: 修复XXX问题"
 
 # 2. 创建hotfix版本
-git tag v1.13.3
-git push origin v1.13.3
+git tag v1.14.0
+git push origin v1.14.0
 
 # 3. 自动构建新版本
-# GitHub Actions会自动构建v1.13.3
+# GitHub Actions会自动构建v1.14.0
 
-# 4. 发布v1.13.3
+# 4. 发布v1.14.0
 # 在Release中说明是hotfix版本
 ```
 
@@ -422,14 +422,14 @@ git push origin v1.13.3
 ```
 v主版本.次版本.修订版本
 
-例如: v1.13.3
+例如: v1.14.0
 ├── 1: 主版本（重大架构变更）
 ├── 13: 次版本（新功能添加）
 └── 0: 修订版本（bug修复）
 ```
 
 **下一版本规划**:
-- v1.13.3 - hotfix版本（bug修复）
+- v1.14.0 - hotfix版本（bug修复）
 - v1.14.0 - 功能增强版（新平台支持）
 - v2.0.0 - 重大升级版（架构重构）
 

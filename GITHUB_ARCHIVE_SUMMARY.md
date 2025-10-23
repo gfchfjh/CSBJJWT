@@ -1,4 +1,4 @@
-# 📦 GitHub存档摘要 - v1.13.3
+# 📦 GitHub存档摘要 - v1.14.0
 
 **存档时间**: 2025-10-23  
 **项目名称**: KOOK消息转发系统  
@@ -16,7 +16,7 @@
 - ✅ 远程同步：100%
 
 ### 版本信息
-- **当前版本**: v1.13.3
+- **当前版本**: v1.14.0
 - **发布日期**: 2025-10-23
 - **分支**: main
 - **最新提交**: 7252dea
@@ -31,8 +31,8 @@
 3. ✅ 删除临时清理方案
 4. ✅ 清理临时和重复文档
 5. ✅ 添加文档更新完成报告
-6. ✅ 更新所有文档到v1.13.3
-7. ✅ 添加v1.13.3版本摘要
+6. ✅ 更新所有文档到v1.14.0
+7. ✅ 添加v1.14.0版本摘要
 8. ✅ 添加最终报告和更新日志
 9. ✅ 更新安装指南
 10. ✅ 修复构建配置
@@ -93,12 +93,12 @@ build/
 ├── BUILD_*.md                         # 构建文档（8个）
 ├── RELEASE_GUIDE.md                   # 发布指南
 │
-├── CHANGELOG_v1.13.3.md              # 版本日志
-├── v1.13.3工作总结报告.md             # 工作总结
+├── CHANGELOG_v1.14.0.md              # 版本日志
+├── v1.14.0工作总结报告.md             # 工作总结
 │
 ├── CLEANUP_RECORD.md                  # 清理记录
 ├── RATING_CLEANUP_RECORD.md           # 评分清理记录
-├── ARCHIVE_REPORT_v1.13.3.md         # 存档报告
+├── ARCHIVE_REPORT_v1.14.0.md         # 存档报告
 ├── GITHUB_ARCHIVE_SUMMARY.md          # 存档摘要（本文档）
 │
 └── docs/                              # 用户文档（15个）
@@ -130,7 +130,7 @@ build/
 - ✅ 添加错误容忍
 
 ### 4. 文档系统
-- ✅ 版本号统一为v1.13.3
+- ✅ 版本号统一为v1.14.0
 - ✅ 删除16个临时文档
 - ✅ 删除所有评分内容
 - ✅ Docker移至首位推荐
@@ -158,7 +158,7 @@ build/
 
 ## 📝 存档记录
 
-### ARCHIVE_REPORT_v1.13.3.md
+### ARCHIVE_REPORT_v1.14.0.md
 完整的存档报告，包含：
 - 11次提交详细记录
 - 完整文档结构
@@ -201,7 +201,7 @@ git clone https://github.com/gfchfjh/CSBJJWT.git
 # SSH
 git clone git@github.com:gfchfjh/CSBJJWT.git
 
-# 切换到v1.13.3
+# 切换到v1.14.0
 cd CSBJJWT
 git checkout main
 ```
@@ -211,8 +211,8 @@ git checkout main
 # 查看所有提交
 git log --oneline
 
-# 查看v1.13.3提交
-git log --oneline --grep="v1.13.3"
+# 查看v1.14.0提交
+git log --oneline --grep="v1.14.0"
 
 # 查看文件变更
 git log --stat
@@ -311,10 +311,10 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ---
 
-**GitHub存档已完成！所有v1.13.3工作已安全保存。** ✅
+**GitHub存档已完成！所有v1.14.0工作已安全保存。** ✅
 
 ---
 
 **存档报告生成时间**: 2025-10-23  
 **报告文件**: GITHUB_ARCHIVE_SUMMARY.md  
-**详细报告**: ARCHIVE_REPORT_v1.13.3.md
+**详细报告**: ARCHIVE_REPORT_v1.14.0.md

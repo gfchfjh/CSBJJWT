@@ -2,18 +2,19 @@
 
 > **多种安装方式，满足不同用户需求**
 
-**当前版本：** v1.13.3  
+**当前版本：** v1.14.0  
 **最后更新：** 2025-10-23
 
 ---
 
-## 🆕 v1.13.3 新增
+## 🆕 v1.14.0 新增
 
-**代码优化和文档完善**：
+**预编译安装包发布**：
 
-- ✅ GitHub Actions优化（artifact v3→v4）
-- ✅ Docker部署推荐（3分钟部署）
-- ✅ 预编译包状态明确（计划v1.14.0）
+- ✅ Windows安装包已发布 (89 MB)
+- ✅ Linux AppImage已发布 (124 MB)
+- ✅ 完整自动化构建系统
+- ✅ 158项测试清单和文档
 
 **v1.13.2 构建工具链**：
 
@@ -35,13 +36,13 @@
 
 | 方式 | 适合人群 | 时间 | 状态 |
 |------|---------|------|------|
-| **方式1: 预编译安装包** | 普通用户 | 2分钟 | ✅ 构建工具完成 |
+| **方式1: 预编译安装包** | 普通用户 | 2分钟 | ✅ v1.14.0可用 |
 | **方式2: Windows增强脚本** | Windows用户 | 8分钟 | ✅ 可用 |
 | **方式3: Docker一键部署** | 服务器用户 | 3分钟 | ✅ 可用 |
 | **方式4: Linux/macOS脚本** | 技术用户 | 7分钟 | ✅ 可用 |
 | **方式5: 源码安装** | 开发者 | 15分钟 | ✅ 可用 |
 
-**🔥 推荐使用方式1**：运行 `./release_package.sh` 触发GitHub Actions自动构建3个平台安装包
+**🔥 推荐使用方式1**：Windows/Linux已提供预编译安装包，macOS即将发布
 
 **📖 详细教程**: 
 - **[START_HERE.md](START_HERE.md)** - 新手入口 🌟
@@ -186,9 +187,10 @@ docker-compose -f docker-compose.standalone.yml down -v
 
 ---
 
-## 🚀 方式1: 预编译安装包（待发布）
+## 🚀 方式1: 预编译安装包（✅ v1.14.0可用）
 
 **适合**: 普通用户，零代码基础
+**下载**: [GitHub Releases](https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.14.0)
 
 ### 步骤1: 下载安装包
 
@@ -198,20 +200,22 @@ docker-compose -f docker-compose.standalone.yml down -v
 
 #### Windows (Win 10/11 x64)
 ```
-下载: KookForwarder-Setup-1.13.3.exe (~450MB)
-包含: Python + Node.js + Chromium + Redis + 所有依赖
+✅ 已发布: KOOK消息转发系统 Setup 1.13.3.exe (89 MB)
+包含: Python + Node.js + Electron + Redis + 所有依赖
+下载: https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK消息转发系统%20Setup%201.13.3.exe
 ```
 
 #### macOS (10.15+, Intel/M1/M2)
 ```
-下载: KookForwarder-1.13.3.dmg (~480MB)
-包含: Python + Node.js + Chromium + Redis + 所有依赖
+🔜 开发中: 即将发布
+预计包含: Python + Node.js + Electron + Redis + 所有依赖
 ```
 
 #### Linux (Ubuntu 20.04+)
 ```
-下载: KookForwarder-1.13.3.AppImage (~420MB)
-包含: Python + Node.js + Chromium + Redis + 所有依赖
+✅ 已发布: KOOK消息转发系统-1.13.3.AppImage (124 MB)
+包含: Python + Node.js + Electron + Redis + 所有依赖
+下载: https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK消息转发系统-1.13.3.AppImage
 ```
 
 ### 步骤2: 安装
@@ -240,14 +244,14 @@ docker-compose -f docker-compose.standalone.yml down -v
 #### Linux
 ```bash
 # 1. 赋予执行权限
-chmod +x KookForwarder-1.13.3.AppImage
+chmod +x KOOK消息转发系统-1.13.3.AppImage
 
 # 2. 运行
-./KookForwarder-1.13.3.AppImage
+./KOOK消息转发系统-1.13.3.AppImage
 
 # 3. （可选）添加到应用菜单
 # Ubuntu/Debian:
-./KookForwarder-1.13.3.AppImage --appimage-extract
+./KOOK消息转发系统-1.13.3.AppImage --appimage-extract
 sudo mv squashfs-root /opt/kook-forwarder
 sudo ln -s /opt/kook-forwarder/AppRun /usr/local/bin/kook-forwarder
 
