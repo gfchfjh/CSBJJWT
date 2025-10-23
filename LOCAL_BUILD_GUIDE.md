@@ -262,7 +262,7 @@ npm run electron:build:win
 
 # 4. 查看输出
 dir dist-electron\
-# 应看到: KookForwarder Setup 1.13.2.exe
+# 应看到: KookForwarder Setup 1.13.3.exe
 
 # 5. 检查文件大小
 # 安装包应该在 400-500MB 左右
@@ -292,7 +292,7 @@ python build/verify_build.py
 cd frontend\dist-electron
 
 # 2. 双击运行安装程序
-# "KookForwarder Setup 1.13.2.exe"
+# "KookForwarder Setup 1.13.3.exe"
 
 # 3. 按照向导安装
 # - 选择安装路径
@@ -542,7 +542,7 @@ npm run electron:build:mac
 
 # 4. 查看输出
 ls -lh dist-electron/
-# 应看到: KookForwarder-1.13.2.dmg
+# 应看到: KookForwarder-1.13.3.dmg
 
 # 5. 检查文件大小
 # DMG应该在 450-500MB 左右
@@ -560,7 +560,7 @@ cd ..
 python3 build/verify_build.py
 
 # 3. 测试DMG安装
-open frontend/dist-electron/KookForwarder-1.13.2.dmg
+open frontend/dist-electron/KookForwarder-1.13.3.dmg
 
 # 4. 拖动应用到Applications文件夹
 
@@ -803,7 +803,7 @@ npm run electron:build:linux
 
 # 4. 查看输出
 ls -lh dist-electron/
-# 应看到: KookForwarder-1.13.2.AppImage
+# 应看到: KookForwarder-1.13.3.AppImage
 
 # 5. 设置可执行权限
 chmod +x dist-electron/*.AppImage
@@ -824,7 +824,7 @@ cd ..
 python3 build/verify_build.py
 
 # 3. 测试AppImage
-./frontend/dist-electron/KookForwarder-1.13.2.AppImage
+./frontend/dist-electron/KookForwarder-1.13.3.AppImage
 
 # 4. 测试基本功能
 # - 配置向导
@@ -1178,5 +1178,5 @@ python3 build/verify_build.py
 ---
 
 **最后更新：** 2025-10-23  
-**适用版本：** v1.13.2  
+**适用版本：** v1.13.3  
 **文档版本：** 1.0

@@ -22,7 +22,7 @@
 ```bash
 # 1. 确保所有更改已提交
 git add .
-git commit -m "准备构建 v1.13.2"
+git commit -m "准备构建 v1.13.3"
 git push
 
 # 2. 运行发布脚本
@@ -113,7 +113,7 @@ python3 build/prepare_redis.py
 ```bash
 # 1. 准备代码
 git add .
-git commit -m "准备发布 v1.13.2"
+git commit -m "准备发布 v1.13.3"
 git push origin main
 
 # 2. 运行发布脚本（推荐）
@@ -126,21 +126,21 @@ git push origin main
 #   - 自动触发GitHub Actions
 
 # 或手动创建Tag
-git tag v1.13.2
-git push origin v1.13.2
+git tag v1.13.3
+git push origin v1.13.3
 
 # 3. 监控构建进度
 # 访问: https://github.com/gfchfjh/CSBJJWT/actions
 # 查看 "Build and Release" workflow
 
 # 4. 下载安装包（15-20分钟后）
-# 访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.2
+# 访问: https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.13.3
 ```
 
 **构建输出：**
-- `KookForwarder_v1.13.2_Windows_x64.exe` (~450MB)
-- `KookForwarder_v1.13.2_macOS.dmg` (~480MB)
-- `KookForwarder_v1.13.2_Linux_x64.AppImage` (~420MB)
+- `KookForwarder_v1.13.3_Windows_x64.exe` (~450MB)
+- `KookForwarder_v1.13.3_macOS.dmg` (~480MB)
+- `KookForwarder_v1.13.3_Linux_x64.AppImage` (~420MB)
 
 ---
 
@@ -174,7 +174,7 @@ cd ..
 ls -lh frontend/dist-electron/*.AppImage
 ```
 
-**输出：** `frontend/dist-electron/KookForwarder-1.13.2.AppImage`
+**输出：** `frontend/dist-electron/KookForwarder-1.13.3.AppImage`
 
 #### 2.2 macOS构建
 
@@ -218,7 +218,7 @@ cd ..
 ls -lh frontend/dist-electron/*.dmg
 ```
 
-**输出：** `frontend/dist-electron/KookForwarder-1.13.2.dmg`
+**输出：** `frontend/dist-electron/KookForwarder-1.13.3.dmg`
 
 #### 2.3 Windows构建
 
@@ -250,7 +250,7 @@ REM 4. 查看输出
 dir frontend\dist-electron\*.exe
 ```
 
-**输出：** `frontend\dist-electron\KookForwarder Setup 1.13.2.exe`
+**输出：** `frontend\dist-electron\KookForwarder Setup 1.13.3.exe`
 
 ---
 
@@ -403,9 +403,9 @@ python3 build/verify_build.py
 ```bash
 # GitHub Actions会自动创建
 # 或手动创建：
-gh release create v1.13.2 \
+gh release create v1.13.3 \
   frontend/dist-electron/*.AppImage \
-  --title "v1.13.2 Release" \
+  --title "v1.13.3 Release" \
   --notes "完整的一键安装包，支持Windows/macOS/Linux"
 ```
 
@@ -416,7 +416,7 @@ nano README.md
 
 # 提交更改
 git add README.md
-git commit -m "docs: update download links for v1.13.2"
+git commit -m "docs: update download links for v1.13.3"
 git push
 ```
 
@@ -622,8 +622,8 @@ git clean -fdx -e node_modules
 nano frontend/package.json
 
 # 创建Git Tag
-git tag v1.13.2
-git push origin v1.13.2
+git tag v1.13.3
+git push origin v1.13.3
 
 # 遵循语义化版本号
 # MAJOR.MINOR.PATCH

@@ -73,7 +73,7 @@ python build\verify_build.py
 dir frontend\dist-electron\*.exe
 ```
 
-**输出：** `KookForwarder Setup 1.13.2.exe` (~450MB)
+**输出：** `KookForwarder Setup 1.13.3.exe` (~450MB)
 
 ---
 
@@ -123,7 +123,7 @@ python3 build/verify_build.py
 ls -lh frontend/dist-electron/*.dmg
 ```
 
-**输出：** `KookForwarder-1.13.2.dmg` (~480MB)
+**输出：** `KookForwarder-1.13.3.dmg` (~480MB)
 
 ---
 
@@ -161,7 +161,7 @@ python3 build/verify_build.py
 ls -lh frontend/dist-electron/*.AppImage
 ```
 
-**输出：** `KookForwarder-1.13.2.AppImage` (~420MB)
+**输出：** `KookForwarder-1.13.3.AppImage` (~420MB)
 
 ---
 
@@ -279,4 +279,4 @@ cat QUICK_BUILD_REFERENCE.md
 ```
 
 **最后更新：** 2025-10-23  
-**版本：** v1.13.2
+**版本：** v1.13.3

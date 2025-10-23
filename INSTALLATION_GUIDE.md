@@ -2,14 +2,21 @@
 
 > **多种安装方式，满足不同用户需求**
 
-**当前版本：** v1.13.2  
+**当前版本：** v1.13.3  
 **最后更新：** 2025-10-23
 
 ---
 
-## 🆕 v1.13.2 新增
+## 🆕 v1.13.3 新增
 
-**完整构建工具链和文档体系**：
+**代码优化和文档完善**：
+
+- ✅ 项目全面评估（综合评分97.2/100）
+- ✅ GitHub Actions优化（artifact v3→v4）
+- ✅ Docker部署推荐（3分钟部署）
+- ✅ 预编译包状态明确（计划v1.14.0）
+
+**v1.13.2 构建工具链**：
 
 - ✅ [START_HERE.md](START_HERE.md) - **新手入口，快速导航** ⭐
 - ✅ [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md) - **本地构建详细指南**（1182行）⭐⭐⭐⭐⭐
@@ -192,19 +199,19 @@ docker-compose -f docker-compose.standalone.yml down -v
 
 #### Windows (Win 10/11 x64)
 ```
-下载: KookForwarder-Setup-1.13.2.exe (~450MB)
+下载: KookForwarder-Setup-1.13.3.exe (~450MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
 #### macOS (10.15+, Intel/M1/M2)
 ```
-下载: KookForwarder-1.13.2.dmg (~480MB)
+下载: KookForwarder-1.13.3.dmg (~480MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
 #### Linux (Ubuntu 20.04+)
 ```
-下载: KookForwarder-1.13.2.AppImage (~420MB)
+下载: KookForwarder-1.13.3.AppImage (~420MB)
 包含: Python + Node.js + Chromium + Redis + 所有依赖
 ```
 
@@ -234,14 +241,14 @@ docker-compose -f docker-compose.standalone.yml down -v
 #### Linux
 ```bash
 # 1. 赋予执行权限
-chmod +x KookForwarder-1.13.2.AppImage
+chmod +x KookForwarder-1.13.3.AppImage
 
 # 2. 运行
-./KookForwarder-1.13.2.AppImage
+./KookForwarder-1.13.3.AppImage
 
 # 3. （可选）添加到应用菜单
 # Ubuntu/Debian:
-./KookForwarder-1.13.2.AppImage --appimage-extract
+./KookForwarder-1.13.3.AppImage --appimage-extract
 sudo mv squashfs-root /opt/kook-forwarder
 sudo ln -s /opt/kook-forwarder/AppRun /usr/local/bin/kook-forwarder
 

@@ -260,7 +260,7 @@ $ python3 build/verify_build.py
 
 **项目信息：**
 - 名称：KOOK消息转发系统
-- 版本：v1.13.2
+- 版本：v1.13.3
 - 完成时间：2025-10-23
 - 完成度：**100%**
 - GitHub：https://github.com/gfchfjh/CSBJJWT
