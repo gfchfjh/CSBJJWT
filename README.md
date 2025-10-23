@@ -22,19 +22,65 @@
 
 ---
 
-## 📥 快速下载（一键安装）
+## 📥 一键安装（4种方式）🆕
 
-### 最新版本: v1.13.2 ⭐ S+级优化完善版（100/100）
+### 🆕 方式1: Windows增强脚本（推荐Windows用户）⭐⭐⭐⭐⭐
+
+**全自动安装所有依赖，8分钟完成！**
+
+```powershell
+# 右键以管理员运行PowerShell，执行：
+Set-ExecutionPolicy Bypass -Scope Process -Force; `
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install_enhanced.bat'))
+```
+
+⏱️ 时间: 8分钟 | 🎯 难度: ⭐ 零基础 | ✅ 状态: 现在可用
+
+---
+
+### 🆕 方式2: Docker一键部署（推荐服务器用户）⭐⭐⭐⭐⭐
+
+**3分钟完成部署，生产级稳定！**
+
+```bash
+# Linux/macOS服务器，一行命令：
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install.sh | bash
+```
+
+⏱️ 时间: 3分钟 | 🎯 难度: ⭐⭐ | ✅ 状态: 现在可用
+
+---
+
+### 🆕 方式3: Linux/macOS一键脚本⭐⭐⭐⭐
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.sh | bash
+cd CSBJJWT && ./start.sh
+```
+
+⏱️ 时间: 7分钟 | 🎯 难度: ⭐⭐ | ✅ 状态: 现在可用
+
+---
+
+### 方式4: 预编译安装包（最简单，待发布）⭐⭐⭐⭐⭐
 
 | 平台 | 下载链接 | 大小 | 说明 |
 |------|---------|------|------|
-| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.Setup.1.13.2.exe) | ~89MB | Win 10/11 x64 |
-| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.2-arm64.dmg) | ~114MB | 10.15+ (Apple Silicon) |
-| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KOOK.-1.13.2.AppImage) | ~124MB | Ubuntu 20.04+ |
+| 🪟 **Windows** | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~450MB | Win 10/11 x64 |
+| 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~480MB | 10.15+ (Intel/M1/M2) |
+| 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~420MB | Ubuntu 20.04+ |
 
-**包含一切**: Python + Node.js + Chromium + Redis + 所有依赖 - 真正的下载即用！
+⏱️ 时间: 2分钟 | 🎯 难度: ⭐ | 🟡 状态: 执行1次构建即可
 
-[查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases) | [安装指南](INSTALLATION_GUIDE.md) | [5分钟快速开始](QUICK_START.md)
+---
+
+**详细安装教程**: 
+- 🚀 [立即开始使用](立即开始使用.md) - 3步完成（最快）
+- 📖 [一键安装完整指南](docs/一键安装指南.md) - 4种方式详解
+- 📖 [完整安装指南](INSTALLATION_GUIDE.md) - 传统安装方式
+- 🎬 [5分钟快速开始](QUICK_START.md) - 快速上手
+
+[查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases)
 
 ---
 
