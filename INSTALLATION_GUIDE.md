@@ -6,13 +6,13 @@
 
 ## 🎯 选择安装方式
 
-| 方式 | 适合人群 | 难度 | 时间 | 体验 | 状态 |
-|------|---------|------|------|------|------|
-| **方式1: 预编译安装包** | 普通用户 | ⭐ | 2分钟 | ⭐⭐⭐⭐⭐ | ✅ 方案完成 |
-| **方式2: Windows增强脚本** | Windows用户 | ⭐ | 8分钟 | ⭐⭐⭐⭐⭐ | ✅ 可用 |
-| **方式3: Docker一键部署** | 服务器用户 | ⭐⭐ | 3分钟 | ⭐⭐⭐⭐⭐ | ✅ 可用 |
-| **方式4: Linux/macOS脚本** | 技术用户 | ⭐⭐ | 7分钟 | ⭐⭐⭐⭐ | ✅ 可用 |
-| **方式5: 源码安装** | 开发者 | ⭐⭐⭐ | 15分钟 | ⭐⭐⭐ | ✅ 可用 |
+| 方式 | 适合人群 | 时间 | 状态 |
+|------|---------|------|------|
+| **方式1: 预编译安装包** | 普通用户 | 2分钟 | ✅ 方案完成 |
+| **方式2: Windows增强脚本** | Windows用户 | 8分钟 | ✅ 可用 |
+| **方式3: Docker一键部署** | 服务器用户 | 3分钟 | ✅ 可用 |
+| **方式4: Linux/macOS脚本** | 技术用户 | 7分钟 | ✅ 可用 |
+| **方式5: 源码安装** | 开发者 | 15分钟 | ✅ 可用 |
 
 **🆕 新增**: 方式1预编译安装包构建方案完成！运行 `./release_package.sh` 即可生成
 
@@ -23,7 +23,7 @@
 
 ---
 
-## 🆕 方式2: Windows增强脚本（推荐Windows用户）⭐⭐⭐⭐⭐
+## 🆕 方式2: Windows增强脚本（推荐Windows用户）
 
 **适合**: Windows用户，零基础
 **特点**: 全自动安装Python、Node.js、Git、Redis等所有依赖
@@ -70,7 +70,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ---
 
-## 🆕 方式3: Docker一键部署（推荐服务器用户）⭐⭐⭐⭐⭐
+## 🆕 方式3: Docker一键部署（推荐服务器用户）
 
 **适合**: Linux/macOS服务器用户，需要24/7运行
 **特点**: 3分钟完成部署，生产级稳定性
@@ -157,7 +157,7 @@ docker-compose -f docker-compose.standalone.yml down -v
 
 ---
 
-## 🚀 方式1: 预编译安装包（最简单，待发布）⭐⭐⭐⭐⭐
+## 🚀 方式1: 预编译安装包（待发布）
 
 **适合**: 普通用户，零代码基础
 
@@ -241,7 +241,7 @@ sudo ln -s /opt/kook-forwarder/AppRun /usr/local/bin/kook-forwarder
 
 ---
 
-## 🛠️ 方式2: 一键安装脚本 ⭐⭐⭐⭐
+## 🛠️ 方式2: 一键安装脚本
 
 **适合**: 愿意安装Python和Node.js的技术用户
 
@@ -345,7 +345,7 @@ cat install.log
 
 ---
 
-## 🔧 方式3: 源码安装（开发者）⭐⭐⭐
+## 🔧 方式3: 源码安装（开发者）
 
 **适合**: 开发者，需要修改源码
 
@@ -612,7 +612,7 @@ Remove-Item -Recurse -Force "$env:USERPROFILE\Documents\KookForwarder"
 
 <div align="center">
 
-**如果觉得有帮助，请给个 ⭐ Star 支持一下！**
+**如果觉得有帮助，请给个 Star 支持一下！**
 
 [返回主页](README.md) | [快速开始](QUICK_START.md) | [提交Issue](https://github.com/gfchfjh/CSBJJWT/issues)
 
