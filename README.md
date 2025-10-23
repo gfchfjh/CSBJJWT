@@ -1127,7 +1127,41 @@ Linux: /home/[用户名]/Documents/KookForwarder/data/logs/
 
 ### 📦 开发者发布流程
 
-**发布新版本（自动化CI/CD）**:
+**🆕 快速构建预编译安装包（v1.13.2新增）**:
+
+```bash
+# 方式1: GitHub Actions自动构建（推荐）⭐
+./release_package.sh
+
+# 等待15-20分钟，访问 GitHub Releases 下载
+# https://github.com/gfchfjh/CSBJJWT/releases
+
+# 方式2: 本地构建
+./BUILD_QUICKSTART.sh  # 准备资源
+./build_installer.sh   # 运行构建
+
+# 方式3: 查看详细指南
+cat LOCAL_BUILD_GUIDE.md
+```
+
+**🔧 构建工具和文档**:
+
+| 文档 | 说明 | 长度 |
+|------|------|------|
+| [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md) | 本地构建详细指南 ⭐ | 1182行 |
+| [QUICK_BUILD_REFERENCE.md](QUICK_BUILD_REFERENCE.md) | 快速命令参考 | 400行 |
+| [PRE_BUILD_CHECKLIST.md](PRE_BUILD_CHECKLIST.md) | 构建前检查清单 | 300行 |
+| [BUILD_INDEX.md](BUILD_INDEX.md) | 文档导航索引 | 300行 |
+
+**🛠️ 构建工具脚本**:
+- `build/verify_build.py` - 构建验证工具（自动检查7项）
+- `build/create_platform_icons.py` - 图标生成工具
+- `build/prepare_redis.py` - Redis准备工具
+- `BUILD_QUICKSTART.sh` - 一键准备脚本
+
+---
+
+**传统发布方式（手动）**:
 
 ```bash
 # 1. 更新版本号
