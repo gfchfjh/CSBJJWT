@@ -4,9 +4,42 @@
 
 ---
 
-## 📥 第一步：下载安装（1分钟）
+## 📥 第一步：选择安装方式（1-8分钟）
 
-### 下载最新版本 v1.13.2
+### 🆕 方式A: Windows增强脚本（推荐Windows用户）⭐⭐⭐⭐⭐
+
+**全自动安装所有依赖，8分钟完成！**
+
+```powershell
+# 右键以管理员运行PowerShell，执行：
+Set-ExecutionPolicy Bypass -Scope Process -Force; `
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install_enhanced.bat'))
+
+# 等待8分钟 → 输入Y启动 → 完成！
+```
+
+### 🆕 方式B: Docker一键部署（推荐服务器用户）⭐⭐⭐⭐⭐
+
+**3分钟完成部署，生产级稳定！**
+
+```bash
+# Linux/macOS服务器，一行命令：
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install.sh | bash
+
+# 3分钟完成！
+```
+
+### 🆕 方式C: Linux/macOS一键脚本⭐⭐⭐⭐
+
+```bash
+# 一行命令安装：
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.sh | bash
+cd CSBJJWT && ./start.sh
+
+# 7分钟完成！
+```
+
+### 方式D: 预编译安装包（最简单，待发布）⭐⭐⭐⭐⭐
 
 选择您的操作系统：
 
@@ -16,14 +49,17 @@
 | 🍎 **macOS** | [下载 .dmg](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~480MB | 支持10.15+（Intel/M1/M2） |
 | 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~420MB | 支持Ubuntu 20.04+ |
 
-### 安装步骤
+**详细安装教程**: [完整安装指南](INSTALLATION_GUIDE.md) | [一键安装指南](docs/一键安装指南.md)
+
+### 预编译包安装步骤（如已下载）
 
 #### Windows
 ```
 1. 双击下载的 .exe 文件
-2. 点击"安装"
-3. 等待安装完成（约30秒）
-4. 完成！在开始菜单找到"KOOK消息转发系统"
+2. 如出现安全提示：点击"更多信息" → "仍要运行"
+3. 点击"安装"
+4. 等待安装完成（约30秒）
+5. 完成！在开始菜单找到"KOOK消息转发系统"
 ```
 
 #### macOS
@@ -31,7 +67,8 @@
 1. 打开下载的 .dmg 文件
 2. 将应用图标拖拽到"应用程序"文件夹
 3. 首次打开：右键点击 → 打开（绕过安全检查）
-4. 完成！
+4. 再次确认"打开"
+5. 完成！
 ```
 
 #### Linux
@@ -42,7 +79,29 @@ chmod +x KookForwarder-*.AppImage
 # 2. 运行
 ./KookForwarder-*.AppImage
 
+# 3. （可选）如无法运行，安装依赖：
+sudo apt install libfuse2  # Ubuntu/Debian
+
 # 完成！
+```
+
+### Windows增强脚本完成后
+
+```
+双击桌面快捷方式"KOOK消息转发" → 应用自动启动
+或进入项目目录，双击 start.bat
+```
+
+### Docker部署完成后
+
+```bash
+# 访问API
+curl http://localhost:9527/health
+
+# 查看日志
+docker logs -f kook-forwarder
+
+# 服务在后台运行，自动重启
 ```
 
 ---
@@ -294,6 +353,7 @@ chmod +x KookForwarder-*.AppImage
 ### 获取更多帮助
 
 - 📖 **完整文档**: [用户手册](docs/用户手册.md)
+- 🚀 **一键安装**: [一键安装完整指南](docs/一键安装指南.md) 🆕
 - ❓ **常见问题**: [FAQ](docs/FAQ.md)
 - 💬 **提交Issue**: [GitHub Issues](https://github.com/gfchfjh/CSBJJWT/issues)
 - 📺 **视频教程**: [教程列表](docs/视频教程/)

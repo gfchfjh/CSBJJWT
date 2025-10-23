@@ -6,15 +6,155 @@
 
 ## 🎯 选择安装方式
 
-| 方式 | 适合人群 | 难度 | 时间 | 体验 |
-|------|---------|------|------|------|
-| **方式1: 预编译安装包** | 普通用户 | ⭐ | 2分钟 | ⭐⭐⭐⭐⭐ |
-| **方式2: 一键安装脚本** | 技术用户 | ⭐⭐ | 5分钟 | ⭐⭐⭐⭐ |
-| **方式3: 源码安装** | 开发者 | ⭐⭐⭐ | 10分钟 | ⭐⭐⭐ |
+| 方式 | 适合人群 | 难度 | 时间 | 体验 | 状态 |
+|------|---------|------|------|------|------|
+| **方式1: 预编译安装包** | 普通用户 | ⭐ | 2分钟 | ⭐⭐⭐⭐⭐ | 🟡 待发布 |
+| **方式2: Windows增强脚本** | Windows用户 | ⭐ | 8分钟 | ⭐⭐⭐⭐⭐ | ✅ 可用 |
+| **方式3: Docker一键部署** | 服务器用户 | ⭐⭐ | 3分钟 | ⭐⭐⭐⭐⭐ | ✅ 可用 |
+| **方式4: Linux/macOS脚本** | 技术用户 | ⭐⭐ | 7分钟 | ⭐⭐⭐⭐ | ✅ 可用 |
+| **方式5: 源码安装** | 开发者 | ⭐⭐⭐ | 15分钟 | ⭐⭐⭐ | ✅ 可用 |
+
+**🆕 新增**: 方式2（Windows增强脚本）和方式3（Docker部署）- 真正的一键安装！
+
+**详细教程**: [一键安装完整指南](docs/一键安装指南.md)
 
 ---
 
-## 🚀 方式1: 预编译安装包（推荐）⭐⭐⭐⭐⭐
+## 🆕 方式2: Windows增强脚本（推荐Windows用户）⭐⭐⭐⭐⭐
+
+**适合**: Windows用户，零基础
+**特点**: 全自动安装Python、Node.js、Git、Redis等所有依赖
+**时间**: 8分钟（全自动，无需手动操作）
+
+### 一键安装命令
+
+```powershell
+# 1. 右键点击"开始"菜单
+# 2. 选择"Windows PowerShell (管理员)"
+# 3. 复制粘贴以下命令：
+
+Set-ExecutionPolicy Bypass -Scope Process -Force; `
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install_enhanced.bat'))
+
+# 4. 等待8分钟自动安装
+# 5. 看到"是否立即启动？"时输入Y
+# 6. ✅ 完成！应用自动打开
+```
+
+### 脚本会自动做什么？
+
+```
+✅ 检测并安装Python 3.11（如未安装）
+✅ 检测并安装Node.js 18（如未安装）
+✅ 检测并安装Git（如未安装）
+✅ 安装Redis（可选）
+✅ 克隆项目代码
+✅ 安装所有依赖（Python + Node.js）
+✅ 下载Chromium浏览器
+✅ 创建桌面快捷方式"KOOK消息转发"
+✅ 创建配置文件
+✅ 询问是否立即启动
+```
+
+### 完成后
+
+```
+方式1: 双击桌面快捷方式"KOOK消息转发"
+方式2: 进入项目目录，双击 start.bat
+```
+
+**详细教程**: [Windows增强安装指南](docs/一键安装指南.md#方式2-windows增强安装)
+
+---
+
+## 🆕 方式3: Docker一键部署（推荐服务器用户）⭐⭐⭐⭐⭐
+
+**适合**: Linux/macOS服务器用户，需要24/7运行
+**特点**: 3分钟完成部署，生产级稳定性
+**时间**: 3分钟
+
+### 方法A: 使用自动安装脚本（推荐）
+
+```bash
+# 一行命令自动安装Docker并部署
+curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install.sh | bash
+
+# 脚本会自动：
+# ✅ 检测并安装Docker（如需要）
+# ✅ 检测并安装Docker Compose（如需要）
+# ✅ 克隆项目代码
+# ✅ 创建配置文件
+# ✅ 启动服务
+# ✅ 执行健康检查
+# ✅ 显示访问地址
+
+# ✅ 完成！3分钟搞定
+```
+
+### 方法B: 使用预构建镜像
+
+```bash
+# 拉取并运行（待Docker镜像发布）
+docker run -d \
+  --name kook-forwarder \
+  --restart unless-stopped \
+  -p 9527:9527 \
+  -p 9528:9528 \
+  -v $(pwd)/data:/app/data \
+  ghcr.io/gfchfjh/csbjjwt:latest
+
+# 查看日志
+docker logs -f kook-forwarder
+
+# 访问API
+curl http://localhost:9527/health
+```
+
+### 方法C: 使用docker-compose
+
+```bash
+# 克隆项目
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
+
+# 创建数据目录
+mkdir -p data/logs data/images data/redis
+
+# 启动服务
+docker-compose -f docker-compose.standalone.yml up -d
+
+# 查看状态
+docker-compose -f docker-compose.standalone.yml ps
+
+# 查看日志
+docker-compose -f docker-compose.standalone.yml logs -f
+```
+
+### Docker常用命令
+
+```bash
+# 启动服务
+docker-compose -f docker-compose.standalone.yml start
+
+# 停止服务
+docker-compose -f docker-compose.standalone.yml stop
+
+# 重启服务
+docker-compose -f docker-compose.standalone.yml restart
+
+# 更新到最新版本
+docker-compose -f docker-compose.standalone.yml pull
+docker-compose -f docker-compose.standalone.yml up -d
+
+# 完全删除
+docker-compose -f docker-compose.standalone.yml down -v
+```
+
+**详细教程**: [Docker部署指南](docs/一键安装指南.md#方式3-docker一键部署)
+
+---
+
+## 🚀 方式1: 预编译安装包（最简单，待发布）⭐⭐⭐⭐⭐
 
 **适合**: 普通用户，零代码基础
 

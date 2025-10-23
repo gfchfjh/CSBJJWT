@@ -1,331 +1,346 @@
 name: Build and Release
 
+# 触发条件：创建tag或手动触发
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to build (e.g., v1.9.1)'
-        required: false
-        default: ''
+        description: 'Version to release (e.g., v1.13.2)'
+        required: true
+        default: 'v1.13.2'
 
 jobs:
-  # 构建Windows版本
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Cache Playwright browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('backend/requirements.txt') }}
-      
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          playwright install chromium
-      
-      - name: Install Frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Backend with PyInstaller
-        run: |
-          cd backend
-          pip install pyinstaller
-          pyinstaller --onefile --name kook-forwarder-backend app/main.py
-      
-      - name: Build Electron App (Windows)
-        run: |
-          cd frontend
-          npm run electron:build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: KookForwarder-Windows
-          path: frontend/dist-electron/*.exe
-          retention-days: 7
-  
-  # 构建macOS版本
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Cache Playwright browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/Library/Caches/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('backend/requirements.txt') }}
-      
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          playwright install chromium
-      
-      - name: Install Frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Backend with PyInstaller
-        run: |
-          cd backend
-          pip install pyinstaller
-          pyinstaller --onefile --name kook-forwarder-backend app/main.py
-      
-      - name: Build Electron App (macOS)
-        run: |
-          cd frontend
-          npm run electron:build:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 如果需要代码签名，请添加以下环境变量
-          # CSC_LINK: ${{ secrets.MAC_CERTIFICATE }}
-          # CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-      
-      - name: Upload macOS Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: KookForwarder-macOS
-          path: frontend/dist-electron/*.dmg
-          retention-days: 7
-  
-  # 构建Linux版本
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Cache Playwright browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('backend/requirements.txt') }}
-      
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libxcb-dri3-0
-      
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          playwright install chromium
-      
-      - name: Install Frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Backend with PyInstaller
-        run: |
-          cd backend
-          pip install pyinstaller
-          pyinstaller --onefile --name kook-forwarder-backend app/main.py
-      
-      - name: Build Electron App (Linux)
-        run: |
-          cd frontend
-          npm run electron:build:linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: KookForwarder-Linux
-          path: frontend/dist-electron/*.AppImage
-          retention-days: 7
-  
-  # 运行测试
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      
-      - name: Cache Playwright browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('backend/requirements.txt') }}
-      
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
-          playwright install chromium
-      
-      - name: Run backend tests
-        run: |
-          cd backend
-          pytest tests/ -v --cov=app --cov-report=xml
-      
-      - name: Install Frontend dependencies
-        run: |
-          cd frontend
-          npm install
-      
-      - name: Run frontend tests
-        run: |
-          cd frontend
-          npm run test
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./backend/coverage.xml
-          flags: backend
-          name: backend-coverage
-  
-  # 创建Release
-  release:
-    needs: [build-windows, build-macos, build-linux]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: write
+  # Job 1: 构建后端
+  build-backend:
+    name: Build Backend
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11']
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          name: KookForwarder-Windows
-          path: ./artifacts/windows
+          python-version: ${{ matrix.python-version }}
       
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pyinstaller
+      
+      - name: Install Playwright browsers
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+      
+      - name: Build backend with PyInstaller
+        run: |
+          cd backend
+          pyinstaller --clean --noconfirm ../build/build_backend.spec
+      
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: KookForwarder-macOS
-          path: ./artifacts/macos
+          name: backend-${{ matrix.os }}
+          path: dist/backend/
+          retention-days: 1
+
+  # Job 2: 构建Electron应用（Windows）
+  build-electron-windows:
+    name: Build Electron (Windows)
+    runs-on: windows-latest
+    needs: build-backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          name: KookForwarder-Linux
-          path: ./artifacts/linux
+          node-version: '18'
       
-      - name: Get version from tag
+      - name: Download backend artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-windows-latest
+          path: frontend/resources/backend
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Electron app
+        run: |
+          cd frontend
+          npm run electron:build -- --win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-installer
+          path: frontend/dist/*.exe
+          retention-days: 7
+
+  # Job 3: 构建Electron应用（macOS）
+  build-electron-macos:
+    name: Build Electron (macOS)
+    runs-on: macos-latest
+    needs: build-backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Download backend artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-macos-latest
+          path: frontend/resources/backend
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Electron app
+        run: |
+          cd frontend
+          npm run electron:build -- --mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+      
+      - name: Upload macOS installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-installer
+          path: frontend/dist/*.dmg
+          retention-days: 7
+
+  # Job 4: 构建Electron应用（Linux）
+  build-electron-linux:
+    name: Build Electron (Linux)
+    runs-on: ubuntu-latest
+    needs: build-backend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Download backend artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-ubuntu-latest
+          path: frontend/resources/backend
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Build Electron app
+        run: |
+          cd frontend
+          npm run electron:build -- --linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload Linux installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-installer
+          path: frontend/dist/*.AppImage
+          retention-days: 7
+
+  # Job 5: 构建Docker镜像
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 6: 创建GitHub Release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-electron-windows, build-electron-macos, build-electron-linux, build-docker]
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+      
+      - name: Get version
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       
-      - name: Generate Release Notes
+      - name: Create Release Notes
         id: release_notes
         run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          cat > release_notes.md << 'EOF'
+          # KOOK消息转发系统 ${{ steps.get_version.outputs.VERSION }}
           
-          # 从CHANGELOG.md提取当前版本的更新日志
-          if [ -f "CHANGELOG.md" ]; then
-            # 提取当前版本的内容（简化版）
-            NOTES=$(awk "/^## \[?$VERSION/,/^## \[?[0-9]/ {print}" CHANGELOG.md | head -n -1)
-            if [ -z "$NOTES" ]; then
-              NOTES="请查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 了解详细更新内容。"
-            fi
-          else
-            NOTES="KOOK消息转发系统 $VERSION 发布。"
-          fi
+          ## 🎉 新版本发布
           
-          # 保存到文件
-          echo "$NOTES" > release_notes.md
+          ### 📥 下载安装包
+          
+          请根据您的操作系统选择合适的安装包：
+          
+          | 平台 | 文件 | 大小 | 说明 |
+          |------|------|------|------|
+          | 🪟 **Windows** | `KookForwarder-Setup-*.exe` | ~450MB | 支持 Windows 10/11 x64 |
+          | 🍎 **macOS** | `KookForwarder-*.dmg` | ~480MB | 支持 macOS 10.15+ (Intel/M1/M2) |
+          | 🐧 **Linux** | `KookForwarder-*.AppImage` | ~420MB | 支持 Ubuntu 20.04+ |
+          
+          ### 🚀 安装方式
+          
+          #### Windows
+          ```
+          1. 下载 KookForwarder-Setup-*.exe
+          2. 双击运行安装程序
+          3. 按照向导完成安装
+          4. 启动应用，完成配置向导
+          ```
+          
+          #### macOS
+          ```
+          1. 下载 KookForwarder-*.dmg
+          2. 打开 .dmg 文件
+          3. 拖拽到应用程序文件夹
+          4. 首次打开：右键 → 打开（绕过安全检查）
+          ```
+          
+          #### Linux
+          ```bash
+          # 下载 AppImage
+          chmod +x KookForwarder-*.AppImage
+          ./KookForwarder-*.AppImage
+          ```
+          
+          #### Docker 部署
+          ```bash
+          # 使用预构建镜像
+          docker run -d -p 9527:9527 -p 9528:9528 \
+            -v $(pwd)/data:/app/data \
+            ghcr.io/gfchfjh/csbjjwt:latest
+          
+          # 或使用 docker-compose
+          docker-compose -f docker-compose.standalone.yml up -d
+          ```
+          
+          ### ✨ 主要功能
+          
+          - ✅ 支持 Discord、Telegram、飞书三大平台
+          - ✅ 实时消息转发，平均延迟 < 2秒
+          - ✅ 智能图片处理和压缩
+          - ✅ 消息过滤和去重
+          - ✅ 多账号管理
+          - ✅ 可视化配置界面
+          - ✅ 详细的实时日志
+          
+          ### 📚 文档
+          
+          - 📖 [快速开始指南](https://github.com/gfchfjh/CSBJJWT/blob/main/QUICK_START.md)
+          - 📚 [完整用户手册](https://github.com/gfchfjh/CSBJJWT/blob/main/docs/用户手册.md)
+          - 🎬 [视频教程](https://github.com/gfchfjh/CSBJJWT/tree/main/docs/视频教程)
+          - ❓ [常见问题FAQ](https://github.com/gfchfjh/CSBJJWT/blob/main/docs/FAQ.md)
+          
+          ### 🆕 更新内容
+          
+          请查看 [CHANGELOG.md](https://github.com/gfchfjh/CSBJJWT/blob/main/CHANGELOG_${{ steps.get_version.outputs.VERSION }}.md)
+          
+          ### 🐛 问题反馈
+          
+          如有问题请提交 [Issue](https://github.com/gfchfjh/CSBJJWT/issues/new?template=bug_report.md)
+          
+          ---
+          
+          **Full Changelog**: https://github.com/gfchfjh/CSBJJWT/compare/v1.13.0...${{ steps.get_version.outputs.VERSION }}
+          
+          EOF
+          cat release_notes.md
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          name: KOOK消息转发系统 ${{ steps.get_version.outputs.VERSION }}
+          name: ${{ steps.get_version.outputs.VERSION }}
           body_path: release_notes.md
-          files: |
-            ./artifacts/windows/*.exe
-            ./artifacts/macos/*.dmg
-            ./artifacts/linux/*.AppImage
           draft: false
           prerelease: false
+          files: |
+            artifacts/windows-installer/*.exe
+            artifacts/macos-installer/*.dmg
+            artifacts/linux-installer/*.AppImage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Notify Release
+      - name: Notify success
         run: |
-          echo "✅ Release ${{ steps.get_version.outputs.VERSION }} created successfully!"
-          echo "📦 Artifacts uploaded:"
-          ls -lh ./artifacts/windows/
-          ls -lh ./artifacts/macos/
-          ls -lh ./artifacts/linux/
+          echo "::notice::Release ${{ steps.get_version.outputs.VERSION }} created successfully!"
