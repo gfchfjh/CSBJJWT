@@ -39,7 +39,7 @@ cd CSBJJWT && ./start.sh
 # 7分钟完成！
 ```
 
-### 方式D: 预编译安装包（最简单，待发布）⭐⭐⭐⭐⭐
+### 方式D: 预编译安装包（最简单）⭐⭐⭐⭐⭐
 
 选择您的操作系统：
 
@@ -50,6 +50,11 @@ cd CSBJJWT && ./start.sh
 | 🐧 **Linux** | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/latest) | ~420MB | 支持Ubuntu 20.04+ |
 
 **详细安装教程**: [完整安装指南](INSTALLATION_GUIDE.md) | [一键安装指南](docs/一键安装指南.md)
+
+**生成安装包**: 构建方案已完成，运行 `./release_package.sh` 触发GitHub Actions自动构建
+- 📦 [快速生成指南](如何生成预编译安装包.md) - 5分钟上手
+- 🔧 [完整构建指南](BUILD_RELEASE_GUIDE.md) - 详细流程
+- ⚡ [本地构建指南](本地构建执行指南.md) - 本地操作
 
 ### 预编译包安装步骤（如已下载）
 
