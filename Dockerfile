@@ -38,10 +38,14 @@ RUN apt-get update && apt-get install -y \
 # 复制后端代码
 COPY backend/ ./backend/
 
-# 安装Python依赖
-RUN cd backend && \
-    pip install --no-cache-dir -r requirements.txt && \
-    playwright install chromium --with-deps
+# 安装Python依赖（分步执行以便调试）
+RUN cd backend && pip install --no-cache-dir -r requirements.txt
+
+# 安装Playwright浏览器
+RUN cd backend && playwright install chromium
+
+# 安装Playwright系统依赖
+RUN cd backend && playwright install-deps chromium || true
 
 # 创建数据目录
 RUN mkdir -p /data/logs /data/images /data/db
