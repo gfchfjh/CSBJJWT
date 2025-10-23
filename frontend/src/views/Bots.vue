@@ -85,12 +85,24 @@
           </el-form-item>
           
           <el-form-item label="Chat ID" prop="config.chat_id">
-            <el-input 
-              v-model="botForm.config.chat_id" 
-              placeholder="-1001234567890" 
-            />
+            <div style="display: flex; gap: 10px;">
+              <el-input 
+                v-model="botForm.config.chat_id" 
+                placeholder="-1001234567890" 
+                style="flex: 1;"
+              />
+              <el-button 
+                type="success" 
+                @click="autoGetChatId"
+                :loading="autoGettingChatId"
+                :disabled="!botForm.config.token"
+              >
+                <el-icon><MagicStick /></el-icon>
+                自动获取
+              </el-button>
+            </div>
             <div class="form-help-text">
-              💡 Chat ID通常是负数，表示群组
+              💡 点击"自动获取"后，请在Telegram群组中发送任意消息，系统将自动检测Chat ID
             </div>
           </el-form-item>
         </template>
@@ -144,7 +156,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import api from '../api'
 import BotList from '../components/BotList.vue'
 
@@ -152,6 +164,7 @@ const activePlatform = ref('discord')
 const showAddDialog = ref(false)
 const isAdding = ref(false)
 const isTesting = ref(false)
+const autoGettingChatId = ref(false)  // v1.15.0 自动获取Chat ID状态
 const botFormRef = ref(null)
 
 const botForm = ref({
@@ -231,6 +244,107 @@ const botFormRules = computed(() => {
 })
 
 // 测试机器人连接（v1.7.2新增）
+// v1.15.0 自动获取Telegram Chat ID
+const autoGetChatId = async () => {
+  if (!botForm.value.config.token) {
+    ElMessage.warning('请先输入Bot Token')
+    return
+  }
+  
+  try {
+    // 显示操作指引
+    await ElMessageBox.confirm(
+      '请按以下步骤操作：\n\n' +
+      '1. 将Bot添加到目标Telegram群组\n' +
+      '2. 在群组中发送任意消息\n' +
+      '3. 点击"确定"开始自动检测\n\n' +
+      '系统将在30秒内自动检测Chat ID',
+      '自动获取Chat ID',
+      {
+        confirmButtonText: '开始检测',
+        cancelButtonText: '取消',
+        type: 'info',
+        dangerouslyUseHTMLString: false
+      }
+    )
+    
+    autoGettingChatId.value = true
+    
+    // 显示进度提示
+    const notification = ElNotification({
+      title: '正在检测Chat ID...',
+      message: '请在Telegram群组中发送任意消息',
+      icon: 'MagicStick',
+      duration: 30000,  // 30秒
+      type: 'info'
+    })
+    
+    try {
+      // 调用自动获取API
+      const response = await api.post('/api/telegram-helper/get-chat-id', {
+        bot_token: botForm.value.config.token
+      })
+      
+      notification.close()
+      
+      if (response.data.success && response.data.chats.length > 0) {
+        const chats = response.data.chats
+        
+        // 如果只有一个群组，直接使用
+        if (chats.length === 1) {
+          botForm.value.config.chat_id = chats[0].chat_id.toString()
+          ElMessage.success({
+            message: `✅ 成功获取Chat ID：${chats[0].chat_title}`,
+            duration: 5000
+          })
+        } else {
+          // 多个群组，让用户选择
+          const chatOptions = chats.map(chat => ({
+            label: `${chat.chat_title} (ID: ${chat.chat_id})${chat.member_count ? ' - ' + chat.member_count + '人' : ''}`,
+            value: chat.chat_id
+          }))
+          
+          const { value } = await ElMessageBox.prompt(
+            '检测到多个群组，请选择目标群组：',
+            '选择Chat ID',
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              inputType: 'select',
+              inputOptions: chatOptions,
+              inputPlaceholder: '请选择群组'
+            }
+          )
+          
+          if (value) {
+            botForm.value.config.chat_id = value.toString()
+            ElMessage.success('✅ Chat ID已设置')
+          }
+        }
+      } else {
+        ElMessage.warning({
+          message: response.data.message || '未检测到任何群组，请确保Bot已添加到群组并发送了消息',
+          duration: 10000
+        })
+      }
+    } catch (error) {
+      notification.close()
+      throw error
+    }
+  } catch (error) {
+    if (error !== 'cancel') {  // 不是用户取消
+      console.error('自动获取Chat ID失败:', error)
+      const errorMsg = error.response?.data?.detail || error.message || '获取失败'
+      ElMessage.error({
+        message: `❌ 获取Chat ID失败: ${errorMsg}`,
+        duration: 10000
+      })
+    }
+  } finally {
+    autoGettingChatId.value = false
+  }
+}
+
 const testBot = async () => {
   // 先验证表单
   if (!botFormRef.value) return
