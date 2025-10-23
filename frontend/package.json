@@ -1,7 +1,7 @@
 {
   "name": "kook-forwarder-frontend",
-  "version": "1.13.3",
-  "description": "KOOK消息转发系统 - 前端应用 (S+级易用优化版 - 93.8分)",
+  "version": "1.15.0",
+  "description": "KOOK消息转发系统 - 前端应用 (v1.15.0 - 一键安装真正可行)",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
