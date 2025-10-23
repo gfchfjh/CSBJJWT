@@ -37,14 +37,16 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pyinstaller
       
-      - name: Install Playwright browsers
-        run: |
-          playwright install chromium --with-deps
+      # Playwright浏览器将在首次运行时自动下载
+      # 由 backend/app/utils/environment_checker.py 处理
+      # 这样可以减小安装包体积并避免构建时的安装问题
       
       - name: Build backend with PyInstaller
         run: |
           cd backend
           pyinstaller --clean --noconfirm build_backend.spec
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           
       - name: Verify build output
         run: |
