@@ -14,9 +14,31 @@
 
 ---
 
-## 📥 一键安装（4种方式）🆕
+## 📥 快速下载（最新版 v1.14.0）
 
-### 🆕 方式1: Docker一键部署（⭐推荐所有用户）
+### 🎯 预编译安装包 - 下载即用（推荐）
+
+| 平台 | 文件 | 大小 | 下载链接 |
+|------|------|------|----------|
+| 🪟 **Windows** | KOOK.Setup.1.13.3.exe | 93 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)** |
+| 🐧 **Linux** | KOOK.-1.13.3.AppImage | 130 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.-1.13.3.AppImage)** |
+| 🍎 **macOS** | 暂不可用 | - | 请使用Docker方式 |
+| 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:latest | - | `docker pull ghcr.io/gfchfjh/csbjjwt:latest` |
+
+💡 **使用说明**：
+- **Windows**: 下载后双击运行，按照向导安装
+- **Linux**: 下载后运行 `chmod +x *.AppImage && ./KOOK.-1.13.3.AppImage`
+- **国内加速**: [ghproxy镜像下载](https://mirror.ghproxy.com/https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)（Windows）
+
+📖 **详细说明**: 查看 [下载安装指南](DOWNLOAD_INSTRUCTIONS.md) | [Windows专项说明](README_WINDOWS_DOWNLOAD.md)
+
+[查看所有历史版本](https://github.com/gfchfjh/CSBJJWT/releases)
+
+---
+
+## 📥 一键安装（4种方式）
+
+### 方式1: Docker一键部署（⭐推荐服务器用户）
 
 **最简单、最稳定的安装方式**
 
@@ -31,7 +53,7 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 
 ---
 
-### 🆕 方式2: Windows增强脚本（⭐推荐Windows用户）
+### 方式2: Windows增强脚本（开发模式）
 
 **全自动安装所有依赖**
 
@@ -47,7 +69,7 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercon
 
 ---
 
-### 🆕 方式3: Linux/macOS一键脚本
+### 方式3: Linux/macOS一键脚本（开发模式）
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/install.sh | bash
@@ -60,21 +82,9 @@ cd CSBJJWT && ./start.sh
 
 ---
 
-### 方式4: 预编译安装包 ✅
+### 方式4: 手动安装（开发者模式）
 
-**状态**: ✅ v1.15.0 已发布
-
-现已提供Windows和Linux预编译安装包，macOS版本开发中。
-
-| 平台 | 状态 | 下载 | 大小 |
-|------|------|------|------|
-| 🪟 **Windows** | ✅ 可用 | [下载 .exe](https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.15.0) | ~150 MB |
-| 🐧 **Linux** | ✅ 可用 | [下载 .AppImage](https://github.com/gfchfjh/CSBJJWT/releases/tag/v1.15.0) | ~150 MB |
-| 🍎 **macOS** | 🔜 开发中 | 即将发布 | - |
-
-💡 **使用方法**: 下载对应平台的安装包，双击运行即可（Windows需要安装，Linux需要添加执行权限）
-
----
+从源码手动安装，适合开发者或需要自定义配置的用户。
 
 **详细安装教程**: 
 - 🚀 [立即开始使用](立即开始使用.md) - 3步完成（最快）
@@ -82,14 +92,11 @@ cd CSBJJWT && ./start.sh
 - 📖 [完整安装指南](INSTALLATION_GUIDE.md) - 传统安装方式
 - 🎬 [5分钟快速开始](QUICK_START.md) - 快速上手
 
-**预编译安装包生成**: 
+**如需自行构建**: 
 - 📦 [如何生成预编译安装包](如何生成预编译安装包.md) - 5分钟快速指南
-- 🔧 [完整构建指南](BUILD_RELEASE_GUIDE.md) - 详细构建流程（8页）
-- ⚡ [本地构建执行](本地构建执行指南.md) - 本地操作步骤（6页）
+- 🔧 [完整构建指南](BUILD_RELEASE_GUIDE.md) - 详细构建流程
+- ⚡ [本地构建执行](本地构建执行指南.md) - 本地操作步骤
 - 📋 [快速参考](README_本地构建.txt) - 命令清单
-- 🎯 [完成说明](预编译安装包生成完成说明.md) - 方案总结
-
-[查看所有版本](https://github.com/gfchfjh/CSBJJWT/releases)
 
 ---
 
