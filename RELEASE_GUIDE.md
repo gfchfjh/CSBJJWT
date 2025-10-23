@@ -1,8 +1,46 @@
 # KOOK消息转发系统 - 发布指南
 
-> **版本**: v1.13.2  
-> **更新日期**: 2025-10-22  
-> **状态**: 100% 完成（紧急修复版）
+> **当前版本**: v1.13.2  
+> **最后更新**: 2025-10-23  
+> **状态**: 100% 完成（完整构建工具链）
+
+---
+
+## 🆕 v1.13.2 重大更新
+
+**完整的构建工具链和文档体系**，让发布变得更简单：
+
+### 新增文档
+- ✅ **[LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md)** - 1182行详细构建指南 ⭐⭐⭐⭐⭐
+  - Windows完整步骤（11步）
+  - macOS完整步骤（10步）
+  - Linux完整步骤（10步）
+  - 故障排查和性能优化
+
+- ✅ **[QUICK_BUILD_REFERENCE.md](QUICK_BUILD_REFERENCE.md)** - 命令速查表
+- ✅ **[BUILD_INDEX.md](BUILD_INDEX.md)** - 文档导航索引
+- ✅ **[START_HERE.md](START_HERE.md)** - 新手入口
+- ✅ **[BUILD_TOOLS_README.md](BUILD_TOOLS_README.md)** - 工具说明
+
+### 新增工具
+- ✅ `build/verify_build.py` - 构建验证（7项检查）
+- ✅ `build/create_platform_icons.py` - 图标生成
+- ✅ `build/prepare_redis.py` - Redis准备
+- ✅ `BUILD_QUICKSTART.sh` - 快速启动
+
+### 快速发布
+```bash
+# 方式1: GitHub Actions自动构建（推荐）⭐⭐⭐⭐⭐
+./release_package.sh
+# 等待15-20分钟，访问 GitHub Releases
+
+# 方式2: 本地构建
+cat LOCAL_BUILD_GUIDE.md  # 查看详细步骤
+./BUILD_QUICKSTART.sh     # 准备资源
+./build_installer.sh      # 运行构建
+```
+
+**详细构建指南：** 查看 [LOCAL_BUILD_GUIDE.md](LOCAL_BUILD_GUIDE.md)
 
 ---
 
@@ -10,9 +48,9 @@
 
 将KOOK消息转发系统打包为**三平台一键安装包**，实现真正的"下载即用"：
 
-- ✅ Windows: `KookForwarder_v1.13.1_Windows_x64.exe` (~450MB)
-- ✅ macOS: `KookForwarder_v1.13.1_macOS.dmg` (~480MB)
-- ✅ Linux: `KookForwarder_v1.13.1_Linux_x64.AppImage` (~420MB)
+- ✅ Windows: `KookForwarder_v1.13.2_Windows_x64.exe` (~450MB)
+- ✅ macOS: `KookForwarder_v1.13.2_macOS.dmg` (~480MB)
+- ✅ Linux: `KookForwarder_v1.13.2_Linux_x64.AppImage` (~420MB)
 
 ---
 
