@@ -22,15 +22,15 @@
 
 | 平台 | 文件 | 大小 | 下载链接 |
 |------|------|------|----------|
-| 🪟 **Windows** | KOOK.Setup.1.13.3.exe | 93 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)** |
-| 🐧 **Linux** | KOOK.-1.13.3.AppImage | 130 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.-1.13.3.AppImage)** |
+| 🪟 **Windows** | KOOK.Setup.1.17.0.exe | ~100 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
+| 🐧 **Linux** | KOOK.-1.17.0.AppImage | ~140 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
 | 🍎 **macOS** | 暂不可用 | - | 请使用Docker方式 |
 | 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:latest | - | `docker pull ghcr.io/gfchfjh/csbjjwt:latest` |
 
 💡 **使用说明**：
 - **Windows**: 下载后双击运行，按照向导安装
-- **Linux**: 下载后运行 `chmod +x *.AppImage && ./KOOK.-1.13.3.AppImage`
-- **国内加速**: [ghproxy镜像下载](https://mirror.ghproxy.com/https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)（Windows）
+- **Linux**: 下载后运行 `chmod +x *.AppImage && ./*.AppImage`
+- **国内加速**: [ghproxy镜像下载](https://mirror.ghproxy.com/https://github.com/gfchfjh/CSBJJWT/releases/latest)（访问后选择对应平台）
 
 📖 **详细说明**: 查看 [下载安装指南](DOWNLOAD_INSTRUCTIONS.md) | [Windows专项说明](README_WINDOWS_DOWNLOAD.md)
 
@@ -135,7 +135,7 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 - 📚 **帮助中心** - 完整的视频教程和FAQ系统（v1.6.0）
 - 💻 **桌面应用** - 开机自启、系统托盘、桌面通知
 - 🧹 **自动运维** - 智能空间管理，定期健康检查
-- 🚀 **完全自动化构建** - Chromium/Redis自动集成，零依赖安装（v1.15.0）
+- 🚀 **完全自动化构建** - Chromium/Redis自动集成，零依赖安装
 
 ---
 
@@ -211,13 +211,15 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ---
 
-## 📜 v1.14.0 历史版本
+---
 
-### 🎯 v1.14.0 核心功能
+## 📜 历史版本特性
+
+### v1.14.0 - 一键安装功能
 
 本版本实现了完整的一键安装功能。
 
-#### 七大核心功能（v1.14.0：完整自动化构建系统）
+#### 七大核心功能
 
 1. **✅ "下载即用"**（零依赖安装）
    - Chromium浏览器完全打包
@@ -263,7 +265,7 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
    - 详细测试报告
    - 用户/维护者/开发者文档齐全
 
-[查看v1.14.0更新说明](./v1.14.0_COMPLETE_UPGRADE_REPORT.md) | [v1.13.3更新日志](./CHANGELOG_v1.13.3.md) | [发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md)
+[发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md)
 
 ---
 
@@ -710,9 +712,7 @@ curl http://localhost:9527/api/cache/stats
 
 ---
 
-## 📦 v1.14.0 新增功能
-
-### ✨ v1.14.0 重大更新（2025-10）
+### v1.14.0 重大更新
 
 #### 🎯 预编译安装包发布
 
@@ -753,7 +753,7 @@ curl http://localhost:9527/api/cache/stats
 
 ---
 
-## 📦 v1.13.3 功能（2025-09）
+### v1.13.3 功能
 
 - ✅ 完整的预编译安装包构建方案（release_package.sh）
 - ✅ GitHub Actions自动化构建流程
@@ -1299,7 +1299,7 @@ cat LOCAL_BUILD_GUIDE.md
 
 # 2. 提交更改
 git add .
-git commit -m "chore: bump version to v1.14.0"
+git commit -m "chore: bump version to v1.17.0"
 git push origin main
 
 # 3. 创建并推送 Git tag（触发自动构建）
