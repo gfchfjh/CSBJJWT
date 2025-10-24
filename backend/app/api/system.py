@@ -75,14 +75,76 @@ async def stop_service():
 
 @router.get("/config")
 async def get_config():
-    """获取配置信息"""
+    """获取配置信息（✅ P1-2优化：添加image_strategy）"""
     return {
         "app_name": settings.app_name,
         "app_version": settings.app_version,
         "api_port": settings.api_port,
         "image_storage_path": str(settings.image_storage_path),
-        "log_level": settings.log_level
+        "log_level": settings.log_level,
+        "image_strategy": settings.image_strategy,  # ✅ P1-2优化
+        "image_max_size_mb": settings.image_max_size_mb,
+        "image_compression_quality": settings.image_compression_quality
     }
+
+
+class SettingsUpdate(BaseModel):
+    """设置更新模型（✅ P1-2优化：支持图片策略配置）"""
+    image_strategy: Optional[str] = None  # smart/direct/imgbed
+    image_max_size_mb: Optional[float] = None
+    image_compression_quality: Optional[int] = None
+    log_level: Optional[str] = None
+
+
+@router.post("/config")
+async def update_config(config: SettingsUpdate):
+    """
+    更新配置（✅ P1-2优化：实时生效）
+    
+    注意：某些配置需要重启服务才能生效
+    """
+    updated_fields = []
+    
+    try:
+        # 更新图片策略
+        if config.image_strategy:
+            if config.image_strategy not in ['smart', 'direct', 'imgbed']:
+                raise HTTPException(status_code=400, detail="无效的图片策略")
+            settings.image_strategy = config.image_strategy
+            updated_fields.append(f"image_strategy={config.image_strategy}")
+        
+        # 更新图片大小限制
+        if config.image_max_size_mb is not None:
+            settings.image_max_size_mb = config.image_max_size_mb
+            updated_fields.append(f"image_max_size_mb={config.image_max_size_mb}")
+        
+        # 更新压缩质量
+        if config.image_compression_quality is not None:
+            if not 1 <= config.image_compression_quality <= 100:
+                raise HTTPException(status_code=400, detail="压缩质量必须在1-100之间")
+            settings.image_compression_quality = config.image_compression_quality
+            updated_fields.append(f"image_compression_quality={config.image_compression_quality}")
+        
+        # 更新日志级别
+        if config.log_level:
+            if config.log_level not in ['DEBUG', 'INFO', 'WARNING', 'ERROR']:
+                raise HTTPException(status_code=400, detail="无效的日志级别")
+            settings.log_level = config.log_level
+            updated_fields.append(f"log_level={config.log_level}")
+        
+        logger.info(f"✅ 配置已更新: {', '.join(updated_fields)}")
+        
+        return {
+            "message": "配置更新成功",
+            "updated_fields": updated_fields,
+            "requires_restart": False  # 这些配置实时生效，无需重启
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"更新配置失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/filter-rules")

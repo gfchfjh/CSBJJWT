@@ -35,18 +35,21 @@ class KookScraper:
     async def start(self, cookie: Optional[str] = None, 
                    email: Optional[str] = None,
                    password: Optional[str] = None,
-                   sync_history_minutes: int = 0):
+                   sync_history_minutes: int = 0,
+                   _retry_count: int = 0):
         """
-        启动抓取器
+        启动抓取器（✅ P2-4优化：自动重启+异常恢复）
         
         Args:
             cookie: Cookie字符串（JSON格式）
             email: 邮箱（用于账号密码登录）
             password: 密码（用于账号密码登录）
             sync_history_minutes: 同步最近N分钟的历史消息（0=不同步）
+            _retry_count: 内部参数，重试计数
         """
         try:
-            logger.info(f"启动KOOK抓取器，账号ID: {self.account_id}")
+            logger.info(f"启动KOOK抓取器，账号ID: {self.account_id}" + 
+                       (f"（第{_retry_count}次重试）" if _retry_count > 0 else ""))
             
             # 检查是否使用共享浏览器（v1.8.1）
             if self.shared_browser and self.shared_context:
@@ -131,39 +134,63 @@ class KookScraper:
                 logger.info(f"开始同步最近{sync_history_minutes}分钟的历史消息...")
                 await self.sync_history_messages(sync_history_minutes)
             
-            # 保持运行
+            # ✅ P2-4优化：保持运行+异常恢复
             while self.is_running:
-                await asyncio.sleep(10)
-                # 心跳检测
                 try:
-                    await self.page.evaluate('() => console.log("heartbeat")')
-                    # 心跳成功，重置重连计数
-                    self.reconnect_count = 0
-                except Exception as e:
-                    logger.warning(f"心跳检测失败: {str(e)}，尝试重连...")
+                    await asyncio.sleep(10)
                     
-                    # 检查是否达到最大重连次数
-                    if self.reconnect_count >= self.max_reconnect:
-                        logger.error(f"账号{self.account_id}达到最大重连次数({self.max_reconnect})，停止抓取器")
-                        self.is_running = False
-                        db.update_account_status(self.account_id, 'offline')
-                        break
-                    
-                    self.reconnect_count += 1
-                    logger.info(f"第{self.reconnect_count}次重连尝试（最多{self.max_reconnect}次）")
-                    
-                    # v1.11.0新增：先尝试自动重新登录
-                    relogin_success = await self._auto_relogin_if_expired()
-                    if not relogin_success:
-                        # 如果自动登录失败，使用常规重连
-                        await self._reconnect()
+                    # 心跳检测
+                    try:
+                        await self.page.evaluate('() => console.log("heartbeat")')
+                        # 心跳成功，重置重连计数
+                        self.reconnect_count = 0
+                        
+                    except Exception as heartbeat_error:
+                        logger.warning(f"心跳检测失败: {str(heartbeat_error)}，尝试重连...")
+                        
+                        # 检查是否达到最大重连次数
+                        if self.reconnect_count >= self.max_reconnect:
+                            logger.error(f"账号{self.account_id}达到最大重连次数({self.max_reconnect})，停止抓取器")
+                            self.is_running = False
+                            db.update_account_status(self.account_id, 'offline')
+                            break
+                        
+                        self.reconnect_count += 1
+                        logger.info(f"第{self.reconnect_count}次重连尝试（最多{self.max_reconnect}次）")
+                        
+                        # v1.11.0新增：先尝试自动重新登录
+                        relogin_success = await self._auto_relogin_if_expired()
+                        if not relogin_success:
+                            # 如果自动登录失败，使用常规重连
+                            await self._reconnect()
+                
+                except Exception as loop_error:
+                    # ✅ P2-4优化：主循环异常不退出，等待后重试
+                    logger.error(f"主循环异常: {str(loop_error)}，5秒后继续...")
+                    await asyncio.sleep(5)
             
             return True
             
         except Exception as e:
             logger.error(f"启动KOOK抓取器失败: {str(e)}")
             db.update_account_status(self.account_id, 'offline')
-            return False
+            
+            # ✅ P2-4优化：浏览器崩溃自动重启（最多3次）
+            if _retry_count < 3:
+                logger.warning(f"浏览器崩溃，30秒后尝试重启 ({_retry_count+1}/3)")
+                await asyncio.sleep(30)
+                
+                # 递归重启（增加重试计数）
+                return await self.start(
+                    cookie=cookie,
+                    email=email,
+                    password=password,
+                    sync_history_minutes=0,  # 重启时不再同步历史
+                    _retry_count=_retry_count + 1
+                )
+            else:
+                logger.error(f"账号 {self.account_id} 浏览器多次崩溃（3次），放弃重启")
+                return False
     
     async def stop(self):
         """停止抓取器（v1.8.1：共享模式下不关闭Browser和Context）"""
@@ -1258,33 +1285,36 @@ class KookScraper:
 
 class ScraperManager:
     """
-    抓取器管理器（v1.8.1：支持浏览器共享上下文）
+    抓取器管理器（✅ P1-4优化：共享Browser，独立Context）
     
-    优化：多个账号共享同一个Browser实例，内存节省60%，支持账号数提升150%
+    优化：
+    - 共享Browser实例（节省内存）
+    - 每个账号独立Context（避免Cookie混淆）
+    - 支持更多账号同时运行
     """
     
     def __init__(self):
         self.scrapers: Dict[int, KookScraper] = {}
         
-        # 共享的浏览器实例（v1.8.1新增）
+        # ✅ P1-4优化：共享Browser，独立Context
         self.shared_browser: Optional[Browser] = None
-        self.shared_context: Optional[BrowserContext] = None
+        self.contexts: Dict[int, BrowserContext] = {}  # 每个账号独立Context
         self.playwright = None
         
         # 是否启用共享模式（默认启用）
         self.use_shared_browser = True
         
-        logger.info("✅ 抓取器管理器已初始化（共享浏览器模式）")
+        logger.info("✅ 抓取器管理器已初始化（共享Browser+独立Context模式）")
     
     async def _ensure_shared_browser(self):
         """
-        确保共享浏览器已初始化（v1.8.1新增）
+        确保共享浏览器已初始化（✅ P1-4优化：仅初始化Browser）
         
         Returns:
-            (Browser, BrowserContext)
+            Browser实例
         """
         if not self.use_shared_browser:
-            return None, None
+            return None
         
         if self.shared_browser is None or not self.shared_browser.is_connected():
             try:
@@ -1294,16 +1324,10 @@ class ScraperManager:
                 if self.playwright is None:
                     self.playwright = await async_playwright().start()
                 
-                # 启动共享浏览器
+                # ✅ P1-4优化：只启动Browser，不创建共享Context
                 self.shared_browser = await self.playwright.chromium.launch(
                     headless=True,
                     args=['--no-sandbox', '--disable-setuid-sandbox']
-                )
-                
-                # 创建共享上下文
-                self.shared_context = await self.shared_browser.new_context(
-                    viewport={'width': 1280, 'height': 720},
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 )
                 
                 logger.info("✅ 共享浏览器启动成功")
@@ -1311,10 +1335,41 @@ class ScraperManager:
             except Exception as e:
                 logger.error(f"启动共享浏览器失败: {str(e)}")
                 self.shared_browser = None
-                self.shared_context = None
-                return None, None
+                return None
         
-        return self.shared_browser, self.shared_context
+        return self.shared_browser
+    
+    async def _create_context_for_account(self, account_id: int) -> Optional[BrowserContext]:
+        """
+        为指定账号创建独立Context（✅ P1-4优化）
+        
+        Args:
+            account_id: 账号ID
+            
+        Returns:
+            BrowserContext实例
+        """
+        try:
+            # 确保Browser已启动
+            browser = await self._ensure_shared_browser()
+            if not browser:
+                logger.error(f"无法为账号 {account_id} 创建Context：Browser未启动")
+                return None
+            
+            # 创建独立Context
+            context = await browser.new_context(
+                viewport={'width': 1280, 'height': 720},
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            )
+            
+            self.contexts[account_id] = context
+            logger.info(f"✅ 账号 {account_id} 的独立Context已创建")
+            
+            return context
+            
+        except Exception as e:
+            logger.error(f"创建Context失败: {str(e)}")
+            return None
     
     async def start_scraper(self, account_id: int, 
                            cookie: Optional[str] = None,
@@ -1323,7 +1378,7 @@ class ScraperManager:
                            message_callback: Optional[Callable] = None,
                            use_shared_browser: Optional[bool] = None):
         """
-        启动抓取器（v1.8.1：支持共享浏览器）
+        启动抓取器（✅ P1-4优化：共享Browser+独立Context）
         
         Args:
             account_id: 账号ID
@@ -1340,21 +1395,23 @@ class ScraperManager:
         # 确定是否使用共享浏览器
         use_shared = use_shared_browser if use_shared_browser is not None else self.use_shared_browser
         
-        # 如果使用共享浏览器，先确保已初始化
+        # ✅ P1-4优化：创建独立Context
         shared_browser = None
-        shared_context = None
+        account_context = None
         if use_shared:
-            shared_browser, shared_context = await self._ensure_shared_browser()
+            shared_browser = await self._ensure_shared_browser()
+            if shared_browser:
+                account_context = await self._create_context_for_account(account_id)
         
         scraper = KookScraper(account_id)
         if message_callback:
             scraper.set_message_callback(message_callback)
         
-        # 如果有共享浏览器，传递给scraper
-        if shared_browser and shared_context:
+        # ✅ P1-4优化：传递Browser和独立Context
+        if shared_browser and account_context:
             scraper.shared_browser = shared_browser
-            scraper.shared_context = shared_context
-            logger.info(f"账号 {account_id} 将使用共享浏览器实例")
+            scraper.shared_context = account_context  # 独立Context，避免Cookie混淆
+            logger.info(f"账号 {account_id} 将使用共享Browser+独立Context")
         
         self.scrapers[account_id] = scraper
         
@@ -1364,7 +1421,7 @@ class ScraperManager:
         return True
     
     async def stop_scraper(self, account_id: int):
-        """停止抓取器"""
+        """停止抓取器（✅ P1-4优化：清理独立Context）"""
         if account_id not in self.scrapers:
             logger.warning(f"抓取器不存在，账号ID: {account_id}")
             return False
@@ -1373,22 +1430,34 @@ class ScraperManager:
         await scraper.stop()
         del self.scrapers[account_id]
         
+        # ✅ P1-4优化：清理该账号的独立Context
+        if account_id in self.contexts:
+            try:
+                context = self.contexts[account_id]
+                await context.close()
+                del self.contexts[account_id]
+                logger.info(f"✅ 账号 {account_id} 的Context已清理")
+            except Exception as e:
+                logger.error(f"清理Context失败: {str(e)}")
+        
         return True
     
     async def stop_all(self):
-        """停止所有抓取器（v1.8.1：清理共享浏览器）"""
+        """停止所有抓取器（✅ P1-4优化：清理所有Context和Browser）"""
+        # 停止所有抓取器（会自动清理各自的Context）
         for account_id in list(self.scrapers.keys()):
             await self.stop_scraper(account_id)
         
-        # 关闭共享浏览器
-        if self.shared_context:
+        # ✅ P1-4优化：确保所有Context都已关闭
+        for account_id, context in list(self.contexts.items()):
             try:
-                await self.shared_context.close()
-                self.shared_context = None
-                logger.info("✅ 共享浏览器上下文已关闭")
+                await context.close()
+                logger.info(f"✅ 账号 {account_id} 的Context已关闭")
             except Exception as e:
-                logger.error(f"关闭共享上下文失败: {str(e)}")
+                logger.error(f"关闭Context失败: {str(e)}")
+        self.contexts.clear()
         
+        # 关闭共享浏览器
         if self.shared_browser:
             try:
                 await self.shared_browser.close()
@@ -1407,7 +1476,7 @@ class ScraperManager:
     
     def get_stats(self) -> Dict[str, Any]:
         """
-        获取管理器统计信息（v1.8.1新增）
+        获取管理器统计信息（✅ P1-4优化：添加Context统计）
         
         Returns:
             统计信息字典
@@ -1417,6 +1486,7 @@ class ScraperManager:
             'active_scrapers': len([s for s in self.scrapers.values() if s.is_running]),
             'use_shared_browser': self.use_shared_browser,
             'shared_browser_active': self.shared_browser is not None,
+            'total_contexts': len(self.contexts),  # ✅ P1-4优化
             'accounts': list(self.scrapers.keys())
         }
 

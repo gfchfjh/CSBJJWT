@@ -1,8 +1,10 @@
 """
-加密工具模块
+加密工具模块（P1-5优化：密钥持久化）
 """
 import base64
 import hashlib
+import os
+from pathlib import Path
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -11,21 +13,75 @@ import uuid
 
 
 class CryptoManager:
-    """加密管理器"""
+    """加密管理器（✅ 优化：密钥持久化，重启后仍可解密）"""
     
     def __init__(self, master_key: str = None):
         """
         初始化加密管理器
         
         Args:
-            master_key: 主密钥，如果不提供则基于设备ID生成
+            master_key: 主密钥，如果不提供则从文件加载或生成
         """
         if master_key is None:
-            # 基于设备唯一ID生成密钥
-            device_id = self._get_device_id()
-            master_key = self._derive_key_from_device_id(device_id)
+            # ✅ P1-5优化：从文件加载或生成持久化密钥
+            master_key = self._load_or_generate_key()
         
         self.fernet = Fernet(master_key.encode() if isinstance(master_key, str) else master_key)
+    
+    def _load_or_generate_key(self) -> bytes:
+        """
+        加载或生成持久化密钥（✅ P1-5优化）
+        
+        Returns:
+            加密密钥（bytes）
+        """
+        from ..config import settings
+        
+        # 密钥文件路径
+        key_file = settings.data_dir / ".encryption_key"
+        
+        if key_file.exists():
+            # 从文件加载密钥
+            try:
+                with open(key_file, 'rb') as f:
+                    key = f.read()
+                    # 验证密钥格式
+                    Fernet(key)  # 如果密钥无效会抛出异常
+                    return key
+            except Exception as e:
+                # 密钥文件损坏，重新生成
+                print(f"⚠️ 密钥文件损坏，重新生成: {e}")
+        
+        # 首次启动或密钥损坏，生成新密钥
+        key = Fernet.generate_key()
+        
+        # 持久化到文件
+        try:
+            with open(key_file, 'wb') as f:
+                f.write(key)
+            
+            # ✅ 设置文件权限（仅当前用户可读写）
+            if os.name != 'nt':  # Unix/Linux/macOS
+                os.chmod(key_file, 0o600)
+            else:  # Windows
+                # Windows使用icacls设置权限
+                try:
+                    import subprocess
+                    subprocess.run([
+                        'icacls', str(key_file), 
+                        '/inheritance:r',  # 移除继承
+                        '/grant:r', f'{os.getlogin()}:F'  # 仅当前用户完全控制
+                    ], check=True, capture_output=True)
+                except:
+                    pass  # 权限设置失败不影响功能
+            
+            print(f"✅ 新密钥已生成并保存到: {key_file}")
+            
+        except Exception as e:
+            print(f"⚠️ 密钥持久化失败: {e}")
+            print("⚠️ 密钥仅在内存中，重启后将无法解密旧数据")
+        
+        return key
     
     def _get_device_id(self) -> str:
         """获取设备唯一ID"""

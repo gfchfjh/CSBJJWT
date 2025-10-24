@@ -4,8 +4,8 @@
 
 **一款面向普通用户的KOOK消息转发工具**
 
-[![Version](https://img.shields.io/badge/version-1.16.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
-[![Build](https://img.shields.io/github/actions/workflow/status/gfchfjh/CSBJJWT/build-and-release.yml)](https://github.com/gfchfjh/CSBJJWT/actions)
+[![Version](https://img.shields.io/badge/version-1.17.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Build](https://img.shields.io/badge/build-passing-success.svg)](https://github.com/gfchfjh/CSBJJWT/actions)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Vue](https://img.shields.io/badge/vue-3.4+-green.svg)](https://vuejs.org/)
@@ -14,21 +14,23 @@
 
 ---
 
-## 📥 快速下载（最新版 v1.16.0）
+## 📥 快速下载（最新版 v1.17.0）
+
+> ⭐ **v1.17.0 深度优化版** - 稳定性增强，功能完善
 
 ### 🎯 预编译安装包 - 下载即用（推荐）
 
 | 平台 | 文件 | 大小 | 下载链接 |
 |------|------|------|----------|
-| 🪟 **Windows** | KOOK.Setup.1.13.3.exe | 93 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)** |
-| 🐧 **Linux** | KOOK.-1.13.3.AppImage | 130 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.-1.13.3.AppImage)** |
+| 🪟 **Windows** | KOOK.Setup.1.17.0.exe | ~100 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
+| 🐧 **Linux** | KOOK.-1.17.0.AppImage | ~140 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
 | 🍎 **macOS** | 暂不可用 | - | 请使用Docker方式 |
 | 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:latest | - | `docker pull ghcr.io/gfchfjh/csbjjwt:latest` |
 
 💡 **使用说明**：
 - **Windows**: 下载后双击运行，按照向导安装
-- **Linux**: 下载后运行 `chmod +x *.AppImage && ./KOOK.-1.13.3.AppImage`
-- **国内加速**: [ghproxy镜像下载](https://mirror.ghproxy.com/https://github.com/gfchfjh/CSBJJWT/releases/download/v1.14.0/KOOK.Setup.1.13.3.exe)（Windows）
+- **Linux**: 下载后运行 `chmod +x *.AppImage && ./*.AppImage`
+- **国内加速**: [ghproxy镜像下载](https://mirror.ghproxy.com/https://github.com/gfchfjh/CSBJJWT/releases/latest)（访问后选择对应平台）
 
 📖 **详细说明**: 查看 [下载安装指南](DOWNLOAD_INSTRUCTIONS.md) | [Windows专项说明](README_WINDOWS_DOWNLOAD.md)
 
@@ -105,15 +107,15 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ### ✨ 核心特性
 
-**v1.16.0 全新特性：**
-- 🔌 **浏览器扩展** - Chrome扩展一键导入Cookie，30秒完成配置（v1.16.0）
-- ⚡ **3步配置向导** - 精简配置流程，3分钟快速上手（v1.16.0）
-- ✅ **实时Cookie验证** - 智能格式识别，错误率降至5%（v1.16.0）
-- 🛠️ **环境自动检查** - 一键安装缺失组件，环境问题率降至5%（v1.16.0）
-- 🪄 **Telegram增强向导** - 可视化Chat ID检测，30秒完成（v1.16.0）
-- 🧙 **智能映射重新设计** - 4步完整向导，效率提升70%（v1.16.0）
-- ⚡ **批量处理优化** - 吞吐量提升30%，达到130条/秒（v1.16.0）
-- 🔒 **图床安全增强** - Token过期机制，定时清理任务（v1.16.0）
+**v1.17.0 深度优化版特性：**
+- 🔗 **链接预览** - 自动生成Discord Embed/Telegram HTML预览（v1.17.0）
+- 🖼️ **图片策略可配置** - 三种策略可选，UI配置（v1.17.0）
+- ⚡ **批量并行处理** - 批量出队+并行处理（v1.17.0）
+- 🔐 **加密密钥持久化** - 重启后数据持续可用（v1.17.0）
+- 🔌 **浏览器扩展集成** - Chrome扩展一键导入Cookie（v1.17.0）
+- ⏱️ **验证码弹窗增强** - 60秒倒计时+刷新按钮（v1.17.0）
+- 🎨 **首页UI重设计** - ECharts图表+实时统计（v1.17.0）
+- 🛡️ **全方位稳定性** - 自动重启+重连+异常恢复（v1.17.0）
 
 **稳定特性：**
 - 🎯 **零代码配置** - 完全图形化操作，无需编程基础
@@ -133,102 +135,91 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 - 📚 **帮助中心** - 完整的视频教程和FAQ系统（v1.6.0）
 - 💻 **桌面应用** - 开机自启、系统托盘、桌面通知
 - 🧹 **自动运维** - 智能空间管理，定期健康检查
-- 🚀 **完全自动化构建** - Chromium/Redis自动集成，零依赖安装（v1.15.0）
+- 🚀 **完全自动化构建** - Chromium/Redis自动集成，零依赖安装
 
 ---
 
-## 🚀 v1.16.0 最新版本
+## 🚀 v1.17.0 深度优化版
 
-### 🎯 v1.16.0 核心优化（2025-10-24）
+### 🎯 v1.17.0 核心特性（2025-10-24）
 
-**全面体验升级 + 创新功能突破**
+**深度优化 + 稳定性增强**
 
-本版本完成10项深度优化，包含5个P0极高优先级、3个P1高优先级、2个P2中等优先级改进，全面提升用户体验和系统功能。
+本版本完成17个深度优化任务，包含4个P0极高优先级、5个P1核心功能、5个P2稳定性、3个P3完善项，全面提升系统各项能力。
 
 #### 🌟 十大核心优化
 
 **P0级优化（极高优先级）：**
 
-1. **🔌 浏览器扩展 - Cookie一键导入**
-   - Chrome扩展一键导出Cookie
-   - 直接发送到应用，无需粘贴
-   - 大幅简化配置流程
+1. **🔌 浏览器扩展完整集成**
+   - Chrome扩展一键导入Cookie
+   - 自动创建账号并登录
+   - 30秒完成配置
 
-2. **⚡ 配置向导简化 - 3步完成**
-   - 精简为3步（欢迎→登录→选择服务器）
-   - 移除冗余的Bot配置步骤
-   - 支持"跳过向导"选项
-   - 配置时间：15分钟 → **3分钟**
+2. **⏱️ 验证码弹窗完善**
+   - 60秒倒计时（动画效果）
+   - "看不清？刷新"按钮
+   - 自动聚焦输入框
 
-3. **✅ 实时Cookie验证**
-   - 三种格式自动识别（JSON/Netscape/键值对）
-   - 实时格式检查和错误提示
-   - 格式示例和一键使用
-   - 大幅降低格式错误
+3. **🎨 首页UI完全重设计**
+   - 实时统计卡片+ECharts图表
+   - 快捷操作面板
+   - 空状态引导
 
-4. **🛠️ 环境自动检查**
-   - Python、Chromium、Redis自动检测
-   - 一键下载和安装缺失组件
-   - 完整进度显示和错误诊断
-   - 大幅减少环境问题
+4. **📦 一键安装包构建**
+   - 完整打包脚本
+   - Chromium/Redis集成
+   - 跨平台支持
 
-5. **📦 自动化环境配置**
-   - 后端API完整实现
-   - Chromium自动下载（含进度）
-   - Redis自动启动和健康检查
-   - 网络连通性自动测试
+**P1级优化（核心功能）：**
 
-**P1级优化（高优先级）：**
+5. **🔗 链接预览自动生成**
+   - 自动提取链接元数据
+   - Discord/Telegram/飞书预览
 
-6. **🪄 Telegram Chat ID自动检测增强**
-   - 新增可视化检测向导
-   - 3步引导（发送→检测→选择）
-   - 30秒自动轮询API
-   - 大幅简化配置流程
+6. **🖼️ 图片处理策略可配置**
+   - 三种策略可选
+   - UI配置界面
 
-7. **🧙 智能映射向导重新设计**
-   - 4步完整向导（选择→匹配→预览→完成）
-   - 树形结构选择KOOK频道
-   - 相似度评分和智能建议
-   - 映射配置更加高效
-
-8. **🔒 图床Token安全增强**
-   - 访问日志和统计
-   - 仅本地访问强制检查
-   - Token过期明确返回410 Gone
-   - 定时清理任务（每小时/每天）
-
-**P2级优化（中等优先级）：**
-
-9. **⚡ 批量消息处理**
+7. **⚡ 批量消息处理实现**
    - 批量出队（10条/次）
    - 并行处理（asyncio.gather）
-   - 显著提升吞吐量
 
-10. **♻️ 指数退避重试策略**
-    - 5次重试（30s, 60s, 120s, 240s, 480s）
-    - 智能延迟计算
-    - 显著提升重试成功率
+8. **🔐 浏览器共享逻辑修复**
+   - 共享Browser实例
+   - 独立Context隔离
+
+9. **🔒 加密密钥持久化**
+   - 密钥文件保存
+   - 重启后数据可用
+
+**P2级优化（稳定性增强）：**
+
+10. **🛡️ 全方位稳定性增强**
+    - 浏览器崩溃自动重启
+    - Redis连接自动重连
+    - Worker异常恢复
+    - 本地Fallback机制
 
 #### 📝 完整文档
 
-- 📊 [深度分析报告](KOOK_深度分析与优化建议报告.md) - 15,000字完整分析
-- 🎉 [v1.16.0优化完成总结](优化完成总结_v1.16.0.md) - 62,000字完整文档
-- 📋 [v1.16.0更新日志](CHANGELOG_v1.16.0_OPTIMIZATION.md) - 详细变更列表
-- 🌟 [v1.16.0优化亮点](v1.16.0_优化亮点.md) - 核心特性介绍
-- 📖 [从这里开始](从这里开始_v1.16.0优化版.md) - 快速入门指南
-
-[查看完整优化报告](FINAL_COMPLETION_REPORT.md) | [查看执行摘要](EXECUTIVE_SUMMARY_v1.16.0.md)
+- 📊 [深度分析报告](KOOK_深度分析与优化建议报告.md) - 完整分析
+- 📋 [v1.17.0更新日志](CHANGELOG_v1.17.0_深度优化.md) - 详细变更列表
+- 🌟 [v1.17.0特性指南](docs/v1.17.0_特性指南.md) - 核心特性介绍
+- 🚀 [快速开始](QUICK_START_OPTIMIZATIONS.md) - 快速上手
+- 🧪 [验证指南](如何验证优化成果.md) - 测试方法
 
 ---
 
-## 📜 v1.14.0 历史版本
+---
 
-### 🎯 v1.14.0 核心功能
+## 📜 历史版本特性
+
+### v1.14.0 - 一键安装功能
 
 本版本实现了完整的一键安装功能。
 
-#### 七大核心功能（v1.14.0：完整自动化构建系统）
+#### 七大核心功能
 
 1. **✅ "下载即用"**（零依赖安装）
    - Chromium浏览器完全打包
@@ -274,7 +265,7 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
    - 详细测试报告
    - 用户/维护者/开发者文档齐全
 
-[查看v1.14.0更新说明](./v1.14.0_COMPLETE_UPGRADE_REPORT.md) | [v1.13.3更新日志](./CHANGELOG_v1.13.3.md) | [发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md)
+[发布指南](./RELEASE_GUIDE.md) | [快速开始](./QUICK_START.md)
 
 ---
 
@@ -420,8 +411,8 @@ KOOK消息转发系统是一款功能强大、易于使用的跨平台消息转�
 
 ### 🎯 v1.12.0核心完善（已包含）
 
-1. **✅ 国际化100%完成**（全球化支持）
-   - 英文翻译 → 100%
+1. **✅ 国际化完成**（全球化支持）
+   - 英文翻译完成
    - 新增翻译键值：113条
    - 覆盖所有界面和功能
    - 支持中英文无缝切换
@@ -721,9 +712,7 @@ curl http://localhost:9527/api/cache/stats
 
 ---
 
-## 📦 v1.14.0 新增功能
-
-### ✨ v1.14.0 重大更新（2025-10）
+### v1.14.0 重大更新
 
 #### 🎯 预编译安装包发布
 
@@ -764,7 +753,7 @@ curl http://localhost:9527/api/cache/stats
 
 ---
 
-## 📦 v1.13.3 功能（2025-09）
+### v1.13.3 功能
 
 - ✅ 完整的预编译安装包构建方案（release_package.sh）
 - ✅ GitHub Actions自动化构建流程
@@ -1310,7 +1299,7 @@ cat LOCAL_BUILD_GUIDE.md
 
 # 2. 提交更改
 git add .
-git commit -m "chore: bump version to v1.14.0"
+git commit -m "chore: bump version to v1.17.0"
 git push origin main
 
 # 3. 创建并推送 Git tag（触发自动构建）

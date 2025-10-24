@@ -11,6 +11,7 @@ from ..database import db
 from ..processors.filter import message_filter
 from ..processors.formatter import formatter
 from ..processors.image import image_processor, attachment_processor
+from ..processors.link_preview import link_preview_generator  # ✅ P1-1优化：链接预览
 from ..forwarders.discord import discord_forwarder
 from ..forwarders.telegram import telegram_forwarder
 from ..forwarders.feishu import feishu_forwarder
@@ -66,22 +67,119 @@ class MessageWorker:
         self.processed_messages = LRUCache(max_size=10000)
     
     async def start(self):
-        """启动Worker"""
-        try:
-            logger.info("启动消息处理Worker")
-            self.is_running = True
-            
-            while self.is_running:
-                # 从队列取出消息（阻塞5秒）
-                message = await redis_queue.dequeue(timeout=5)
+        """启动Worker（✅ P1-3+P2-4优化：批量处理+异常恢复）"""
+        logger.info("启动消息处理Worker（批量处理+自动恢复模式）")
+        self.is_running = True
+        
+        consecutive_errors = 0  # ✅ P2-4优化：连续错误计数
+        max_consecutive_errors = 10  # 最多10次连续错误后才停止
+        
+        # ✅ P2-4优化：Worker级别异常不退出
+        while self.is_running:
+            try:
+                # ✅ P1-3优化：批量出队（10条/次）
+                messages = await redis_queue.dequeue_batch(count=10, timeout=5)
                 
-                if message:
-                    await self.process_message(message)
+                if messages:
+                    # ✅ P1-3优化：并行处理（asyncio.gather）
+                    logger.debug(f"批量处理 {len(messages)} 条消息")
                     
+                    # ✅ P2-4优化：每条消息单独try-catch，单个失败不影响Worker
+                    results = await asyncio.gather(
+                        *[self._safe_process_message(msg) for msg in messages],
+                        return_exceptions=True
+                    )
+                    
+                    # 统计结果
+                    success_count = sum(1 for r in results if r is True)
+                    failure_count = len(results) - success_count
+                    
+                    if failure_count > 0:
+                        logger.warning(f"批量处理完成：成功 {success_count} 条，失败 {failure_count} 条")
+                    else:
+                        logger.debug(f"批量处理完成：全部成功 {success_count} 条")
+                    
+                    # 成功处理消息，重置错误计数
+                    consecutive_errors = 0
+                else:
+                    # 队列为空，重置错误计数
+                    consecutive_errors = 0
+                    
+            except Exception as e:
+                consecutive_errors += 1
+                logger.error(f"Worker异常 ({consecutive_errors}/{max_consecutive_errors}): {str(e)}")
+                
+                # ✅ P2-4优化：连续错误过多才停止
+                if consecutive_errors >= max_consecutive_errors:
+                    logger.error(f"Worker连续错误 {consecutive_errors} 次，停止运行")
+                    self.is_running = False
+                    break
+                
+                # 等待5秒后重试
+                logger.info("5秒后重试...")
+                await asyncio.sleep(5)
+        
+        logger.info("消息处理Worker已停止")
+    
+    async def _safe_process_message(self, message: Dict[str, Any]) -> bool:
+        """
+        安全地处理单条消息（✅ P2-4优化：捕获所有异常）
+        
+        Args:
+            message: 消息数据
+            
+        Returns:
+            是否成功
+        """
+        try:
+            await self.process_message(message)
+            return True
         except Exception as e:
-            logger.error(f"Worker运行异常: {str(e)}")
-        finally:
-            logger.info("消息处理Worker已停止")
+            logger.error(f"处理消息失败: {message.get('message_id')}, {str(e)}")
+            
+            # 记录到失败队列
+            try:
+                await self._handle_failed_message(message, e)
+            except:
+                pass  # 失败队列操作失败也不影响Worker运行
+            
+            return False
+    
+    async def _handle_failed_message(self, message: Dict[str, Any], error: Exception):
+        """
+        处理失败的消息（✅ P2-4优化：统一失败处理）
+        
+        Args:
+            message: 消息数据
+            error: 错误信息
+        """
+        try:
+            # 记录失败日志
+            log_id = db.add_message_log(
+                kook_message_id=message.get('message_id', ''),
+                kook_channel_id=message.get('channel_id', ''),
+                content=message.get('content', '')[:200],
+                message_type=message.get('message_type', 'text'),
+                sender_name=message.get('sender_name', ''),
+                target_platform='unknown',
+                target_channel='unknown',
+                status='failed',
+                error_message=str(error)[:200]
+            )
+            
+            # 添加到失败消息队列
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO failed_messages (message_log_id, retry_count)
+                    VALUES (?, 0)
+                """, (log_id,))
+                conn.commit()
+            
+            logger.info(f"消息已添加到失败队列: log_id={log_id}")
+            
+        except Exception as e:
+            logger.error(f"记录失败消息异常: {str(e)}")
     
     async def stop(self):
         """停止Worker"""
@@ -208,11 +306,13 @@ class MessageWorker:
         try:
             logger.debug(f"处理图片: {url}")
             
-            # 使用智能策略处理图片（✅ 传递Cookie解决防盗链问题）
+            # ✅ P1-2优化：从配置读取策略（而非硬编码）
+            from ..config import settings
+            
             result = await image_processor.process_image(
                 url=url,
-                strategy='smart',  # 智能模式：优先直传，失败用图床
-                cookies=cookies,  # ✅ 传递Cookie
+                strategy=settings.image_strategy,  # 从配置读取：smart/direct/imgbed
+                cookies=cookies,
                 referer='https://www.kookapp.cn'
             )
             
@@ -356,6 +456,19 @@ class MessageWorker:
             quote = message.get('quote')
             mentions = message.get('mentions', [])
             
+            # ✅ P1-1优化：检测链接并生成预览（最多3个链接）
+            link_previews = []
+            if content:
+                try:
+                    link_previews = await link_preview_generator.process_message_links(
+                        content, 
+                        max_previews=3
+                    )
+                    if link_previews:
+                        logger.info(f"生成了 {len(link_previews)} 个链接预览")
+                except Exception as e:
+                    logger.warning(f"链接预览生成失败: {str(e)}")
+            
             # 处理表情反应消息
             if message_type == 'reaction' or message.get('type') == 'reaction':
                 reaction_text = formatter.format_reaction(message)
@@ -393,6 +506,12 @@ class MessageWorker:
                 
                 webhook_url = bot_config['config'].get('webhook_url')
                 
+                # ✅ P1-1优化：如果有链接预览，添加Embed
+                embeds = []
+                if link_previews:
+                    for preview in link_previews:
+                        embeds.append(link_preview_generator.format_preview_for_discord(preview))
+                
                 # 如果有图片，尝试上传
                 if processed_images:
                     # Discord支持Embed方式显示图片
@@ -422,11 +541,12 @@ class MessageWorker:
                                 }]
                             )
                 else:
-                    # 纯文本消息
+                    # 纯文本消息（✅ P1-1优化：附带链接预览Embed）
                     success = await discord_forwarder.send_message(
                         webhook_url=webhook_url,
                         content=formatted_content,
-                        username=sender_name
+                        username=sender_name,
+                        embeds=embeds if embeds else None
                     )
                 
                 # 转发附件文件（如果有）
@@ -454,6 +574,13 @@ class MessageWorker:
                 
                 # 组合最终内容
                 formatted_content = f"{quote_text}<b>{sender_name}</b>: {formatted_content}"
+                
+                # ✅ P1-1优化：如果有链接预览，添加到内容
+                if link_previews:
+                    formatted_content += "\n\n📎 <b>链接预览:</b>"
+                    for preview in link_previews:
+                        preview_text = link_preview_generator.format_preview_for_telegram(preview)
+                        formatted_content += f"\n{preview_text}"
                 
                 # 如果有附件，添加到内容中
                 if processed_attachments:
