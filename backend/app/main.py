@@ -1,11 +1,12 @@
 """
-FastAPI主应用
+FastAPI主应用（✅ P2-5优化：全局API认证）
 """
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment
 from .api import performance  # v1.12.0 性能监控API
+from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
 from .queue.retry_worker import retry_worker
