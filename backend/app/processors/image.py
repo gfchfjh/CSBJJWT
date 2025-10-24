@@ -40,14 +40,15 @@ class ImageProcessor:
         self.process_pool = ProcessPoolExecutor(max_workers=max_workers)
         logger.info(f"✅ 图片处理多进程池已启动：{max_workers}个进程")
         
-        # 统计信息
+        # ✅ P1-3优化: 增强统计信息
         self.stats = {
             'total_processed': 0,
             'total_compressed_mb': 0,
             'total_saved_mb': 0,
             'parallel_count': 0,
             'tokens_generated': 0,
-            'tokens_expired': 0
+            'tokens_expired': 0,
+            'access_logs': []  # 访问日志（最近100条）
         }
     
     async def download_image(self, url: str, 

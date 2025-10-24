@@ -59,6 +59,14 @@
           <el-button size="large" @click="handleReject">
             拒绝并退出
           </el-button>
+          <!-- ✅ P0-1优化: 添加跳过选项 -->
+          <el-button 
+            size="large" 
+            :disabled="!agreed"
+            @click="handleSkip"
+          >
+            跳过向导
+          </el-button>
         </div>
       </template>
     </el-result>
@@ -70,7 +78,7 @@ import { ref } from 'vue'
 
 const agreed = ref(false)
 
-const emit = defineEmits(['next', 'reject'])
+const emit = defineEmits(['next', 'reject', 'skip'])
 
 const handleNext = () => {
   emit('next')
@@ -78,6 +86,11 @@ const handleNext = () => {
 
 const handleReject = () => {
   emit('reject')
+}
+
+// ✅ P0-1优化: 添加跳过处理
+const handleSkip = () => {
+  emit('skip')
 }
 </script>
 

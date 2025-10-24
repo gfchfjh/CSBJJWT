@@ -4,7 +4,7 @@ FastAPI主应用
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment
 from .api import performance  # v1.12.0 性能监控API
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
@@ -191,6 +191,8 @@ app.include_router(updates.router)  # 更新检查
 app.include_router(selectors.router)  # 选择器配置
 app.include_router(performance.router)  # 性能监控 🆕 v1.12.0
 app.include_router(telegram_helper.router)  # Telegram辅助工具 🆕 v1.15.0
+app.include_router(cookie_import.router)  # Cookie导入 🆕 P0-2优化
+app.include_router(environment.router)  # 环境检查 🆕 P0-5优化
 
 
 @app.get("/")
