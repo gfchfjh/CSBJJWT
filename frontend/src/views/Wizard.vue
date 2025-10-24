@@ -1,12 +1,11 @@
 <template>
   <div class="wizard-container">
     <el-card class="wizard-card">
+      <!-- ✅ P0-1优化: 简化为3步 -->
       <el-steps :active="currentStep" finish-status="success" align-center>
         <el-step title="欢迎" description="开始配置" />
         <el-step title="登录KOOK" description="添加账号" />
         <el-step title="选择服务器" description="监听频道" />
-        <el-step title="配置机器人" description="选择平台" />
-        <el-step title="完成" description="开始使用" />
       </el-steps>
 
       <div class="wizard-content">
@@ -14,6 +13,7 @@
         <WizardStepWelcome
           v-if="currentStep === 0"
           @next="nextStep"
+          @skip="handleSkipWizard"
           @reject="handleRejectDisclaimer"
         />
 
@@ -40,25 +40,6 @@
           @selectAll="selectAll"
           @unselectAll="unselectAll"
         />
-
-        <!-- 步骤4: 配置机器人 -->
-        <WizardStepBots
-          v-else-if="currentStep === 3"
-          :added-bots="addedBots"
-          @next="nextStep"
-          @prev="prevStep"
-          @addBot="handleAddBot"
-          @skip="handleSkipBots"
-        />
-
-        <!-- 步骤5: 完成 -->
-        <WizardStepComplete
-          v-else-if="currentStep === 4"
-          :account-added="accountAdded"
-          :selected-channels-count="selectedChannelsCount"
-          :bots-count="addedBots.length"
-          @finish="finishWizard"
-        />
       </div>
     </el-card>
   </div>
@@ -72,8 +53,6 @@ import api from '@/api'
 import WizardStepWelcome from '@/components/wizard/WizardStepWelcome.vue'
 import WizardStepLogin from '@/components/wizard/WizardStepLogin.vue'
 import WizardStepServers from '@/components/wizard/WizardStepServers.vue'
-import WizardStepBots from '@/components/wizard/WizardStepBots.vue'
-import WizardStepComplete from '@/components/wizard/WizardStepComplete.vue'
 
 const router = useRouter()
 
@@ -82,9 +61,6 @@ const currentStep = ref(0)
 
 // 账号是否已添加
 const accountAdded = ref(false)
-
-// 已添加的Bots
-const addedBots = ref([])
 
 // 服务器相关
 const servers = ref([])
@@ -99,7 +75,7 @@ const selectedChannelsCount = computed(() => {
 
 // 步骤导航
 const nextStep = () => {
-  if (currentStep.value < 4) {
+  if (currentStep.value < 2) {
     currentStep.value++
     
     // 如果进入到服务器选择步骤，自动加载服务器列表
@@ -241,7 +217,7 @@ const unselectAll = () => {
   })
 }
 
-// 处理服务器选择完成
+// ✅ P0-1优化: 服务器选择完成后直接完成向导
 const handleServerSelectionComplete = () => {
   // 将选中的频道信息保存到localStorage供后续使用
   const selectedData = {
@@ -262,39 +238,27 @@ const handleServerSelectionComplete = () => {
   
   localStorage.setItem('wizard_selected_channels', JSON.stringify(selectedData))
   ElMessage.success(`已保存 ${selectedChannelsCount.value} 个频道`)
-  nextStep()
+  
+  // 直接完成向导
+  finishWizard()
 }
 
-// 处理添加Bot
-const handleAddBot = async (data, platform) => {
-  try {
-    const response = await api.addBot(data)
-    ElMessage.success('Bot添加成功')
-    addedBots.value.push(response.data)
-  } catch (error) {
-    ElMessage.error(error.response?.data?.detail || '添加失败')
-  }
-}
-
-// 处理跳过Bot配置（v1.12.0+ 优化：更友好的提示）
-const handleSkipBots = () => {
+// ✅ P0-1优化: 新增跳过向导功能
+const handleSkipWizard = () => {
   ElMessageBox.confirm(
-    '跳过Bot配置后，您将无法立即转发消息。建议至少配置一个目标平台Bot。',
-    '确认跳过？',
+    '跳过配置向导后，您需要手动配置账号和Bot。确定要跳过吗？',
+    '跳过配置向导',
     {
-      confirmButtonText: '确定跳过',
-      cancelButtonText: '返回配置',
+      confirmButtonText: '跳过',
+      cancelButtonText: '继续配置',
       type: 'warning',
     }
   ).then(() => {
-    ElMessage.info({
-      message: '已跳过机器人配置。您可以稍后在"机器人配置"页面添加Bot。',
-      duration: 5000,
-      showClose: true
-    })
-    currentStep.value = 4  // 直接跳转到完成步骤
+    localStorage.setItem('wizard_completed', 'true')
+    ElMessage.info('已跳过配置向导，请手动配置')
+    router.push('/')
   }).catch(() => {
-    // 用户取消，不做任何操作
+    // 用户取消
   })
 }
 

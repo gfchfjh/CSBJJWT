@@ -129,58 +129,18 @@
       </el-table>
     </el-card>
     
-    <!-- 智能映射对话框 -->
+    <!-- ✅ P1-2优化: 智能映射对话框（完全重构） -->
     <el-dialog
       v-model="showSmartMappingDialog"
-      title="💡 智能频道映射"
-      width="800px"
+      title="🪄 智能频道映射"
+      width="90%"
+      fullscreen
+      :close-on-click-modal="false"
     >
-      <el-alert
-        title="智能映射说明"
-        type="info"
-        :closable="false"
-        style="margin-bottom: 20px"
-      >
-        系统将自动识别KOOK频道名称，并在目标平台查找同名或相似频道，建立映射关系。
-      </el-alert>
-
-      <div v-if="!smartSuggestions.length">
-        <el-button type="primary" :loading="loadingSuggestions" @click="generateSmartSuggestions">
-          🔍 生成映射建议
-        </el-button>
-      </div>
-
-      <div v-else>
-        <el-table :data="smartSuggestions" border max-height="400">
-          <el-table-column type="selection" width="55" />
-          <el-table-column prop="kook_channel_name" label="KOOK频道" width="150" />
-          <el-table-column label="→" width="40" align="center">
-            <template>→</template>
-          </el-table-column>
-          <el-table-column prop="target_channel_name" label="目标频道" width="150" />
-          <el-table-column prop="target_platform" label="平台" width="100">
-            <template #default="{ row }">
-              <el-tag size="small">{{ row.target_platform }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="置信度" width="120">
-            <template #default="{ row }">
-              <el-progress
-                :percentage="Math.round(row.confidence * 100)"
-                :color="getConfidenceColor(row.confidence)"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="reason" label="匹配原因" show-overflow-tooltip />
-        </el-table>
-
-        <div style="margin-top: 20px; text-align: center">
-          <el-button @click="smartSuggestions = []">重新生成</el-button>
-          <el-button type="primary" @click="applySmartSuggestions" :loading="applyingMappings">
-            应用所有建议
-          </el-button>
-        </div>
-      </div>
+      <SmartMappingWizard
+        @finish="handleSmartMappingFinish"
+        @cancel="showSmartMappingDialog = false"
+      />
     </el-dialog>
 
     <!-- 添加映射对话框 -->

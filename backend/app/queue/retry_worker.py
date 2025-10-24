@@ -17,12 +17,20 @@ from ..config import settings
 
 
 class RetryWorker:
-    """失败消息重试Worker"""
+    """
+    失败消息重试Worker
+    ✅ P2-2优化: 指数退避策略（30s, 60s, 120s, 240s, 480s）
+    """
     
     def __init__(self):
         self.is_running = False
-        self.retry_interval = settings.message_retry_interval  # 重试间隔（秒）
-        self.max_retries = settings.message_retry_max  # 最大重试次数
+        self.retry_interval = settings.message_retry_interval  # 基础重试间隔（秒）
+        self.max_retries = 5  # ✅ P2-2: 增加到5次
+        
+        # ✅ P2-2优化: 指数退避重试延迟
+        self.retry_delays = [30, 60, 120, 240, 480]  # 秒
+        
+        logger.info(f"重试Worker配置: 最大重试{self.max_retries}次, 延迟{self.retry_delays}")
     
     async def start(self):
         """启动重试Worker"""
@@ -53,17 +61,16 @@ class RetryWorker:
             with db.get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # 查询需要重试的消息（失败且重试次数未达上限）
+                # ✅ P2-2优化: 查询需要重试的消息（考虑指数退避）
+                # 查询所有未达上限的失败消息
                 cursor.execute("""
                     SELECT fm.*, ml.*
                     FROM failed_messages fm
                     JOIN message_logs ml ON fm.message_log_id = ml.id
                     WHERE fm.retry_count < ?
-                    AND (fm.last_retry IS NULL 
-                         OR datetime(fm.last_retry, '+' || ? || ' seconds') <= datetime('now'))
                     ORDER BY fm.last_retry ASC
-                    LIMIT 10
-                """, (self.max_retries, self.retry_interval))
+                    LIMIT 20
+                """, (self.max_retries,))
                 
                 failed_messages = [dict(row) for row in cursor.fetchall()]
             
@@ -80,7 +87,7 @@ class RetryWorker:
     
     async def retry_message(self, msg_data: Dict[str, Any]):
         """
-        重试单条消息
+        重试单条消息（✅ P2-2优化: 指数退避策略）
         
         Args:
             msg_data: 消息数据（包含failed_messages和message_logs的字段）
@@ -89,7 +96,24 @@ class RetryWorker:
         retry_count = msg_data.get("retry_count", 0)
         
         try:
-            logger.info(f"重试消息: id={message_log_id}, 第{retry_count + 1}次重试")
+            # ✅ P2-2优化: 检查是否到了重试时间（指数退避）
+            retry_delay = self.retry_delays[retry_count] if retry_count < len(self.retry_delays) else self.retry_delays[-1]
+            
+            last_retry = msg_data.get("last_retry")
+            if last_retry:
+                last_retry_time = datetime.fromisoformat(last_retry)
+                next_retry_time = last_retry_time + timedelta(seconds=retry_delay)
+                
+                # 如果还没到重试时间，跳过
+                if datetime.now() < next_retry_time:
+                    wait_seconds = (next_retry_time - datetime.now()).total_seconds()
+                    logger.debug(f"消息未到重试时间: id={message_log_id}, 还需等待{wait_seconds:.0f}秒")
+                    return
+            
+            logger.info(
+                f"[指数退避重试] 消息: id={message_log_id}, "
+                f"第{retry_count + 1}/{self.max_retries}次, 延迟{retry_delay}秒"
+            )
             
             # 重构消息数据
             message = {
@@ -183,9 +207,11 @@ class RetryWorker:
                 conn.commit()
             
             if new_retry_count >= self.max_retries:
-                logger.warning(f"消息已达最大重试次数: id={message_log_id}")
+                logger.warning(f"[指数退避重试] 消息已达最大重试次数: id={message_log_id}")
             else:
-                logger.info(f"消息重试失败，将在{self.retry_interval}秒后再次重试")
+                # ✅ P2-2优化: 显示下次重试的延迟时间
+                next_delay = self.retry_delays[new_retry_count] if new_retry_count < len(self.retry_delays) else self.retry_delays[-1]
+                logger.info(f"[指数退避重试] 消息重试失败，将在{next_delay}秒后再次重试")
                 
         except Exception as e:
             logger.error(f"更新重试状态失败: {str(e)}")
