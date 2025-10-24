@@ -103,13 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const jsonString = JSON.stringify(exportedCookies);
 
-      // 尝试通过本地HTTP发送到Electron应用
-      const response = await fetch('http://localhost:9527/api/cookie-import', {
+      // ✅ P0-2优化：通过本地HTTP发送到Electron应用
+      const response = await fetch('http://localhost:9527/api/cookie-import/extension', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Extension-Version': '1.0.0',  // 扩展版本
         },
-        body: jsonString
+        body: JSON.stringify({
+          cookies: exportedCookies,
+          source: 'chrome-extension',
+          auto_login: true,  // 自动登录
+          timestamp: Date.now()
+        })
       });
 
       if (response.ok) {

@@ -53,6 +53,8 @@ export default {
   getChannels: (accountId, serverId) => api.get(`/api/accounts/${accountId}/servers/${serverId}/channels`),
   getCaptchaStatus: (accountId) => api.get(`/api/accounts/${accountId}/captcha`),
   submitCaptcha: (accountId, code) => api.post(`/api/accounts/${accountId}/captcha`, { code }),
+  // ✅ P0-3优化：刷新验证码API
+  refreshCaptcha: (accountId) => api.get(`/api/accounts/${accountId}/captcha/refresh`),
   
   // Bot配置
   getBotConfigs: (platform) => api.get('/api/bots/', { params: { platform } }),

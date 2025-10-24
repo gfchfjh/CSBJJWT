@@ -98,6 +98,137 @@ class ErrorDiagnostic:
             'auto_fixable': True  # 可以切换到图床模式
         },
         
+        # ✅ P2-3优化：新增诊断规则
+        'playwright_timeout': {
+            'keywords': ['playwright', 'timeout', 'navigation timeout', 'page timeout'],
+            'patterns': [r'playwright.*timeout', r'navigation\s+timeout', r'page.*timeout'],
+            'severity': 'high',
+            'solution': 'Playwright浏览器操作超时，可能原因：网络延迟、KOOK网页加载慢、选择器配置错误',
+            'suggestions': [
+                '增加浏览器超时时间（设置 → 高级 → 浏览器超时）',
+                '检查网络连接速度',
+                '检查选择器配置是否正确（设置 → 选择器配置）',
+                '尝试关闭其他占用网络的程序',
+                '使用有线网络代替WiFi'
+            ],
+            'auto_fixable': True  # 可以自动增加超时
+        },
+        
+        'disk_full': {
+            'keywords': ['disk full', 'no space', 'insufficient space', 'disk quota'],
+            'patterns': [r'disk\s+(is\s+)?full', r'no\s+space\s+left', r'insufficient\s+disk\s+space'],
+            'severity': 'critical',
+            'solution': '磁盘空间不足，无法保存图片或日志',
+            'suggestions': [
+                f'清理图床缓存：设置 → 图床 → 立即清理',
+                f'清理日志文件：设置 → 日志 → 清空日志',
+                f'手动清理数据目录',
+                '增加磁盘空间',
+                '调整图床最大占用空间限制'
+            ],
+            'auto_fixable': True  # 可以自动清理
+        },
+        
+        'browser_crashed': {
+            'keywords': ['browser crashed', 'chromium crashed', 'browser closed', 'target closed'],
+            'patterns': [r'(browser|chromium)\s+crash', r'target\s+closed', r'browser\s+closed'],
+            'severity': 'high',
+            'solution': '浏览器进程崩溃，系统会自动重启',
+            'suggestions': [
+                '等待自动重启（最多3次）',
+                '检查系统内存是否充足',
+                '关闭其他占用内存的程序',
+                '如果频繁崩溃，可能是系统资源不足',
+                '考虑使用独立浏览器模式（关闭共享）'
+            ],
+            'auto_fixable': True  # 可以自动重启
+        },
+        
+        'redis_connection_failed': {
+            'keywords': ['redis connection', 'redis error', 'connection refused redis'],
+            'patterns': [r'redis\s+connection\s+(error|failed)', r'connection\s+refused.*redis'],
+            'severity': 'critical',
+            'solution': 'Redis连接失败，消息队列不可用',
+            'suggestions': [
+                '检查Redis服务是否运行',
+                '检查Redis端口配置（默认6379）',
+                '系统会自动尝试重连（3次）',
+                '消息会保存到本地Fallback',
+                '手动启动Redis：redis-server.exe（Windows）或 redis-server（Linux/macOS）'
+            ],
+            'auto_fixable': True  # 可以自动重连
+        },
+        
+        'cookie_expired': {
+            'keywords': ['cookie expired', 'session expired', 'authentication failed', 'not logged in'],
+            'patterns': [r'cookie\s+expired', r'session\s+expired', r'authentication\s+failed'],
+            'severity': 'high',
+            'solution': 'Cookie已过期，系统会尝试自动重新登录',
+            'suggestions': [
+                '如果存储了密码，系统会自动重新登录',
+                '如果未存储密码，需要手动重新登录',
+                '建议启用"记住密码"功能',
+                '检查KOOK账号是否在其他设备登录（会导致Cookie失效）'
+            ],
+            'auto_fixable': True  # 可以自动重新登录
+        },
+        
+        'memory_error': {
+            'keywords': ['memory error', 'out of memory', 'cannot allocate memory'],
+            'patterns': [r'memory\s+error', r'out\s+of\s+memory', r'cannot\s+allocate'],
+            'severity': 'critical',
+            'solution': '内存不足，系统无法继续运行',
+            'suggestions': [
+                '关闭其他占用内存的程序',
+                '减少同时运行的账号数量',
+                '降低消息处理并发数',
+                '增加系统内存',
+                '重启应用清理内存'
+            ],
+            'auto_fixable': False
+        },
+        
+        'encoding_error': {
+            'keywords': ['encoding error', 'decode error', 'unicode error', 'codec error'],
+            'patterns': [r'encoding\s+error', r'decode\s+error', r'unicode.*error'],
+            'severity': 'warning',
+            'solution': '消息内容编码错误，可能包含特殊字符',
+            'suggestions': [
+                '消息包含不支持的特殊字符',
+                '系统会尝试过滤特殊字符',
+                '如果频繁出现，请反馈问题'
+            ],
+            'auto_fixable': True  # 可以过滤特殊字符
+        },
+        
+        'database_locked': {
+            'keywords': ['database locked', 'sqlite locked', 'database is locked'],
+            'patterns': [r'database\s+(is\s+)?locked', r'sqlite.*locked'],
+            'severity': 'warning',
+            'solution': '数据库被锁定（多个进程同时访问），系统会自动重试',
+            'suggestions': [
+                '等待数据库操作完成',
+                '避免同时启动多个实例',
+                '系统会自动重试',
+                '如果频繁出现，考虑使用PostgreSQL代替SQLite'
+            ],
+            'auto_fixable': True  # 可以自动重试
+        },
+        
+        'selector_not_found': {
+            'keywords': ['selector not found', 'element not found', 'cannot find element'],
+            'patterns': [r'selector\s+not\s+found', r'element\s+not\s+found', r'cannot\s+find\s+element'],
+            'severity': 'high',
+            'solution': 'DOM选择器失效，KOOK网页结构可能已更新',
+            'suggestions': [
+                '更新选择器配置文件（设置 → 选择器配置）',
+                '查看GitHub是否有选择器配置更新',
+                '导出当前页面截图用于调试',
+                '联系开发者报告此问题'
+            ],
+            'auto_fixable': False
+        },
+        
         'webhook_invalid': {
             'keywords': ['invalid webhook', 'webhook not found', 'invalid url'],
             'patterns': [r'invalid\s+webhook', r'webhook\s+not\s+found'],
