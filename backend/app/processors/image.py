@@ -50,6 +50,9 @@ class ImageProcessor:
             'tokens_expired': 0,
             'access_logs': []  # 访问日志（最近100条）
         }
+        
+        # ✅ 优化11: Token清理任务标志
+        self._cleanup_task_running = False
     
     async def download_image(self, url: str, 
                             cookies: Optional[Dict] = None,
@@ -411,6 +414,100 @@ class ImageProcessor:
                 'freed_space_gb': 0,
                 'error': str(e)
             }
+    
+    async def save_and_process_strategy(self, compressed_data: bytes, 
+                                        original_url: str, 
+                                        strategy: str = "smart") -> Optional[Dict[str, Any]]:
+        """
+        保存压缩后的图片并根据策略处理（✅ P1-3优化：新增方法）
+        
+        Args:
+            compressed_data: 压缩后的图片数据
+            original_url: 原始URL
+            strategy: 处理策略（smart/direct/imgbed）
+            
+        Returns:
+            处理结果
+        """
+        try:
+            # 保存到本地
+            filepath = self.save_image(compressed_data)
+            
+            if strategy == "direct":
+                # 直接使用原始URL
+                return {
+                    'original': original_url,
+                    'local': None,
+                    'filepath': filepath,
+                    'strategy': 'direct'
+                }
+            elif strategy == "imgbed":
+                # 仅使用图床
+                local_url = self.generate_url(filepath, expire_hours=2)
+                return {
+                    'original': None,
+                    'local': local_url,
+                    'filepath': filepath,
+                    'strategy': 'imgbed'
+                }
+            else:  # smart (default)
+                # 智能模式：提供两个URL供选择
+                local_url = self.generate_url(filepath, expire_hours=2)
+                return {
+                    'original': original_url,
+                    'local': local_url,
+                    'filepath': filepath,
+                    'strategy': 'smart'
+                }
+        except Exception as e:
+            logger.error(f"保存并处理图片失败: {str(e)}")
+            return None
+    
+    async def cleanup_expired_tokens(self):
+        """
+        定期清理过期Token（✅ 优化11：自动清理任务）
+        
+        此方法应在应用启动时作为后台任务运行
+        """
+        self._cleanup_task_running = True
+        logger.info("🧹 Token自动清理任务已启动（每小时执行一次）")
+        
+        while self._cleanup_task_running:
+            try:
+                await asyncio.sleep(3600)  # 每小时执行一次
+                
+                current_time = time.time()
+                expired_keys = []
+                
+                # 找出所有过期的Token
+                for filepath, token_info in list(self.url_tokens.items()):
+                    if token_info['expire_at'] < current_time:
+                        expired_keys.append(filepath)
+                
+                # 删除过期Token
+                for key in expired_keys:
+                    del self.url_tokens[key]
+                
+                if expired_keys:
+                    self.stats['tokens_expired'] += len(expired_keys)
+                    logger.info(f"🧹 清理了 {len(expired_keys)} 个过期Token，剩余 {len(self.url_tokens)} 个有效Token")
+                else:
+                    logger.debug(f"✅ 无过期Token，当前 {len(self.url_tokens)} 个有效Token")
+                    
+            except asyncio.CancelledError:
+                logger.info("🛑 Token清理任务已取消")
+                break
+            except Exception as e:
+                logger.error(f"Token清理异常: {str(e)}")
+                # 继续运行，不退出
+                await asyncio.sleep(60)  # 发生异常时，等待1分钟后重试
+        
+        self._cleanup_task_running = False
+        logger.info("🛑 Token清理任务已停止")
+    
+    def stop_cleanup_task(self):
+        """停止Token清理任务"""
+        self._cleanup_task_running = False
     
     def get_storage_size(self) -> float:
         """

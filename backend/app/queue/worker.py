@@ -294,7 +294,7 @@ class MessageWorker:
     
     async def _process_single_image(self, url: str, cookies: dict = None) -> Optional[Dict[str, Any]]:
         """
-        处理单张图片
+        处理单张图片（✅ P1-3优化：使用多进程池压缩）
         
         Args:
             url: 图片URL
@@ -309,24 +309,37 @@ class MessageWorker:
             # ✅ P1-2优化：从配置读取策略（而非硬编码）
             from ..config import settings
             
-            result = await image_processor.process_image(
+            # ✅ P1-3优化：下载和压缩分离，压缩使用多进程
+            # 1. 下载图片（异步I/O）
+            image_data = await image_processor.download_image(
                 url=url,
-                strategy=settings.image_strategy,  # 从配置读取：smart/direct/imgbed
                 cookies=cookies,
                 referer='https://www.kookapp.cn'
             )
             
+            if not image_data:
+                logger.error(f"图片下载失败: {url}")
+                return None
+            
+            # 2. 压缩图片（CPU密集型，使用多进程池）
+            loop = asyncio.get_event_loop()
+            compressed_data = await loop.run_in_executor(
+                image_processor.process_pool,  # ✅ 使用多进程池
+                image_processor._compress_image_worker,  # 静态方法
+                image_data,
+                settings.image_max_size_mb,
+                settings.image_compression_quality
+            )
+            
+            # 3. 保存并处理策略
+            result = await image_processor.save_and_process_strategy(
+                compressed_data=compressed_data,
+                original_url=url,
+                strategy=settings.image_strategy
+            )
+            
             if result:
-                if isinstance(result, dict):
-                    # 智能模式返回dict
-                    return result
-                else:
-                    # 其他模式返回URL字符串
-                    return {
-                        'original': url,
-                        'local': result,
-                        'filepath': None
-                    }
+                return result
             else:
                 logger.error(f"图片处理返回None: {url}")
                 return None
@@ -542,12 +555,30 @@ class MessageWorker:
                             )
                 else:
                     # 纯文本消息（✅ P1-1优化：附带链接预览Embed）
-                    success = await discord_forwarder.send_message(
-                        webhook_url=webhook_url,
-                        content=formatted_content,
-                        username=sender_name,
-                        embeds=embeds if embeds else None
-                    )
+                    # ✅ P0-1优化: 自动分段超长消息
+                    if len(formatted_content) > 2000:
+                        logger.warning(f"消息超长({len(formatted_content)}字符)，自动分段")
+                        segments = formatter.split_long_message(formatted_content, max_length=1950)  # 留50字符余量
+                        success = True
+                        for i, segment in enumerate(segments):
+                            segment_success = await discord_forwarder.send_message(
+                                webhook_url=webhook_url,
+                                content=f"[{i+1}/{len(segments)}] {segment}",
+                                username=sender_name,
+                                embeds=embeds if (embeds and i == 0) else None  # 仅第一段带Embed
+                            )
+                            if not segment_success:
+                                success = False
+                                logger.error(f"分段消息发送失败: {i+1}/{len(segments)}")
+                                break
+                            await asyncio.sleep(0.5)  # 分段间延迟，避免限流
+                    else:
+                        success = await discord_forwarder.send_message(
+                            webhook_url=webhook_url,
+                            content=formatted_content,
+                            username=sender_name,
+                            embeds=embeds if embeds else None
+                        )
                 
                 # 转发附件文件（如果有）
                 if processed_attachments and success:
@@ -616,11 +647,28 @@ class MessageWorker:
                             )
                 else:
                     # 纯文本消息
-                    success = await telegram_forwarder.send_message(
-                        token=token,
-                        chat_id=target_channel,
-                        content=formatted_content
-                    )
+                    # ✅ P0-1优化: 自动分段超长消息（Telegram限制4096字符）
+                    if len(formatted_content) > 4096:
+                        logger.warning(f"Telegram消息超长({len(formatted_content)}字符)，自动分段")
+                        segments = formatter.split_long_message(formatted_content, max_length=4000)  # 留96字符余量
+                        success = True
+                        for i, segment in enumerate(segments):
+                            segment_success = await telegram_forwarder.send_message(
+                                token=token,
+                                chat_id=target_channel,
+                                content=f"[{i+1}/{len(segments)}]\n{segment}"
+                            )
+                            if not segment_success:
+                                success = False
+                                logger.error(f"Telegram分段消息发送失败: {i+1}/{len(segments)}")
+                                break
+                            await asyncio.sleep(0.3)  # 分段间延迟
+                    else:
+                        success = await telegram_forwarder.send_message(
+                            token=token,
+                            chat_id=target_channel,
+                            content=formatted_content
+                        )
                 
                 # 转发附件文件（如果有）
                 if processed_attachments and success:
@@ -685,12 +733,30 @@ class MessageWorker:
                             )
                 else:
                     # 纯文本消息
-                    success = await feishu_forwarder.send_message(
-                        app_id=app_id,
-                        app_secret=app_secret,
-                        chat_id=target_channel,
-                        content=formatted_content
-                    )
+                    # ✅ P0-1优化: 自动分段超长消息（飞书限制约5000字符）
+                    if len(formatted_content) > 5000:
+                        logger.warning(f"飞书消息超长({len(formatted_content)}字符)，自动分段")
+                        segments = formatter.split_long_message(formatted_content, max_length=4900)  # 留100字符余量
+                        success = True
+                        for i, segment in enumerate(segments):
+                            segment_success = await feishu_forwarder.send_message(
+                                app_id=app_id,
+                                app_secret=app_secret,
+                                chat_id=target_channel,
+                                content=f"[{i+1}/{len(segments)}]\n{segment}"
+                            )
+                            if not segment_success:
+                                success = False
+                                logger.error(f"飞书分段消息发送失败: {i+1}/{len(segments)}")
+                                break
+                            await asyncio.sleep(0.5)  # 分段间延迟
+                    else:
+                        success = await feishu_forwarder.send_message(
+                            app_id=app_id,
+                            app_secret=app_secret,
+                            chat_id=target_channel,
+                            content=formatted_content
+                        )
                 
                 # 转发附件文件（如果有）
                 if processed_attachments and success:

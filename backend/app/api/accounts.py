@@ -36,8 +36,25 @@ async def get_accounts():
 
 
 @router.post("/", response_model=AccountResponse)
-async def add_account(account: AccountCreate):
-    """添加账号"""
+async def add_account(account: AccountCreate, request: Request):
+    """添加账号（✅ 安全优化: HTTPS传输检查）"""
+    # ✅ 安全优化: 检查HTTPS传输（如果不是本地地址）
+    client_host = request.client.host if request.client else "unknown"
+    is_localhost = client_host in ['127.0.0.1', 'localhost', '::1']
+    is_https = request.url.scheme == 'https'
+    
+    if not is_https and not is_localhost:
+        logger.warning(f"⚠️ 安全警告：非HTTPS传输敏感信息！客户端: {client_host}")
+        raise HTTPException(
+            status_code=400,
+            detail="出于安全考虑，请使用HTTPS传输Cookie和密码。如果在本地环境，请使用127.0.0.1而非外网IP。"
+        )
+    
+    if is_localhost:
+        logger.info(f"✅ 本地环境，允许HTTP传输（{client_host}）")
+    else:
+        logger.info(f"✅ HTTPS传输，安全（{client_host}）")
+    
     # 加密密码
     password_encrypted = None
     if account.password:

@@ -41,17 +41,26 @@ nsis:
   shortcutName: ${productName}
   license: ../LICENSE
 
-# macOS配置
+# macOS配置 ✅ P0-2优化: 完整macOS构建配置
 mac:
   target:
     - dmg
+    - zip  # 添加zip格式，方便直接分发
   icon: build/icon.icns
   category: public.app-category.utilities
-  artifactName: ${productName}_v${version}_macOS.${ext}
+  artifactName: ${productName}_v${version}_macOS_${arch}.${ext}
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
+  # 代码签名配置（需要Apple开发者证书）
+  # identity: "Developer ID Application: Your Name (TEAM_ID)"
+  # provisioningProfile: "path/to/profile.provisionprofile"
+  # 公证配置（需要Apple ID）
+  # notarize:
+  #   teamId: "YOUR_TEAM_ID"
+  darkModeSupport: true  # 支持深色模式
+  minimumSystemVersion: "10.15.0"  # 最低系统要求
 
 dmg:
   title: ${productName} ${version}

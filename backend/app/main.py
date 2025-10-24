@@ -142,6 +142,11 @@ async def lifespan(app: FastAPI):
         await redis_queue.disconnect()
         logger.info("✅ Redis连接已关闭")
         
+        # 停止Token清理任务
+        from .processors.image import image_processor
+        image_processor.stop_cleanup_task()
+        logger.info("✅ Token清理任务已停止")
+        
         # 停止嵌入式Redis服务
         redis_manager.stop()
         logger.info("✅ Redis服务已停止")
@@ -159,6 +164,14 @@ app = FastAPI(
     description="KOOK消息转发系统后端API",
     lifespan=lifespan
 )
+
+# ✅ 优化12: 注册全局异常处理器
+from .utils.exceptions import KookForwarderException, get_exception_handler
+
+@app.exception_handler(KookForwarderException)
+async def kook_exception_handler(request, exc: KookForwarderException):
+    """处理所有KookForwarder自定义异常"""
+    return get_exception_handler()(request, exc)
 
 # 配置CORS
 app.add_middleware(
@@ -218,6 +231,11 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=settings.api_host,
+        port=settings.api_port,
+        reload=settings.debug,
+        log_level=settings.log_level.lower()
+    )
+.api_host,
         port=settings.api_port,
         reload=settings.debug,
         log_level=settings.log_level.lower()
