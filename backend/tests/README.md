@@ -18,7 +18,6 @@
 - ✅ `test_scheduler.py` - 任务调度器测试
 - ✅ `test_api_integration.py` - API集成测试
 - ✅ `test_worker_e2e.py` - Worker端到端测试
-- ✅ `test_v1_11_0_features.py` - **v1.11.0新功能测试** ⭐
 
 ### 测试覆盖范围
 

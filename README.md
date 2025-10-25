@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Vue](https://img.shields.io/badge/vue-3.4-green.svg)
@@ -17,9 +17,9 @@
 
 ---
 
-## ✨ v3.1.0 Ultimate Edition 新特性
+## ✨ v5.0.0 深度优化完成版
 
-🎉 **最新版本已发布！** 包含19项深度优化，带来全面的功能增强和性能提升。
+🎉 **重大版本更新！** 完成19项深度优化，带来全面的功能增强、性能提升和文档完善。
 
 ### 核心新增功能
 
@@ -53,7 +53,7 @@
 - ✅ 模块化设计
 - ✅ RESTful API标准
 
-**详细更新日志**: [V3.1.0 Release Notes](V5_RELEASE_NOTES.md)
+**详细更新日志**: [V5.0.0 Release Notes](V5_RELEASE_NOTES.md) | [完整变更历史](CHANGELOG.md)
 
 ---
 
@@ -80,7 +80,6 @@
 - 💬 **Discord** - Webhook方式，支持Embed卡片
 - ✈️ **Telegram** - Bot API，支持HTML格式
 - 🏢 **飞书** - 自建应用，支持消息卡片
-- ⚖️ **负载均衡** - 多Webhook轮询，吞吐量提升10倍
 
 #### 图形化界面
 - 🖥️ **Electron桌面应用** - 跨平台支持（Windows/macOS/Linux）
@@ -125,7 +124,7 @@
 #### Windows
 ```bash
 # 下载安装包
-# KookForwarder_v3.1.0_Windows_x64.exe
+# KookForwarder_v5.0.0_Windows_x64.exe
 
 # 双击运行安装程序
 # 安装向导会自动配置所有依赖
@@ -134,7 +133,7 @@
 #### macOS
 ```bash
 # 下载安装包
-# KookForwarder_v3.1.0_macOS.dmg
+# KookForwarder_v5.0.0_macOS.dmg
 
 # 打开.dmg文件
 # 拖动到Applications文件夹
@@ -143,13 +142,13 @@
 #### Linux
 ```bash
 # 下载AppImage
-# KookForwarder_v3.1.0_Linux_x64.AppImage
+# KookForwarder_v5.0.0_Linux_x64.AppImage
 
 # 添加执行权限
-chmod +x KookForwarder_v3.1.0_Linux_x64.AppImage
+chmod +x KookForwarder_v5.0.0_Linux_x64.AppImage
 
 # 运行
-./KookForwarder_v3.1.0_Linux_x64.AppImage
+./KookForwarder_v5.0.0_Linux_x64.AppImage
 ```
 
 ### 首次配置（5步向导）
@@ -327,7 +326,7 @@ npm run test:e2e
 
 ## 📜 更新日志
 
-### v3.1.0 Ultimate Edition (2025-10-25)
+### v5.0.0 深度优化完成版 (2025-10-25)
 
 #### 🎉 核心新增
 - ✨ 视频管理系统（占位符+上传+流式传输）
@@ -404,7 +403,6 @@ in the Software without restriction...
 
 <div align="center">
 
-**⭐ 如果这个项目对你有帮助，请给个Star支持一下！**
 
 Made with ❤️ by KOOK Forwarder Team
 
