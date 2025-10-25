@@ -1,6 +1,6 @@
 # ⚡ KOOK消息转发系统 - 快速开始指南
 
-**版本**: v3.1.0 Ultimate Edition  
+**版本**: v5.0.0 深度优化完成版  
 **预计时间**: 10分钟  
 
 ---
@@ -36,10 +36,10 @@
 ```bash
 # 1. 下载安装包
 https://github.com/gfchfjh/CSBJJWT/releases/latest
-  → KookForwarder_v3.1.0_Windows_x64.exe
+  → KookForwarder_v5.0.0_Windows_x64.exe
 
 # 2. 双击运行
-KookForwarder_v3.1.0_Windows_x64.exe
+KookForwarder_v5.0.0_Windows_x64.exe
 
 # 3. 按向导安装
 默认路径: C:\Program Files\KookForwarder
@@ -54,10 +54,10 @@ KookForwarder_v3.1.0_Windows_x64.exe
 ```bash
 # 1. 下载dmg文件
 https://github.com/gfchfjh/CSBJJWT/releases/latest
-  → KookForwarder_v3.1.0_macOS.dmg
+  → KookForwarder_v5.0.0_macOS.dmg
 
 # 2. 打开dmg
-双击 KookForwarder_v3.1.0_macOS.dmg
+双击 KookForwarder_v5.0.0_macOS.dmg
 
 # 3. 拖动到Applications
 拖动"KOOK消息转发系统"到"Applications"文件夹
@@ -70,13 +70,13 @@ https://github.com/gfchfjh/CSBJJWT/releases/latest
 
 ```bash
 # 1. 下载AppImage
-wget https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KookForwarder_v3.1.0_Linux_x64.AppImage
+wget https://github.com/gfchfjh/CSBJJWT/releases/latest/download/KookForwarder_v5.0.0_Linux_x64.AppImage
 
 # 2. 添加执行权限
-chmod +x KookForwarder_v3.1.0_Linux_x64.AppImage
+chmod +x KookForwarder_v5.0.0_Linux_x64.AppImage
 
 # 3. 运行
-./KookForwarder_v3.1.0_Linux_x64.AppImage
+./KookForwarder_v5.0.0_Linux_x64.AppImage
 ```
 
 ---
@@ -273,7 +273,7 @@ KOOK #活动 → Telegram 活动群
 [保存设置]
 ```
 
-### 3. 启用邮件通知（v3.1.0新增）
+### 3. 启用邮件通知（v5.0.0新增）
 
 ```
 设置 → 邮件配置
@@ -287,7 +287,7 @@ SMTP服务器: smtp.gmail.com
 [测试连接] [保存配置]
 ```
 
-### 4. 配置文件安全（v3.1.0新增）
+### 4. 配置文件安全（v5.0.0新增）
 
 ```
 设置 → 文件安全
@@ -394,7 +394,7 @@ KOOK #公告频道 → Discord #announcements
 
 ---
 
-## 📺 视频教程（v3.1.0新增）
+## 📺 视频教程（v5.0.0新增）
 
 ### 内置视频教程
 
@@ -418,7 +418,7 @@ KOOK #公告频道 → Discord #announcements
 
 - 📖 [用户手册](docs/用户手册.md) - 完整功能说明
 - 🎬 [视频教程](docs/视频教程/README.md) - 图文视频教程
-- 📊 [优化报告](OPTIMIZATION_COMPLETION_REPORT.md) - v3.1.0新功能
+- 📊 [优化报告](OPTIMIZATION_COMPLETION_REPORT.md) - v5.0.0新功能
 
 ### 高级配置
 
