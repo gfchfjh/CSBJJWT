@@ -294,7 +294,6 @@ frontend/src/components/UserSelectorDialog.vue (新增)
 
 **预期效果**:
 - ✅ 支持10,000+条日志无卡顿
-- ✅ 渲染性能提升10倍
 
 **关键文件**:
 ```
@@ -405,9 +404,7 @@ frontend/src/i18n/locales/
 - [x] 数据归档机制（10小时）
 
 **预期效果**:
-- ✅ 性能提升3-5倍
 - ✅ 支持100万+日志记录
-- ✅ 并发能力提升10倍
 
 **关键文件**:
 ```
@@ -447,7 +444,6 @@ backend/app/queue/priority_queue.py (新增)
 - [x] 资源限制管理（5小时）
 
 **预期效果**:
-- ✅ 吞吐量提升5-10倍
 - ✅ 响应时间降低60%
 - ✅ CPU利用率优化
 
@@ -634,9 +630,6 @@ backend/app/utils/encryption_manager.py (增强)
 
 | 指标 | 当前 | 目标 | 优化方向 |
 |------|------|------|----------|
-| UI美观度评分 | 6/10 | 9/10 | P1-P2全部 |
-| 易用性评分 | 7/10 | 9/10 | 优化1,7,10,12 |
-| 文档完整性评分 | 7/10 | 9.5/10 | 优化13 |
 | 用户满意度 | 75% | 90% | 全部优化 |
 
 ---
@@ -679,7 +672,6 @@ playwright install chromium --with-deps
 
 ### 推荐IDE配置
 
-#### VS Code插件
 ```
 - Vue Language Features (Volar)
 - Python

@@ -2,7 +2,6 @@
 
 **版本**: v3.1.0 Ultimate Edition  
 **预计时间**: 10分钟  
-**难度**: ⭐⭐☆☆☆ 简单
 
 ---
 
@@ -307,8 +306,6 @@ SMTP服务器: smtp.gmail.com
 
 ```
 吞吐量提升：
-单Webhook:   60条/分钟
-10个Webhook: 600条/分钟（提升10倍！）
 
 配置方法：
 1. 创建多个Discord Webhook

@@ -218,8 +218,6 @@ class DiscordForwarder:
 ```
 
 **性能提升**:
-- ✅ 单Webhook: 60条/分钟
-- ✅ 10个Webhook: 600条/分钟（**提升10倍**）
 
 ---
 

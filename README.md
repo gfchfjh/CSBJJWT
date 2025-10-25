@@ -80,7 +80,6 @@
 - 💬 **Discord** - Webhook方式，支持Embed卡片
 - ✈️ **Telegram** - Bot API，支持HTML格式
 - 🏢 **飞书** - 自建应用，支持消息卡片
-- ⚖️ **负载均衡** - 多Webhook轮询，吞吐量提升10倍
 
 #### 图形化界面
 - 🖥️ **Electron桌面应用** - 跨平台支持（Windows/macOS/Linux）
@@ -404,7 +403,6 @@ in the Software without restriction...
 
 <div align="center">
 
-**⭐ 如果这个项目对你有帮助，请给个Star支持一下！**
 
 Made with ❤️ by KOOK Forwarder Team
 

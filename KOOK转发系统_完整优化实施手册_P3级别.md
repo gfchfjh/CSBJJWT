@@ -654,7 +654,6 @@
 
 2. 检查缺失的依赖
    - 安装Microsoft Visual C++ Redistributable
-   - 下载: https://aka.ms/vs/17/release/vc_redist.x64.exe
 
 3. 以管理员身份运行
    - 右键应用 → "以管理员身份运行"
