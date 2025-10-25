@@ -11,7 +11,6 @@
 [![Vue](https://img.shields.io/badge/vue-3.4+-green.svg)](https://vuejs.org/)
 [![Electron](https://img.shields.io/badge/electron-28.0-blue.svg)](https://www.electronjs.org/)
 
-> **🚀 v4.1.0重大更新**：12项P0核心优化，配置时间⬇️83%，成功率⬆️125%，错误理解度⬆️375%
 
 </div>
 
@@ -44,11 +43,8 @@
 
 | 维度 | v4.0.0 | v4.1.0 | 提升 |
 |------|--------|--------|------|
-| **配置时间** | 30分钟 | 5分钟 | ⬇️ 83% |
-| **配置成功率** | 40% | 90%+ | ⬆️ 125% |
-| **错误理解度** | 20% | 95%+ | ⬆️ 375% |
-| **功能完整度** | 70% | 100% | ⬆️ 43% |
-| **帮助完善度** | 10% | 90%+ | ⬆️ 800% |
+
+
 | **技术门槛** | 需编程背景 | **真正零基础** | 质的飞跃 |
 
 ### ✨ v4.1.0 新增功能（12项）
@@ -217,7 +213,7 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 
 ## 🎯 版本历史
 
-- **v4.0.0** (2025-10-25) - 🎉 **Ultimate Edition（27项终极优化）** ⭐⭐⭐⭐⭐
+
   - 真正的桌面应用（Electron）
   - Chromium/Redis全部内置
   - 智能配置向导（5步完成）

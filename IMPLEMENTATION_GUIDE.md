@@ -481,7 +481,6 @@ gh release create v4.0.0 \
 5. 运行时设置环境变量：PLAYWRIGHT_BROWSERS_PATH=./chromium
 ```
 
-**影响**: 用户无需任何操作，安装成功率从40%→70%+
 
 ---
 
@@ -499,7 +498,6 @@ gh release create v4.0.0 \
 5. 崩溃自动重启
 ```
 
-**影响**: Windows用户友好度提升90%+
 
 ---
 
