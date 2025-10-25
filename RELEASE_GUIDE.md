@@ -315,7 +315,7 @@ KOOK.-1.14.0.AppImage
 ```markdown
 🎉 KOOK消息转发系统 v1.14.0 正式发布！
 
-✨ 主要特性：
+
 • 零代码配置，5分钟上手
 • 支持Discord、Telegram、飞书
 • 完整的图形化界面

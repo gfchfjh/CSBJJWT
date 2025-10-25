@@ -22,9 +22,8 @@
 
 | 平台 | 文件 | 大小 | 下载链接 |
 |------|------|------|----------|
-| 🪟 **Windows** | KOOK-Forwarder-4.1.0-Setup.exe | ~150 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
-| 🐧 **Linux** | KOOK-Forwarder-4.1.0.AppImage | ~140 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
-| 🍎 **macOS** | KOOK-Forwarder-4.1.0.dmg | ~160 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
+
+
 | 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:4.1.0 | - | `docker pull ghcr.io/gfchfjh/csbjjwt:4.1.0` |
 
 💡 **使用说明**：
@@ -47,7 +46,6 @@
 
 | **技术门槛** | 需编程背景 | **真正零基础** | 质的飞跃 |
 
-### ✨ v4.1.0 新增功能（12项）
 
 #### 🟢 易用性革命（5项）
 - ✅ **5步完整向导** - Bot配置和映射集成，完成即可用
@@ -99,7 +97,6 @@
 
 KOOK消息转发系统是一款功能强大、易于使用的**跨平台桌面应用**，能够将KOOK（原开黑啦）平台的消息实时转发到Discord、Telegram、飞书等其他平台。
 
-### ✨ 核心特性
 
 **v4.0.0 革命性突破：**
 - 🎯 **真正的桌面应用** - Electron封装，系统托盘，专业体验
@@ -144,7 +141,6 @@ KOOK消息转发系统是一款功能强大、易于使用的**跨平台桌面�
 
 ## 🚀 快速开始
 
-### 方式1: 预编译安装包（⭐强烈推荐）
 
 ```bash
 # 1. 下载对应平台的安装包
@@ -185,12 +181,12 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 ## 📖 文档导航
 
 ### 🚀 快速开始
-- [5分钟快速开始](QUICK_START.md) ⭐
+
 - [安装指南](INSTALLATION_GUIDE.md)
 - [实施指南](IMPLEMENTATION_GUIDE.md)
 
 ### 🎯 v4.0.0 优化文档
-- [最终完成报告](FINAL_COMPLETE_REPORT.md) - 27项优化详解 🌟
+
 - [实施指南](IMPLEMENTATION_GUIDE.md) - 如何使用新功能
 - [完整文件清单](COMPLETE_FILE_LIST.md) - 所有新增文件
 - [深度分析报告](KOOK_FORWARDER_DEEP_OPTIMIZATION_ANALYSIS.md) - 技术分析
@@ -328,7 +324,6 @@ python build/build_all_ultimate.py
 
 [立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest) | [快速开始](QUICK_START.md) | [查看文档](INDEX.md)
 
-**如果觉得有帮助，请给个 ⭐ Star 支持一下！**
 
 ---
 
