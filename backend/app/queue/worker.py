@@ -12,6 +12,7 @@ from ..processors.filter import message_filter
 from ..processors.formatter import formatter
 from ..processors.image import image_processor, attachment_processor
 from ..processors.link_preview import link_preview_generator  # ✅ P1-1优化：链接预览
+from ..processors.file_security import file_security_checker  # ✅ P0新增：文件安全检查
 from ..forwarders.discord import discord_forwarder
 from ..forwarders.telegram import telegram_forwarder
 from ..forwarders.feishu import feishu_forwarder
@@ -390,7 +391,7 @@ class MessageWorker:
     
     async def _process_single_attachment(self, attachment: Dict[str, Any], cookies: dict = None) -> Optional[Dict[str, Any]]:
         """
-        处理单个附件
+        处理单个附件（✅ P0优化：添加文件安全检查）
         
         Args:
             attachment: 附件信息
@@ -402,11 +403,25 @@ class MessageWorker:
         try:
             url = attachment.get('url')
             filename = attachment.get('name', 'unknown')
-            file_size_mb = attachment.get('size', 0) / (1024 * 1024)
+            file_size_bytes = attachment.get('size', 0)
+            file_size_mb = file_size_bytes / (1024 * 1024)
             
             logger.debug(f"处理附件: {filename} ({file_size_mb:.2f}MB)")
             
-            # 检查文件大小（最大50MB）
+            # ✅ P0优化：文件安全检查
+            is_safe, risk_level, reason = file_security_checker.is_safe_file(
+                filename, 
+                file_size_bytes
+            )
+            
+            if not is_safe:
+                logger.warning(f"🚫 附件被安全拦截: {filename} - {reason}")
+                return None
+            
+            if risk_level == "warning":
+                logger.info(f"⚠️ 附件安全警告: {filename} - {reason}")
+            
+            # 检查文件大小（最大50MB）- 已在安全检查器中处理
             if file_size_mb > 50:
                 logger.warning(f"附件过大，跳过: {filename} ({file_size_mb:.2f}MB)")
                 return None

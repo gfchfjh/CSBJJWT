@@ -5,6 +5,8 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix, auth_master_password
+# ✅ P0-P1优化新增: 增强版API
+from .api import password_reset_enhanced, environment_autofix_enhanced, help_system
 from .api import performance  # v1.12.0 性能监控API
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
@@ -209,6 +211,10 @@ app.include_router(telegram_helper.router)  # Telegram辅助工具 🆕 v1.15.0
 app.include_router(cookie_import.router)  # Cookie导入 🆕 P0-2优化
 app.include_router(environment.router)  # 环境检查 🆕 P0-5优化
 app.include_router(environment_autofix.router)  # 环境一键修复 🆕 P0-2优化
+# ✅ P0-P1优化新增路由
+app.include_router(password_reset_enhanced.router)  # 邮箱验证码重置 🆕 P0-14优化
+app.include_router(environment_autofix_enhanced.router)  # 增强环境修复 🆕 P0-3优化
+app.include_router(help_system.router)  # 完整帮助系统 🆕 P1-4优化
 
 
 @app.get("/")
