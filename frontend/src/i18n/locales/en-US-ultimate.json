@@ -1,0 +1,150 @@
+{
+  "app": {
+    "title": "KOOK Message Forwarder",
+    "version": "Version {version}",
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped",
+      "error": "Error"
+    }
+  },
+  "nav": {
+    "home": "Dashboard",
+    "accounts": "Accounts",
+    "bots": "Bots",
+    "mapping": "Channel Mapping",
+    "filter": "Filter Rules",
+    "logs": "Real-time Logs",
+    "settings": "Settings",
+    "help": "Help"
+  },
+  "wizard": {
+    "title": "Setup Wizard",
+    "step": {
+      "environment": "Environment Check",
+      "welcome": "Welcome",
+      "login": "Login KOOK",
+      "servers": "Select Servers",
+      "bots": "Configure Bots",
+      "mapping": "Quick Mapping",
+      "complete": "Complete"
+    },
+    "environment": {
+      "checking": "Checking environment...",
+      "allPassed": "All checks passed!",
+      "fixIssue": "Fix Issue",
+      "autoFix": "Auto Fix All"
+    },
+    "login": {
+      "title": "Login to KOOK",
+      "cookieImport": "Import Cookie",
+      "accountLogin": "Account Login",
+      "email": "Email",
+      "password": "Password"
+    },
+    "bots": {
+      "title": "Configure Target Platforms",
+      "discord": "Discord Webhook",
+      "telegram": "Telegram Bot",
+      "feishu": "Feishu App",
+      "testConnection": "Test Connection"
+    },
+    "mapping": {
+      "title": "Quick Channel Mapping",
+      "smartMapping": "Smart Mapping",
+      "manualMapping": "Manual Mapping",
+      "confidence": "Confidence"
+    },
+    "complete": {
+      "title": "Setup Complete!",
+      "message": "You can now start using the message forwarding service.",
+      "startUsing": "Start Using"
+    }
+  },
+  "accounts": {
+    "title": "KOOK Accounts",
+    "addAccount": "Add Account",
+    "email": "Email",
+    "status": "Status",
+    "lastActive": "Last Active",
+    "actions": "Actions",
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "bots": {
+    "title": "Bot Configuration",
+    "platform": "Platform",
+    "name": "Name",
+    "status": "Status",
+    "testConnection": "Test Connection",
+    "addBot": "Add Bot"
+  },
+  "mapping": {
+    "title": "Channel Mapping",
+    "kookChannel": "KOOK Channel",
+    "targetChannel": "Target Channel",
+    "platform": "Platform",
+    "confidence": "Confidence",
+    "enabled": "Enabled",
+    "actions": "Actions",
+    "smartMapping": "Smart Mapping",
+    "dragToCreate": "Drag to Create Mapping"
+  },
+  "filter": {
+    "title": "Filter Rules",
+    "keywordBlacklist": "Keyword Blacklist",
+    "keywordWhitelist": "Keyword Whitelist",
+    "regexBlacklist": "Regex Blacklist",
+    "regexWhitelist": "Regex Whitelist",
+    "userBlacklist": "User Blacklist",
+    "userWhitelist": "User Whitelist",
+    "messageTypes": "Message Types",
+    "addKeyword": "Add Keyword",
+    "addRegex": "Add Regex Pattern",
+    "addUser": "Add User"
+  },
+  "logs": {
+    "title": "Real-time Logs",
+    "status": "Status",
+    "platform": "Platform",
+    "search": "Search",
+    "autoRefresh": "Auto Refresh",
+    "success": "Success",
+    "failed": "Failed",
+    "pending": "Pending",
+    "viewDetail": "View Detail",
+    "retry": "Retry"
+  },
+  "settings": {
+    "title": "Settings",
+    "service": "Service Control",
+    "start": "Start Service",
+    "stop": "Stop Service",
+    "restart": "Restart Service",
+    "imageStrategy": "Image Strategy",
+    "smart": "Smart Mode",
+    "directUpload": "Direct Upload Only",
+    "imgbed": "Image Bed Only",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "auto": "Auto",
+    "language": "Language"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "loading": "Loading...",
+    "success": "Success",
+    "failed": "Failed",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  }
+}
