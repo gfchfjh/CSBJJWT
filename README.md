@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Vue](https://img.shields.io/badge/vue-3.4-green.svg)
@@ -119,37 +119,40 @@
 - **磁盘**: 500MB（不含图片缓存）
 - **网络**: 稳定的网络连接
 
-### 一键安装
+### 一键安装（真正的零门槛）
 
 #### Windows
 ```bash
-# 下载安装包
-# KookForwarder_v5.0.0_Windows_x64.exe
+# 1. 下载安装包
+https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-Setup.exe
 
-# 双击运行安装程序
-# 安装向导会自动配置所有依赖
+# 2. 双击运行，3分钟完成安装
+# 3. 自动启动，完成5步配置向导
 ```
 
 #### macOS
 ```bash
-# 下载安装包
-# KookForwarder_v5.0.0_macOS.dmg
+# 1. 下载DMG
+https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS.dmg
 
-# 打开.dmg文件
-# 拖动到Applications文件夹
+# 2. 打开.dmg文件
+# 3. 拖动到Applications文件夹
+# 4. 右键 → 打开（首次需要）
 ```
 
 #### Linux
 ```bash
-# 下载AppImage
-# KookForwarder_v5.0.0_Linux_x64.AppImage
+# 1. 下载AppImage
+wget https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-x64.AppImage
 
-# 添加执行权限
-chmod +x KookForwarder_v5.0.0_Linux_x64.AppImage
+# 2. 添加执行权限
+chmod +x KOOK-Forwarder-6.0.0-x64.AppImage
 
-# 运行
-./KookForwarder_v5.0.0_Linux_x64.AppImage
+# 3. 双击运行或命令行
+./KOOK-Forwarder-6.0.0-x64.AppImage
 ```
+
+🎯 **无需安装任何依赖！Python、Node.js、Redis、Chromium 全部内置！**
 
 ### 首次配置（5步向导）
 

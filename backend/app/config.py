@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     
     # 应用基础配置
     app_name: str = "KOOK消息转发系统"
-    app_version: str = "3.0.0"  # v3.0 深度优化版
+    app_version: str = "6.0.0"  # v6.0 真正的傻瓜式一键安装版
     debug: bool = False
     data_dir: Path = DATA_DIR
     

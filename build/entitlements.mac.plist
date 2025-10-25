@@ -1,45 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!--
-  ✅ P0-2优化: 完整的macOS权限配置
-  用于代码签名和公证
--->
 <plist version="1.0">
 <dict>
-    <!-- JIT编译权限（Chromium需要） -->
-    <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    
-    <!-- 允许加载未签名的可执行内存（Python/Node需要） -->
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    
-    <!-- 允许DYLD环境变量 -->
-    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
-    <true/>
-    
-    <!-- 网络客户端权限（KOOK连接需要） -->
+    <!-- 允许网络连接 -->
     <key>com.apple.security.network.client</key>
     <true/>
     
-    <!-- 网络服务器权限（本地API服务需要） -->
+    <!-- 允许网络服务器 -->
     <key>com.apple.security.network.server</key>
     <true/>
     
-    <!-- 文件读写权限 -->
+    <!-- 允许文件访问 -->
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
     
-    <!-- 文档文件夹访问权限 -->
+    <!-- 允许访问用户文档 -->
     <key>com.apple.security.files.downloads.read-write</key>
     <true/>
     
-    <!-- 防止库验证（允许加载动态库） -->
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
-    
-    <!-- 摄像头访问权限（如果需要截图功能） -->
+    <!-- 允许摄像头（可选） -->
     <!-- <key>com.apple.security.device.camera</key>
     <true/> -->
+    
+    <!-- 允许麦克风（可选） -->
+    <!-- <key>com.apple.security.device.audio-input</key>
+    <true/> -->
+    
+    <!-- Hardened Runtime -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
 </dict>
 </plist>
