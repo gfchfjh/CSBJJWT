@@ -322,9 +322,6 @@ SMTP服务器: smtp.gmail.com
 - 💬 [Discord配置](docs/Discord配置教程.md)
 - ✈️ [Telegram配置](docs/Telegram配置教程.md)
 
-### 优化报告
-- 📊 [深度优化建议](DEEP_OPTIMIZATION_RECOMMENDATIONS_2025.md)
-- ✅ [优化完成报告](OPTIMIZATION_COMPLETION_REPORT.md)
 
 ---
 

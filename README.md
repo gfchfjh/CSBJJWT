@@ -222,10 +222,6 @@ chmod +x KookForwarder_v3.1.0_Linux_x64.AppImage
 - 📡 [API文档](docs/API接口文档.md)
 - 🔨 [构建指南](BUILD_RELEASE_GUIDE.md)
 
-### 优化报告
-- 📊 [深度优化建议](DEEP_OPTIMIZATION_RECOMMENDATIONS_2025.md)
-- ✅ [优化完成报告](OPTIMIZATION_COMPLETION_REPORT.md)
-- 📦 [Git存档报告](GIT_ARCHIVE_REPORT.md)
 
 **完整索引**: [文档索引](V5_DOCUMENTATION_INDEX.md)
 
@@ -351,12 +347,6 @@ npm run test:e2e
 - 📦 环境变量配置支持
 - 📦 模块化代码重构
 - 📦 RESTful API标准化
-
-#### 📝 文档完善
-- 📄 深度优化建议报告（38KB）
-- 📄 优化完成报告（23KB）
-- 📄 Git存档报告（8KB）
-- 📄 完整实施方案（13个）
 
 **代码统计**: +2,346行, -311行, 净增+2,035行
 
