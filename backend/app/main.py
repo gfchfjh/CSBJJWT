@@ -14,6 +14,8 @@ from .api import email_api
 # ✅ P0-4新增: 文件安全API
 from .api import file_security_api
 from .api import performance  # v1.12.0 性能监控API
+# ✅ v6.0.0新增: Cookie导入增强版API
+from .api import cookie_import_enhanced
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
@@ -224,6 +226,7 @@ app.include_router(help_system.router)  # 完整帮助系统 🆕 P1-4优化
 app.include_router(video_api.router)  # 视频管理API 🆕 P0-1优化
 app.include_router(email_api.router)  # 邮件管理API 🆕 P0-2优化
 app.include_router(file_security_api.router)  # 文件安全API 🆕 P0-4优化
+app.include_router(cookie_import_enhanced.router)  # Cookie导入增强API 🆕 v6.0.0
 
 
 @app.get("/")

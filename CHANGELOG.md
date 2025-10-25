@@ -566,4 +566,6 @@ pillow>=10.1.0          # 图片处理
 ---
 
 **最后更新**: 2025-10-25  
-**当前版本**: v5.0.0
+**当前版本**: v6.0.0  
+
+**v6.0.0文档**: [V6_CHANGELOG.md](V6_CHANGELOG.md) | [V6文档索引](V6_DOCUMENTATION_INDEX.md)
