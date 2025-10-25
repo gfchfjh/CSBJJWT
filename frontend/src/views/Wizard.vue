@@ -1,11 +1,13 @@
 <template>
   <div class="wizard-container">
     <el-card class="wizard-card">
-      <!-- ✅ P0-1优化: 简化为3步 -->
+      <!-- ✅ P0-1优化完成: 扩展为5步完整向导 -->
       <el-steps :active="currentStep" finish-status="success" align-center>
         <el-step title="欢迎" description="开始配置" />
         <el-step title="登录KOOK" description="添加账号" />
         <el-step title="选择服务器" description="监听频道" />
+        <el-step title="配置Bot" description="转发目标" />
+        <el-step title="频道映射" description="完成配置" />
       </el-steps>
 
       <div class="wizard-content">
@@ -40,6 +42,23 @@
           @selectAll="selectAll"
           @unselectAll="unselectAll"
         />
+
+        <!-- ✅ 步骤4: Bot配置 -->
+        <WizardStepBotConfig
+          v-else-if="currentStep === 3"
+          @next="handleBotConfigComplete"
+          @prev="prevStep"
+        />
+
+        <!-- ✅ 步骤5: 快速映射 -->
+        <WizardStepQuickMapping
+          v-else-if="currentStep === 4"
+          :selected-channels="selectedChannels"
+          :configured-bots="configuredBots"
+          @next="finishWizard"
+          @prev="prevStep"
+          @complete="finishWizard"
+        />
       </div>
     </el-card>
   </div>
@@ -53,6 +72,8 @@ import api from '@/api'
 import WizardStepWelcome from '@/components/wizard/WizardStepWelcome.vue'
 import WizardStepLogin from '@/components/wizard/WizardStepLogin.vue'
 import WizardStepServers from '@/components/wizard/WizardStepServers.vue'
+import WizardStepBotConfig from '@/components/wizard/WizardStepBotConfig.vue'
+import WizardStepQuickMapping from '@/components/wizard/WizardStepQuickMapping.vue'
 
 const router = useRouter()
 
@@ -67,6 +88,10 @@ const servers = ref([])
 const loadingServers = ref(false)
 const loadingChannels = ref({})
 
+// ✅ 新增：Bot配置和选中的频道数据
+const configuredBots = ref([])
+const selectedChannels = ref([])
+
 const selectedChannelsCount = computed(() => {
   return servers.value.reduce((count, server) => {
     return count + (server.selectedChannels?.length || 0)
@@ -75,7 +100,7 @@ const selectedChannelsCount = computed(() => {
 
 // 步骤导航
 const nextStep = () => {
-  if (currentStep.value < 2) {
+  if (currentStep.value < 4) {
     currentStep.value++
     
     // 如果进入到服务器选择步骤，自动加载服务器列表
@@ -217,30 +242,36 @@ const unselectAll = () => {
   })
 }
 
-// ✅ P0-1优化: 服务器选择完成后直接完成向导
+// ✅ P0-1优化: 服务器选择完成后进入Bot配置步骤
 const handleServerSelectionComplete = () => {
-  // 将选中的频道信息保存到localStorage供后续使用
-  const selectedData = {
-    servers: servers.value
-      .filter(s => s.selectedChannels && s.selectedChannels.length > 0)
-      .map(s => ({
-        id: s.id,
-        name: s.name,
-        channels: s.channels
-          .filter(c => s.selectedChannels.includes(c.id))
-          .map(c => ({
-            id: c.id,
-            name: c.name,
-            type: c.type
-          }))
-      }))
-  }
+  // 保存选中的频道信息
+  selectedChannels.value = servers.value
+    .filter(s => s.selectedChannels && s.selectedChannels.length > 0)
+    .flatMap(s => 
+      s.channels
+        .filter(c => s.selectedChannels.includes(c.id))
+        .map(c => ({
+          server_id: s.id,
+          server_name: s.name,
+          channel_id: c.id,
+          channel_name: c.name,
+          channel_type: c.type
+        }))
+    )
   
-  localStorage.setItem('wizard_selected_channels', JSON.stringify(selectedData))
-  ElMessage.success(`已保存 ${selectedChannelsCount.value} 个频道`)
+  ElMessage.success(`已选择 ${selectedChannelsCount.value} 个频道`)
   
-  // 直接完成向导
-  finishWizard()
+  // 进入Bot配置步骤
+  nextStep()
+}
+
+// ✅ P0-1优化: Bot配置完成
+const handleBotConfigComplete = (data) => {
+  configuredBots.value = data.botConfigs || []
+  ElMessage.success(`已配置 ${configuredBots.value.length} 个Bot`)
+  
+  // 进入快速映射步骤
+  nextStep()
 }
 
 // ✅ P0-1优化: 新增跳过向导功能
@@ -268,32 +299,24 @@ const openVideoTutorial = (type) => {
   ElMessage.info(`打开${type}视频教程（功能开发中）`)
 }
 
-// 完成向导（v1.12.0+ 优化：根据配置情况给出不同提示）
+// ✅ P0-1优化: 完成完整的5步向导
 const finishWizard = () => {
   // 标记向导已完成
   localStorage.setItem('wizard_completed', 'true')
   
-  // 检查配置完整性，给出相应提示
-  if (addedBots.value.length === 0) {
-    ElMessage.warning({
-      message: '提示：您还没有配置任何Bot，无法转发消息。建议进入"机器人配置"页面添加。',
-      duration: 8000,
-      showClose: true
-    })
-  } else if (selectedChannelsCount.value === 0) {
-    ElMessage.warning({
-      message: '提示：您还没有选择任何频道，建议进入"频道映射"页面配置映射关系。',
-      duration: 8000,
-      showClose: true
-    })
-  } else {
-    ElMessage.success({
-      message: '🎉 配置完成！现在可以开始使用消息转发功能了。',
-      duration: 5000,
-      showClose: true
-    })
+  // 通知Electron主进程
+  if (window.electron && window.electron.ipcRenderer) {
+    window.electron.ipcRenderer.send('wizard-completed')
   }
   
+  // 显示成功消息
+  ElMessage.success({
+    message: '🎉 配置完成！系统已开始自动监听和转发消息。',
+    duration: 5000,
+    showClose: true
+  })
+  
+  // 跳转到主页
   router.push('/')
 }
 </script>
