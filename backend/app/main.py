@@ -4,7 +4,7 @@ FastAPI主应用（✅ P2-5优化：全局API认证）
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix, auth_master_password
 from .api import performance  # v1.12.0 性能监控API
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
@@ -190,6 +190,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(auth.router)  # 认证相关（无需Token）
+app.include_router(auth_master_password.router)  # 主密码认证 🆕 P0-8优化
 app.include_router(password_reset.router)  # 密码重置（无需Token）
 app.include_router(accounts.router)
 app.include_router(bots.router)
