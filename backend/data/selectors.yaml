@@ -1,297 +1,220 @@
-# KOOK网页DOM选择器配置文件
-# 用于适配KOOK网页版的DOM结构变化
-# 
-# 说明：
-# - 每个选择器支持多个备选项，按优先级尝试
-# - 更新选择器后会自动热加载，无需重启服务
-# - 可根据实际DOM结构调整选择器
-#
-# 最后更新：2025-10-17
-# 版本：v1.3.0
+# KOOK 网页元素选择器配置
+# P0-8: 选择器配置化
+# 版本：v3.1
+# 说明：KOOK 网页改版时，仅需修改此文件，无需改动代码
 
-# 服务器列表容器
+# 登录页面选择器
+login:
+  # 邮箱输入框（多个备选）
+  email_input:
+    - 'input[type="email"]'
+    - 'input[name="email"]'
+    - '#email'
+    - 'input[placeholder*="邮箱"]'
+  
+  # 密码输入框
+  password_input:
+    - 'input[type="password"]'
+    - 'input[name="password"]'
+    - '#password'
+    - 'input[placeholder*="密码"]'
+  
+  # 登录按钮
+  submit_button:
+    - 'button[type="submit"]'
+    - 'button.login-btn'
+    - 'button.submit-btn'
+    - '.login-button'
+    - 'button:has-text("登录")'
+  
+  # 验证码输入框
+  captcha_input:
+    - 'input[name="captcha"]'
+    - 'input[name="verify_code"]'
+    - 'input[placeholder*="验证码"]'
+    - '#captcha'
+  
+  # 验证码图片
+  captcha_image:
+    - 'img.captcha-image'
+    - 'img[alt*="验证码"]'
+    - 'img[src*="captcha"]'
+    - '.captcha-img'
+  
+  # 短信验证码输入框
+  sms_code_input:
+    - 'input[name="sms_code"]'
+    - 'input[name="phone_code"]'
+    - 'input[placeholder*="短信验证码"]'
+    - 'input[placeholder*="手机验证码"]'
+  
+  # 邮箱验证码输入框
+  email_code_input:
+    - 'input[name="email_code"]'
+    - 'input[placeholder*="邮箱验证码"]'
+  
+  # 发送验证码按钮
+  send_code_button:
+    - 'button:has-text("发送验证码")'
+    - '.send-code-btn'
+    - 'button.send-code'
+
+# 主页面选择器
+main_page:
+  # 用户信息面板
+  user_panel:
+    - '.user-panel'
+    - '[data-user-info]'
+    - '.current-user'
+    - '.user-profile'
+    - '[class*="user"]'
+  
+  # 用户头像
+  user_avatar:
+    - '.user-avatar'
+    - 'img.avatar'
+    - '[class*="avatar"]'
+  
+  # 用户名
+  username:
+    - '.username'
+    - '.user-name'
+    - '[data-username]'
+
+# 服务器列表选择器
 server_container:
-  - '.guild-list'
-  - '[class*="guild-list"]'
-  - '[class*="GuildList"]'
-  - 'nav[class*="guild"]'
-  - '.server-list'
-  - '[class*="ServerList"]'
-  - 'aside[class*="guild"]'
+  # 服务器列表容器
+  container:
+    - '.guild-list'
+    - '[class*="guild-list"]'
+    - '[class*="GuildList"]'
+    - '.server-list'
+    - '[class*="server-list"]'
+  
+  # 服务器项
+  item:
+    - '.guild-item'
+    - '[class*="guild-item"]'
+    - '[class*="GuildItem"]'
+    - '[class*="server-item"]'
+    - '[data-guild-id]'
+    - '[data-server-id]'
+    - 'a[href*="/guild/"]'
+  
+  # 服务器名称
+  name:
+    - '.guild-name'
+    - '[class*="guild-name"]'
+    - '[class*="GuildName"]'
+    - '.server-name'
+    - '[class*="name"]'
+  
+  # 服务器图标
+  icon:
+    - 'img.guild-icon'
+    - 'img.server-icon'
+    - '.guild-avatar img'
+    - 'img'
 
-# 服务器项
-server_item:
-  - '.guild-item'
-  - '[class*="guild-item"]'
-  - '[class*="GuildItem"]'
-  - '[class*="server-item"]'
-  - '[data-guild-id]'
-  - '[data-server-id]'
-  - 'a[href*="/guild/"]'
-  - 'div[class*="guild"][class*="item"]'
-
-# 服务器名称
-server_name:
-  - '.guild-name'
-  - '[class*="guild-name"]'
-  - '[class*="GuildName"]'
-  - '[class*="server-name"]'
-  - '.name'
-  - 'span[class*="name"]'
-
-# 服务器图标
-server_icon:
-  - '.guild-icon img'
-  - '[class*="guild-icon"] img'
-  - 'img[class*="guild"]'
-  - 'img[class*="avatar"]'
-
-# 频道列表容器
+# 频道列表选择器
 channel_container:
-  - '.channel-list'
-  - '[class*="channel-list"]'
-  - '[class*="ChannelList"]'
-  - '[class*="channels"]'
-  - 'nav[class*="channel"]'
-  - 'div[class*="sidebar"]'
-  - 'aside[class*="channel"]'
+  # 频道列表容器
+  container:
+    - '.channel-list'
+    - '[class*="channel-list"]'
+    - '[class*="ChannelList"]'
+    - 'nav[class*="channel"]'
+    - 'div[class*="sidebar"]'
+  
+  # 频道项
+  item:
+    - '.channel-item'
+    - '[class*="channel-item"]'
+    - '[class*="ChannelItem"]'
+    - '[data-channel-id]'
+    - 'a[href*="/channel/"]'
+  
+  # 频道名称
+  name:
+    - '.channel-name'
+    - '[class*="channel-name"]'
+    - '[class*="ChannelName"]'
+    - 'span.name'
+    - '[class*="name"]'
+  
+  # 频道类型图标（区分文本/语音）
+  type_icon:
+    - 'svg[class*="voice"]'
+    - 'i[class*="voice"]'
+    - '.channel-type-icon'
 
-# 频道项
-channel_item:
-  - '.channel-item'
-  - '[class*="channel-item"]'
-  - '[class*="ChannelItem"]'
-  - '[data-channel-id]'
-  - 'a[href*="/channel/"]'
-  - 'div[class*="channel"][class*="item"]'
-  - 'li[class*="channel"]'
+# 消息相关选择器
+message:
+  # 消息列表
+  list_container:
+    - '.message-list'
+    - '[class*="message-list"]'
+    - '[class*="MessageList"]'
+    - '.messages'
+  
+  # 消息项
+  item:
+    - '[class*="message"]'
+    - '[data-message-id]'
+    - '.msg-item'
+  
+  # 消息内容
+  content:
+    - '[class*="content"]'
+    - '.message-content'
+    - '.msg-content'
+  
+  # 发送者
+  author:
+    - '[class*="author"]'
+    - '.message-author'
+    - '.sender'
+  
+  # 时间戳
+  timestamp:
+    - '[class*="time"]'
+    - '[data-timestamp]'
+    - '.message-time'
 
-# 频道名称
-channel_name:
-  - '.channel-name'
-  - '[class*="channel-name"]'
-  - '[class*="ChannelName"]'
-  - '[class*="name"]'
-  - 'span[class*="name"]'
-  - '.name'
+# WebSocket URL 提取
+websocket:
+  # 从页面中提取 WebSocket URL 的方法
+  extraction_methods:
+    - 'window.__INITIAL_STATE__.websocketUrl'
+    - 'window.websocketUrl'
+    - 'localStorage.getItem("websocket_url")'
 
-# 消息列表容器
-message_container:
-  - '.message-list'
-  - '[class*="message-list"]'
-  - '[class*="MessageList"]'
-  - '[class*="messages"]'
-  - 'div[class*="message-container"]'
+# 特殊功能选择器
+special:
+  # 加载更多按钮
+  load_more:
+    - 'button:has-text("加载更多")'
+    - '.load-more'
+    - '[class*="load-more"]'
+  
+  # 错误提示
+  error_message:
+    - '.error-message'
+    - '[class*="error"]'
+    - '.toast-error'
+  
+  # 成功提示
+  success_message:
+    - '.success-message'
+    - '[class*="success"]'
+    - '.toast-success'
 
-# 消息项
-message_item:
-  - '.message'
-  - '[class*="message-item"]'
-  - '[class*="Message"]'
-  - '[data-message-id]'
-  - 'div[class*="message"]'
-
-# 消息内容
-message_content:
-  - '.message-content'
-  - '[class*="message-content"]'
-  - '[class*="content"]'
-  - '.content'
-
-# 消息时间
-message_time:
-  - '.message-time'
-  - '[class*="time"]'
-  - '[class*="timestamp"]'
-  - 'time'
-  - 'span[class*="time"]'
-
-# 消息作者
-message_author:
-  - '.message-author'
-  - '[class*="author"]'
-  - '[class*="username"]'
-  - '.username'
-  - 'span[class*="author"]'
-
-# 登录表单
-login_form:
-  - 'form[class*="login"]'
-  - '.login-form'
-  - '[class*="LoginForm"]'
-  - 'form'
-
-# 邮箱输入框
-email_input:
-  - 'input[type="email"]'
-  - 'input[name="email"]'
-  - 'input[placeholder*="邮箱"]'
-  - 'input[placeholder*="Email"]'
-  - '.email-input'
-  - '[class*="email"]'
-
-# 密码输入框
-password_input:
-  - 'input[type="password"]'
-  - 'input[name="password"]'
-  - 'input[placeholder*="密码"]'
-  - 'input[placeholder*="Password"]'
-  - '.password-input'
-  - '[class*="password"]'
-
-# 登录按钮
-login_button:
-  - 'button[type="submit"]'
-  - '.login-button'
-  - '[class*="login-btn"]'
-  - 'button[class*="login"]'
-  - 'button[class*="submit"]'
-
-# 验证码输入框
-captcha_input:
-  - 'input[name="captcha"]'
-  - 'input[placeholder*="验证码"]'
-  - 'input[placeholder*="Captcha"]'
-  - '.captcha-input'
-  - '[class*="captcha"]'
-
-# 验证码图片
-captcha_image:
-  - 'img.captcha-image'
-  - 'img[alt*="验证码"]'
-  - 'img[class*="captcha"]'
-  - '.captcha-container img'
-
-# 用户头像
-user_avatar:
-  - '.user-avatar'
-  - '[class*="avatar"]'
-  - 'img[class*="avatar"]'
-
-# 在线状态指示器
-online_indicator:
-  - '.online-status'
-  - '[class*="status"]'
-  - '[class*="online"]'
-
-# 设置菜单
-settings_menu:
-  - '.settings-menu'
-  - '[class*="settings"]'
-  - '[aria-label*="设置"]'
-  - '[aria-label*="Settings"]'
-
-# 下拉菜单
-dropdown_menu:
-  - '.dropdown-menu'
-  - '[class*="dropdown"]'
-  - '[role="menu"]'
-
-# 通知标记
-notification_badge:
-  - '.notification-badge'
-  - '[class*="badge"]'
-  - '[class*="notification"]'
-
-# 语音频道标识
-voice_channel_indicator:
-  - '.voice-channel'
-  - '[class*="voice"]'
-  - 'svg[class*="voice"]'
-  - '[data-type="voice"]'
-
-# 文本频道标识
-text_channel_indicator:
-  - '.text-channel'
-  - '[class*="text"]'
-  - 'svg[class*="text"]'
-  - '[data-type="text"]'
-
-# 频道分组
-channel_category:
-  - '.channel-category'
-  - '[class*="category"]'
-  - '[class*="group"]'
-  - 'h3[class*="channel"]'
-
-# 表情反应容器
-reaction_container:
-  - '.reactions'
-  - '[class*="reaction"]'
-  - '[class*="emoji-container"]'
-
-# 表情反应项
-reaction_item:
-  - '.reaction'
-  - '[class*="reaction-item"]'
-  - '[class*="emoji"]'
-
-# 附件容器
-attachment_container:
-  - '.attachments'
-  - '[class*="attachment"]'
-  - '[class*="file-container"]'
-
-# 附件项
-attachment_item:
-  - '.attachment'
-  - '[class*="attachment-item"]'
-  - '[class*="file"]'
-
-# 图片预览
-image_preview:
-  - '.image-preview'
-  - '[class*="image"]'
-  - 'img[class*="preview"]'
-
-# 引用消息
-quoted_message:
-  - '.quoted-message'
-  - '[class*="quote"]'
-  - '[class*="reply"]'
-
-# @提及
-mention:
-  - '.mention'
-  - '[class*="mention"]'
-  - '[data-mention]'
-
-# 加载指示器
-loading_indicator:
-  - '.loading'
-  - '[class*="loading"]'
-  - '[class*="spinner"]'
-  - '.spinner'
-
-# 错误提示
-error_message:
-  - '.error-message'
-  - '[class*="error"]'
-  - '[role="alert"]'
-
-# 成功提示
-success_message:
-  - '.success-message'
-  - '[class*="success"]'
-  - '[class*="toast"]'
-
-# 确认对话框
-confirm_dialog:
-  - '.confirm-dialog'
-  - '[role="dialog"]'
-  - '[class*="modal"]'
-  - '.modal'
-
-# 取消按钮
-cancel_button:
-  - 'button[class*="cancel"]'
-  - 'button[class*="close"]'
-  - '[aria-label*="取消"]'
-  - '[aria-label*="Cancel"]'
-
-# 确认按钮
-confirm_button:
-  - 'button[class*="confirm"]'
-  - 'button[class*="ok"]'
-  - '[aria-label*="确认"]'
-  - '[aria-label*="Confirm"]'
+# 配置元数据
+metadata:
+  version: "3.1.0"
+  last_updated: "2025-10-24"
+  kook_version_tested: "current"
+  notes: |
+    此配置文件用于适配 KOOK 网页版的 DOM 结构。
+    当 KOOK 改版导致抓取失败时，请更新相应的选择器。
+    每个选择器提供多个备选项，按顺序尝试。

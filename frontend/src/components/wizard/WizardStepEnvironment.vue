@@ -1,542 +1,291 @@
 <template>
-  <!-- ✅ P0-4优化: 环境检查组件 -->
-  <div class="environment-step">
-    <el-result 
-      :icon="getResultIcon()"
-      :title="getTitle()"
-    >
-      <template #sub-title>
-        <div class="check-content">
-          <!-- 检查项列表 -->
-          <el-space direction="vertical" :size="15" style="width: 100%;">
-            <!-- 1. Python环境 -->
-            <div class="check-item">
-              <div class="check-header">
-                <el-icon :size="20" :color="getStatusColor('python')">
-                  <component :is="getStatusIcon('python')" />
-                </el-icon>
-                <span class="check-label">Python 运行环境</span>
-                <el-tag :type="getStatusTagType('python')">
-                  {{ envStatus.python.message }}
-                </el-tag>
-              </div>
-              <el-progress
-                v-if="envStatus.python.status === 'checking'"
-                :percentage="envStatus.python.progress"
-                :status="envStatus.python.progress === 100 ? 'success' : ''"
-              />
-            </div>
+  <div class="wizard-step-environment">
+    <h2>🔍 环境检查</h2>
+    <p class="description">
+      正在检查您的系统环境，确保所有必需组件已正确安装...
+    </p>
 
-            <!-- 2. Chromium浏览器 -->
-            <div class="check-item">
-              <div class="check-header">
-                <el-icon :size="20" :color="getStatusColor('chromium')">
-                  <component :is="getStatusIcon('chromium')" />
-                </el-icon>
-                <span class="check-label">Chromium 浏览器</span>
-                <el-tag :type="getStatusTagType('chromium')">
-                  {{ envStatus.chromium.message }}
-                </el-tag>
-              </div>
-              <el-progress
-                v-if="envStatus.chromium.status === 'checking' || 
-                      envStatus.chromium.status === 'downloading'"
-                :percentage="envStatus.chromium.progress"
-                :status="envStatus.chromium.progress === 100 ? 'success' : ''"
-              >
-                <template #default="{ percentage }">
-                  <span>{{ percentage }}%</span>
-                  <span v-if="envStatus.chromium.downloadSpeed" 
-                        style="margin-left: 10px; font-size: 12px; color: #909399;">
-                    ({{ envStatus.chromium.downloadSpeed }})
-                  </span>
-                </template>
-              </el-progress>
-              <div v-if="envStatus.chromium.status === 'downloading'" class="check-detail">
-                <el-text size="small" type="info">
-                  正在下载: {{ envStatus.chromium.downloadedSize }} / {{ envStatus.chromium.totalSize }}
-                  <br/>
-                  预计剩余时间: {{ envStatus.chromium.estimatedTime }}
-                </el-text>
-              </div>
-            </div>
+    <!-- 检查进度 -->
+    <el-progress
+      v-if="checking"
+      :percentage="progress"
+      :status="progress === 100 ? 'success' : undefined"
+    />
 
-            <!-- 3. Redis服务 -->
-            <div class="check-item">
-              <div class="check-header">
-                <el-icon :size="20" :color="getStatusColor('redis')">
-                  <component :is="getStatusIcon('redis')" />
-                </el-icon>
-                <span class="check-label">Redis 消息队列</span>
-                <el-tag :type="getStatusTagType('redis')">
-                  {{ envStatus.redis.message }}
-                </el-tag>
-              </div>
-              <el-progress
-                v-if="envStatus.redis.status === 'checking' || 
-                      envStatus.redis.status === 'starting'"
-                :percentage="envStatus.redis.progress"
-                :status="envStatus.redis.progress === 100 ? 'success' : ''"
-              />
-            </div>
+    <!-- 检查结果 -->
+    <div v-if="!checking && checkResults" class="check-results">
+      <!-- 摘要 -->
+      <el-alert
+        :type="checkResults.summary.failed === 0 ? 'success' : 'warning'"
+        :title="getResultTitle()"
+        :closable="false"
+        show-icon
+      >
+        <p>
+          ✅ 通过: {{ checkResults.summary.passed }} 项<br>
+          ❌ 失败: {{ checkResults.summary.failed }} 项<br>
+          🔧 可修复: {{ checkResults.summary.fixable }} 项
+        </p>
+      </el-alert>
 
-            <!-- 4. 网络连接 -->
-            <div class="check-item">
-              <div class="check-header">
-                <el-icon :size="20" :color="getStatusColor('network')">
-                  <component :is="getStatusIcon('network')" />
-                </el-icon>
-                <span class="check-label">网络连接</span>
-                <el-tag :type="getStatusTagType('network')">
-                  {{ envStatus.network.message }}
-                </el-tag>
-              </div>
-            </div>
-          </el-space>
-
-          <!-- 错误提示和解决方案 -->
-          <el-collapse v-if="hasErrors" style="margin-top: 20px;">
-            <el-collapse-item 
-              v-for="(error, key) in errors" 
-              :key="key"
-              :name="key"
+      <!-- 详细结果 -->
+      <el-collapse v-model="activeNames" class="results-list">
+        <!-- 通过的检查 -->
+        <el-collapse-item title="✅ 通过的检查" name="passed">
+          <el-timeline>
+            <el-timeline-item
+              v-for="item in checkResults.passed"
+              :key="item.name"
+              type="success"
+              :timestamp="item.name"
             >
-              <template #title>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <el-icon color="#F56C6C"><WarningFilled /></el-icon>
-                  <strong>{{ error.title }}</strong>
-                </div>
-              </template>
-              
-              <el-alert :type="error.type" :closable="false">
-                <template #title>
-                  <strong>问题描述:</strong> {{ error.description }}
-                </template>
-              </el-alert>
+              {{ item.message }}
+            </el-timeline-item>
+          </el-timeline>
+        </el-collapse-item>
 
-              <div class="solution" style="margin-top: 10px;">
-                <strong>解决方案:</strong>
-                <ol style="margin: 10px 0; padding-left: 20px;">
-                  <li v-for="(step, idx) in error.solutions" :key="idx">
-                    {{ step }}
-                  </li>
-                </ol>
-              </div>
-
-              <el-button 
-                v-if="error.fixable"
-                type="primary" 
+        <!-- 失败的检查 -->
+        <el-collapse-item
+          v-if="checkResults.failed.length > 0"
+          title="❌ 失败的检查"
+          name="failed"
+        >
+          <el-timeline>
+            <el-timeline-item
+              v-for="item in checkResults.failed"
+              :key="item.name"
+              type="danger"
+              :timestamp="item.name"
+            >
+              <p>{{ item.message }}</p>
+              <el-button
+                v-if="item.fixable"
+                type="primary"
                 size="small"
-                @click="autoFix(key)"
+                :loading="fixing[item.name]"
+                @click="handleFix(item.name)"
               >
-                <el-icon><Tools /></el-icon>
-                自动修复
+                🔧 自动修复
               </el-button>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </template>
-      <template #extra>
-        <el-space>
-          <el-button 
-            v-if="checkStatus === 'error'"
-            @click="retryCheck"
-          >
-            <el-icon><RefreshRight /></el-icon>
-            重新检查
-          </el-button>
-          <el-button 
-            v-if="checkStatus === 'success'"
-            type="primary" 
-            @click="handleNext"
-          >
-            继续配置
-          </el-button>
-          <el-button 
-            v-if="checkStatus === 'error' && canSkip"
-            @click="handleSkip"
-          >
-            忽略错误并继续
-          </el-button>
-        </el-space>
-      </template>
-    </el-result>
+            </el-timeline-item>
+          </el-timeline>
+        </el-collapse-item>
+      </el-collapse>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="actions">
+      <el-button @click="$emit('prev')">
+        上一步
+      </el-button>
+      
+      <el-button
+        v-if="!checking"
+        type="info"
+        @click="handleRecheck"
+      >
+        🔄 重新检查
+      </el-button>
+
+      <el-button
+        v-if="!checking && canProceed"
+        type="primary"
+        @click="$emit('next')"
+      >
+        下一步
+      </el-button>
+
+      <el-button
+        v-if="!checking && !canProceed && hasFixableIssues"
+        type="warning"
+        @click="handleFixAll"
+      >
+        🔧 一键修复全部
+      </el-button>
+    </div>
+
+    <!-- 帮助提示 -->
+    <el-alert
+      v-if="!canProceed && !hasFixableIssues"
+      type="error"
+      title="无法继续"
+      :closable="false"
+    >
+      <p>检测到严重问题，无法自动修复。请手动解决后重新检查。</p>
+      <el-button type="text" @click="openHelp">
+        📖 查看解决方案
+      </el-button>
+    </el-alert>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { 
-  WarningFilled, Tools, RefreshRight, 
-  CircleCheck, CircleClose, Loading 
-} from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
 
 const emit = defineEmits(['next', 'prev'])
 
-const checkStatus = ref('checking') // checking / success / error
-const envStatus = reactive({
-  python: {
-    status: 'pending',
-    message: '等待检查',
-    progress: 0
-  },
-  chromium: {
-    status: 'pending',
-    message: '等待检查',
-    progress: 0,
-    downloadSpeed: '',
-    downloadedSize: '',
-    totalSize: '',
-    estimatedTime: ''
-  },
-  redis: {
-    status: 'pending',
-    message: '等待检查',
-    progress: 0
-  },
-  network: {
-    status: 'pending',
-    message: '等待检查',
-    progress: 0
-  }
+// 状态
+const checking = ref(false)
+const progress = ref(0)
+const checkResults = ref(null)
+const activeNames = ref(['failed'])
+const fixing = ref({})
+
+// 计算属性
+const canProceed = computed(() => {
+  if (!checkResults.value) return false
+  return checkResults.value.summary.failed === 0
 })
 
-const errors = ref({})
-const hasErrors = computed(() => Object.keys(errors.value).length > 0)
-const canSkip = ref(false)
-
-onMounted(() => {
-  startEnvironmentCheck()
+const hasFixableIssues = computed(() => {
+  if (!checkResults.value) return false
+  return checkResults.value.summary.fixable > 0
 })
 
-// 环境检查
-const startEnvironmentCheck = async () => {
-  checkStatus.value = 'checking'
+// 方法
+const getResultTitle = () => {
+  if (!checkResults.value) return ''
   
-  try {
-    // 1. 检查Python
-    await checkPython()
-    
-    // 2. 检查Chromium
-    await checkChromium()
-    
-    // 3. 检查Redis
-    await checkRedis()
-    
-    // 4. 检查网络
-    await checkNetwork()
-    
-    // 全部通过
-    if (!hasErrors.value) {
-      checkStatus.value = 'success'
-    } else {
-      checkStatus.value = 'error'
-      // 如果只是警告级别的错误，允许跳过
-      canSkip.value = !Object.values(errors.value).some(e => e.critical)
-    }
-  } catch (error) {
-    checkStatus.value = 'error'
-    ElMessage.error('环境检查失败: ' + error.message)
-  }
-}
-
-// 检查Python
-const checkPython = async () => {
-  envStatus.python.status = 'checking'
-  envStatus.python.message = '检查中...'
+  const { passed, failed } = checkResults.value.summary
   
-  try {
-    const response = await api.get('/api/system/check-python')
-    
-    if (response.installed) {
-      envStatus.python.status = 'success'
-      envStatus.python.message = `已安装 (${response.version})`
-      envStatus.python.progress = 100
-    } else {
-      envStatus.python.status = 'error'
-      envStatus.python.message = '未安装'
-      errors.value.python = {
-        title: 'Python未安装',
-        description: '系统未检测到Python运行环境',
-        type: 'error',
-        critical: true,
-        fixable: false,
-        solutions: [
-          '请访问 https://www.python.org/downloads/ 下载安装Python 3.11+',
-          '安装完成后重新运行本程序',
-          '如已安装，请检查环境变量配置'
-        ]
-      }
-    }
-  } catch (error) {
-    envStatus.python.status = 'error'
-    envStatus.python.message = '检查失败'
-  }
-}
-
-// 检查Chromium
-const checkChromium = async () => {
-  envStatus.chromium.status = 'checking'
-  envStatus.chromium.message = '检查中...'
-  
-  try {
-    const response = await api.get('/api/system/check-chromium')
-    
-    if (response.installed) {
-      envStatus.chromium.status = 'success'
-      envStatus.chromium.message = '已安装'
-      envStatus.chromium.progress = 100
-    } else {
-      // 自动下载Chromium
-      envStatus.chromium.status = 'downloading'
-      envStatus.chromium.message = '正在下载...'
-      
-      await downloadChromium()
-    }
-  } catch (error) {
-    envStatus.chromium.status = 'error'
-    envStatus.chromium.message = '下载失败'
-    errors.value.chromium = {
-      title: 'Chromium下载失败',
-      description: error.message,
-      type: 'error',
-      critical: false,
-      fixable: true,
-      solutions: [
-        '检查网络连接是否正常',
-        '关闭代理或VPN后重试',
-        '点击"自动修复"重新下载',
-        '或手动下载后放置到指定目录'
-      ]
-    }
-  }
-}
-
-// 下载Chromium
-const downloadChromium = async () => {
-  try {
-    // 开始下载
-    const downloadResponse = await api.post('/api/system/download-chromium')
-    const downloadId = downloadResponse.download_id
-    
-    // 轮询下载进度
-    const pollInterval = setInterval(async () => {
-      try {
-        const progressResponse = await api.get(`/api/system/download-progress/${downloadId}`)
-        const progress = progressResponse
-        
-        envStatus.chromium.progress = progress.percentage
-        envStatus.chromium.downloadSpeed = progress.speed
-        envStatus.chromium.downloadedSize = progress.downloaded_size
-        envStatus.chromium.totalSize = progress.total_size
-        envStatus.chromium.estimatedTime = progress.estimated_time
-        
-        if (progress.percentage === 100) {
-          clearInterval(pollInterval)
-          envStatus.chromium.status = 'success'
-          envStatus.chromium.message = '下载完成'
-        }
-      } catch (error) {
-        clearInterval(pollInterval)
-        throw error
-      }
-    }, 1000)
-  } catch (error) {
-    throw error
-  }
-}
-
-// 检查Redis
-const checkRedis = async () => {
-  envStatus.redis.status = 'checking'
-  envStatus.redis.message = '检查中...'
-  
-  try {
-    const response = await api.get('/api/system/check-redis')
-    
-    if (response.running) {
-      envStatus.redis.status = 'success'
-      envStatus.redis.message = '运行中'
-      envStatus.redis.progress = 100
-    } else {
-      // 自动启动Redis
-      envStatus.redis.status = 'starting'
-      envStatus.redis.message = '正在启动...'
-      
-      await api.post('/api/system/start-redis')
-      
-      // 等待启动完成
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // 再次检查
-      const checkResponse = await api.get('/api/system/check-redis')
-      if (checkResponse.running) {
-        envStatus.redis.status = 'success'
-        envStatus.redis.message = '已启动'
-        envStatus.redis.progress = 100
-      } else {
-        throw new Error('Redis启动失败')
-      }
-    }
-  } catch (error) {
-    envStatus.redis.status = 'error'
-    envStatus.redis.message = '启动失败'
-    errors.value.redis = {
-      title: 'Redis启动失败',
-      description: error.message,
-      type: 'error',
-      critical: false,
-      fixable: true,
-      solutions: [
-        '检查端口6379是否被占用',
-        '检查防火墙设置',
-        '点击"自动修复"重新启动',
-        '或手动启动Redis服务'
-      ]
-    }
-  }
-}
-
-// 检查网络
-const checkNetwork = async () => {
-  envStatus.network.status = 'checking'
-  envStatus.network.message = '检查中...'
-  
-  try {
-    const response = await api.get('/api/system/check-network')
-    
-    if (response.connected) {
-      envStatus.network.status = 'success'
-      envStatus.network.message = `连接正常 (延迟: ${response.latency}ms)`
-      envStatus.network.progress = 100
-    } else {
-      envStatus.network.status = 'error'
-      envStatus.network.message = '无法连接'
-      errors.value.network = {
-        title: '网络连接异常',
-        description: '无法连接到KOOK服务器',
-        type: 'warning',
-        critical: false,
-        fixable: false,
-        solutions: [
-          '检查网络连接',
-          '检查防火墙或安全软件设置',
-          '尝试使用代理或VPN',
-          '联系网络管理员'
-        ]
-      }
-    }
-  } catch (error) {
-    envStatus.network.status = 'error'
-    envStatus.network.message = '检查失败'
-  }
-}
-
-// 获取结果图标
-const getResultIcon = () => {
-  if (checkStatus.value === 'checking') return 'loading'
-  if (checkStatus.value === 'success') return 'success'
-  return 'error'
-}
-
-// 获取标题
-const getTitle = () => {
-  if (checkStatus.value === 'checking') {
-    return '正在检查系统环境...'
-  } else if (checkStatus.value === 'success') {
-    return '✅ 环境检查通过！'
+  if (failed === 0) {
+    return '✅ 环境检查通过'
   } else {
-    return '⚠️ 发现环境问题'
+    return `⚠️ 发现 ${failed} 个问题`
   }
 }
 
-// 获取状态图标
-const getStatusIcon = (key) => {
-  const status = envStatus[key].status
-  if (status === 'success') return 'CircleCheck'
-  if (status === 'error') return 'CircleClose'
-  if (status === 'checking' || status === 'downloading' || status === 'starting') {
-    return 'Loading'
-  }
-  return 'Remove'
-}
+const runCheck = async () => {
+  try {
+    checking.value = true
+    progress.value = 0
+    checkResults.value = null
 
-// 获取状态颜色
-const getStatusColor = (key) => {
-  const status = envStatus[key].status
-  if (status === 'success') return '#67C23A'
-  if (status === 'error') return '#F56C6C'
-  if (status === 'checking' || status === 'downloading' || status === 'starting') {
-    return '#409EFF'
-  }
-  return '#909399'
-}
+    // 模拟进度
+    const progressInterval = setInterval(() => {
+      if (progress.value < 90) {
+        progress.value += 10
+      }
+    }, 200)
 
-// 获取Tag类型
-const getStatusTagType = (key) => {
-  const status = envStatus[key].status
-  if (status === 'success') return 'success'
-  if (status === 'error') return 'danger'
-  if (status === 'checking' || status === 'downloading' || status === 'starting') {
-    return 'primary'
-  }
-  return 'info'
-}
+    const response = await api.get('/environment/check')
+    
+    clearInterval(progressInterval)
+    progress.value = 100
+    
+    checkResults.value = response
+    
+    setTimeout(() => {
+      checking.value = false
+    }, 500)
 
-// 重试检查
-const retryCheck = () => {
-  errors.value = {}
-  startEnvironmentCheck()
-}
-
-// 自动修复
-const autoFix = async (key) => {
-  if (key === 'chromium') {
-    await downloadChromium()
-  } else if (key === 'redis') {
-    await checkRedis()
+  } catch (error) {
+    checking.value = false
+    ElMessage.error('环境检查失败：' + (error.response?.data?.detail || error.message))
   }
 }
 
-// 下一步
-const handleNext = () => {
-  emit('next')
+const handleFix = async (issueName) => {
+  try {
+    fixing.value[issueName] = true
+    
+    const response = await api.post(`/environment/fix/${encodeURIComponent(issueName)}`)
+    
+    if (response.success) {
+      ElMessage.success(`✅ ${issueName} 修复成功`)
+      // 重新检查
+      await runCheck()
+    } else {
+      ElMessage.error(`❌ ${issueName} 修复失败: ${response.message}`)
+    }
+    
+  } catch (error) {
+    ElMessage.error('修复失败：' + (error.response?.data?.detail || error.message))
+  } finally {
+    fixing.value[issueName] = false
+  }
 }
 
-// 跳过
-const handleSkip = () => {
-  ElMessage.warning('已忽略环境检查错误，部分功能可能无法正常使用')
-  emit('next')
+const handleFixAll = async () => {
+  try {
+    const fixableIssues = checkResults.value.failed.filter(item => item.fixable)
+    
+    if (fixableIssues.length === 0) {
+      return
+    }
+
+    const confirmed = await ElMessageBox.confirm(
+      `将尝试自动修复 ${fixableIssues.length} 个问题，是否继续？`,
+      '一键修复',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    if (!confirmed) return
+
+    for (const issue of fixableIssues) {
+      await handleFix(issue.name)
+    }
+
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('批量修复失败：' + error.message)
+    }
+  }
 }
+
+const handleRecheck = () => {
+  runCheck()
+}
+
+const openHelp = () => {
+  // 打开帮助页面
+  window.open('/help#environment', '_blank')
+}
+
+// 生命周期
+onMounted(() => {
+  runCheck()
+})
 </script>
 
 <style scoped>
-.check-item {
-  padding: 15px;
-  border: 1px solid #DCDFE6;
-  border-radius: 4px;
-  background-color: #FAFAFA;
+.wizard-step-environment {
+  padding: 20px;
 }
 
-.check-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+h2 {
+  text-align: center;
   margin-bottom: 10px;
 }
 
-.check-label {
-  flex: 1;
-  font-size: 16px;
-  font-weight: 500;
+.description {
+  text-align: center;
+  color: #666;
+  margin-bottom: 30px;
 }
 
-.check-detail {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #F5F7FA;
-  border-radius: 4px;
+.check-results {
+  margin: 30px 0;
+}
+
+.results-list {
+  margin-top: 20px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.el-timeline {
+  padding-left: 20px;
 }
 </style>
