@@ -59,7 +59,7 @@
 
 ## 📋 功能特性
 
-### 核心功能
+### v6.0.0 核心功能
 
 #### 消息抓取
 - 🌐 **Playwright驱动** - 稳定可靠的浏览器自动化
@@ -121,28 +121,44 @@
 
 ### 一键安装（真正的零门槛）
 
-#### Windows
+#### Windows（3分钟）
+
 ```bash
-# 1. 下载安装包
+# 1. 下载安装包（~150MB）
 https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-Setup.exe
 
-# 2. 双击运行，3分钟完成安装
-# 3. 自动启动，完成5步配置向导
+# 2. 双击运行 KOOK-Forwarder-6.0.0-Setup.exe
+# 3. 选择安装路径（默认即可）
+# 4. 等待2-3分钟
+# 5. 勾选"运行应用" → 完成
+
+✅ 自动配置所有组件
+✅ 创建开始菜单快捷方式
+✅ 创建桌面快捷方式
 ```
 
-#### macOS
-```bash
-# 1. 下载DMG
-https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS.dmg
+#### macOS（3分钟）
 
-# 2. 打开.dmg文件
-# 3. 拖动到Applications文件夹
-# 4. 右键 → 打开（首次需要）
+```bash
+# 1. 下载DMG（~180MB）
+# Intel Mac:
+https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS-x64.dmg
+
+# Apple Silicon (M1/M2/M3):
+https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS-arm64.dmg
+
+# 2. 打开DMG文件
+# 3. 拖动应用到Applications文件夹
+# 4. 右键应用 → 打开（首次需要）
+
+✅ 原生支持Apple Silicon
+✅ 自动集成到Launchpad
 ```
 
-#### Linux
+#### Linux（2分钟）
+
 ```bash
-# 1. 下载AppImage
+# 1. 下载AppImage（~160MB）
 wget https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-x64.AppImage
 
 # 2. 添加执行权限
@@ -150,9 +166,37 @@ chmod +x KOOK-Forwarder-6.0.0-x64.AppImage
 
 # 3. 双击运行或命令行
 ./KOOK-Forwarder-6.0.0-x64.AppImage
+
+✅ 也提供 .deb 和 .rpm 包
+✅ 自包含，无依赖冲突
 ```
 
 🎯 **无需安装任何依赖！Python、Node.js、Redis、Chromium 全部内置！**
+
+### 首次配置（5分钟）
+
+```
+步骤1: 欢迎页（30秒）
+  ↓
+步骤2: 登录KOOK（1分钟）
+  • Chrome扩展一键导出（推荐，5秒）✨
+  • 或账号密码登录
+  • 或手动粘贴Cookie（支持10+种格式）✨
+  ↓
+步骤3: 选择服务器和频道（1分钟）
+  ↓
+步骤4: 配置Bot（1-2分钟）
+  • Discord / Telegram / 飞书
+  • 实时测试连接
+  ↓
+步骤5: 频道映射（30秒）
+  • 一键智能映射（推荐，95%准确）✨
+  • 或手动拖拽映射
+  ↓
+完成！自动开始转发 ✅
+```
+
+**详细教程**: [QUICK_START_V6.md](QUICK_START_V6.md)
 
 ### 首次配置（5步向导）
 
