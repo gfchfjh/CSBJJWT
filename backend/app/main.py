@@ -7,6 +7,12 @@ from contextlib import asynccontextmanager
 from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix, auth_master_password
 # ✅ P0-P1优化新增: 增强版API
 from .api import password_reset_enhanced, environment_autofix_enhanced, help_system
+# ✅ P0-1新增: 视频管理API
+from .api import video_api
+# ✅ P0-2新增: 邮件管理API
+from .api import email_api
+# ✅ P0-4新增: 文件安全API
+from .api import file_security_api
 from .api import performance  # v1.12.0 性能监控API
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
@@ -215,6 +221,9 @@ app.include_router(environment_autofix.router)  # 环境一键修复 🆕 P0-2�
 app.include_router(password_reset_enhanced.router)  # 邮箱验证码重置 🆕 P0-14优化
 app.include_router(environment_autofix_enhanced.router)  # 增强环境修复 🆕 P0-3优化
 app.include_router(help_system.router)  # 完整帮助系统 🆕 P1-4优化
+app.include_router(video_api.router)  # 视频管理API 🆕 P0-1优化
+app.include_router(email_api.router)  # 邮件管理API 🆕 P0-2优化
+app.include_router(file_security_api.router)  # 文件安全API 🆕 P0-4优化
 
 
 @app.get("/")

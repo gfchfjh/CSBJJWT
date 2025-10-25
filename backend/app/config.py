@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     api_token: Optional[str] = None  # API访问Token（如果设置则启用认证）
     api_token_header: str = "X-API-Token"  # Token请求头名称
     
+    # ✅ P0-2新增: 邮件配置（SMTP）
+    smtp_enabled: bool = False  # 是否启用邮件功能
+    smtp_host: str = "smtp.gmail.com"  # SMTP服务器地址
+    smtp_port: int = 587  # SMTP端口
+    smtp_username: Optional[str] = None  # SMTP用户名
+    smtp_password: Optional[str] = None  # SMTP密码
+    smtp_from_email: Optional[str] = None  # 发件人邮箱
+    smtp_use_tls: bool = True  # 是否使用TLS加密
+    
     # 验证码自动识别配置
     captcha_2captcha_api_key: Optional[str] = None
     captcha_auto_solve: bool = True  # 是否启用自动识别

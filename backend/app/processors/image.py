@@ -51,8 +51,12 @@ class ImageProcessor:
             'access_logs': []  # 访问日志（最近100条）
         }
         
-        # ✅ 优化11: Token清理任务标志
-        self._cleanup_task_running = False
+        # ✅ P1-1优化: Token清理任务
+        self._cleanup_task = None
+        self._cleanup_running = False
+        
+        # 启动Token清理任务
+        self.start_cleanup_task()
     
     async def download_image(self, url: str, 
                             cookies: Optional[Dict] = None,

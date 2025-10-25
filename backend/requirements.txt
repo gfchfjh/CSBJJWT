@@ -1,60 +1,39 @@
-# Web框架
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-python-multipart==0.0.6
+# FastAPI and dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
 
-# 异步和HTTP
-aiohttp==3.9.1
-asyncio==3.4.3
-httpx==0.25.2
+# Async HTTP
+aiohttp>=3.9.0
+aiofiles>=23.2.1
 
-# 浏览器自动化
-playwright==1.40.0
+# Database
+aiosqlite>=0.19.0
 
-# 消息队列
-redis==5.0.1
-aioredis==2.0.1
+# Redis
+redis>=5.0.1
+aioredis>=2.0.1
 
-# 消息转发
-discord-webhook==1.3.0
-python-telegram-bot==20.7
-lark-oapi==1.2.9
+# Playwright (browser automation)
+playwright>=1.40.0
 
-# 数据库
-aiosqlite==0.19.0
+# Image processing
+Pillow>=10.1.0
 
-# 工具库
-cryptography==41.0.7
-Pillow==10.1.0
-python-dotenv==1.0.0
-pydantic-settings==2.1.0
-psutil==5.9.6  # v1.12.0 性能监控
+# Crypto
+cryptography>=41.0.7
+bcrypt>=4.1.2
 
-# 日志
-loguru==0.7.2
+# Utils
+python-dotenv>=1.0.0
+orjson>=3.9.10  # High-performance JSON
 
-# 日期时间
-python-dateutil==2.8.2
+# ✅ P0-2新增: 邮件支持
+aiosmtplib>=3.0.1  # Async SMTP client
+email-validator>=2.1.0  # Email validation
 
-# 邮件发送
-aiosmtplib==3.0.1
-
-# 定时任务
-apscheduler==3.10.4
-
-# 版本比较
-packaging==23.2
-
-# YAML解析
-PyYAML==6.0.1
-
-# HTML解析（链接预览）
-beautifulsoup4==4.12.2
-lxml==4.9.3
-
-# OCR识别（验证码）
-ddddocr==1.4.11
-
-# ✅ P1-5优化: 高性能JSON库（速度提升3-5倍）
-orjson==3.9.10
+# Optional: Advanced features
+# 2captcha-python>=1.2.0  # Captcha solving (optional)
+# schedule>=1.2.0  # Task scheduling (optional)
