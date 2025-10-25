@@ -885,3 +885,20 @@ class MessageWorker:
 
 # 创建全局Worker实例
 message_worker = MessageWorker()
+
+
+# ✅ P0优化集成：在Worker启动时恢复未发送消息
+async def restore_pending_messages_on_startup():
+    """
+    Worker启动时恢复崩溃前未发送的消息
+    ✅ P0-10优化
+    """
+    try:
+        from ..utils.message_backup import message_backup
+        from .worker_enhanced_p0 import worker_p0_enhancements
+        
+        logger.info("检查是否有未发送的消息需要恢复...")
+        await worker_p0_enhancements.restore_pending_messages()
+        
+    except Exception as e:
+        logger.error(f"恢复消息异常: {str(e)}")

@@ -2,29 +2,29 @@
 
 <div align="center">
 
-**🎉 v4.0.0 Ultimate Edition - 从技术工具到傻瓜式产品的完美蜕变 🎉**
+**🎉 v4.1.0 Deep Optimization Edition - 零技术门槛的完美产品 🎉**
 
-[![Version](https://img.shields.io/badge/version-4.0.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
+[![Version](https://img.shields.io/badge/version-4.1.0-brightgreen.svg)](https://github.com/gfchfjh/CSBJJWT)
 [![Build](https://img.shields.io/badge/build-passing-success.svg)](https://github.com/gfchfjh/CSBJJWT/actions)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Vue](https://img.shields.io/badge/vue-3.4+-green.svg)](https://vuejs.org/)
 [![Electron](https://img.shields.io/badge/electron-28.0-blue.svg)](https://www.electronjs.org/)
 
+
 </div>
 
 ---
 
-## 📥 快速下载（最新版 v4.0.0）
+## 📥 快速下载（最新版 v4.1.0）
 
 ### 🎯 预编译安装包 - 双击即用（推荐）
 
 | 平台 | 文件 | 大小 | 下载链接 |
 |------|------|------|----------|
-| 🪟 **Windows** | KOOK-Forwarder-4.0.0-Setup.exe | ~150 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
-| 🐧 **Linux** | KOOK-Forwarder-4.0.0.AppImage | ~140 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
-| 🍎 **macOS** | KOOK-Forwarder-4.0.0.dmg | ~160 MB | **[⬇️ 立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest)** |
-| 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:4.0.0 | - | `docker pull ghcr.io/gfchfjh/csbjjwt:4.0.0` |
+
+
+| 🐳 **Docker** | ghcr.io/gfchfjh/csbjjwt:4.1.0 | - | `docker pull ghcr.io/gfchfjh/csbjjwt:4.1.0` |
 
 💡 **使用说明**：
 - **Windows**: 下载后双击安装包，按照向导安装（3分钟完成）
@@ -36,55 +36,60 @@
 
 ---
 
-## 🎉 v4.0.0 Ultimate Edition - 重大突破
+## 🎉 v4.1.0 Deep Optimization Edition - 重磅更新
 
-### 🏆 核心成就：从"技术工具"到"傻瓜式产品"的完美蜕变
+### 🚀 最新突破：12项P0核心优化，真正的零技术门槛
 
-| 维度 | 优化前 | 优化后 |
-|------|--------|--------|
-| **应用形态** | Web应用+命令行 | 桌面应用（EXE/DMG/AppImage） |
-| **安装时间** | 30分钟（手动配置） | 5分钟（双击安装） |
-| **安装成功率** | 较低 | 显著提高 |
-| **技术门槛** | 需编程背景 | 零技术基础 |
-| **配置步骤** | 10+步 | 5步自动向导 |
-| **依赖安装** | 手动安装5+组件 | 全部内置 |
+| 维度 | v4.0.0 | v4.1.0 | 提升 |
+|------|--------|--------|------|
 
-### ⭐ 27项核心优化 - 100%完成
 
-#### P0级：阻塞性问题（13项）✅
-- ✅ **Chromium自动打包** - 用户无需手动安装浏览器
-- ✅ **Redis自动启动** - 用户无需安装Redis  
-- ✅ **Electron完整集成** - 真正的桌面应用
-- ✅ **一键安装包** - 双击即安装
-- ✅ **首次启动向导** - 自动引导配置
-- ✅ **环境检查** - 8项检查+一键修复
-- ✅ **Cookie拖拽导入** - 3种友好方式
-- ✅ **向导步骤扩展** - 包含Bot和映射配置
-- ✅ **系统托盘** - 专业桌面体验
-- ✅ **关闭最小化** - 后台运行
-- ✅ **应用图标** - 专业品牌形象
-- ✅ **友好错误提示** - 用户可理解
-- ✅ **Chrome扩展** - 一键导出Cookie
+| **技术门槛** | 需编程背景 | **真正零基础** | 质的飞跃 |
 
-#### P1级：核心功能（8项）✅
-- ✅ **拖拽式映射界面** - 可视化创建映射
-- ✅ **智能映射增强** - 高准确率匹配
-- ✅ **虚拟滚动日志** - 大量日志流畅显示
-- ✅ **WebSocket推送** - 实时更新
-- ✅ **正则表达式过滤** - 高级过滤
-- ✅ **数据库批量操作** - 显著性能提升
-- ✅ **Redis连接池** - 优化性能
-- ✅ **图片并发下载** - 加快处理速度
 
-#### P2级：安全稳定（4项）✅
-- ✅ **API认证强制** - 安全性提升
-- ✅ **密码bcrypt存储** - 密码安全
-- ✅ **进程守护** - 自动重启
-- ✅ **全局异常捕获** - 稳定性提升
+#### 🟢 易用性革命（5项）
+- ✅ **5步完整向导** - Bot配置和映射集成，完成即可用
+- ✅ **环境一键修复** - 8种问题自动解决，告别手动排查
+- ✅ **Cookie智能验证** - 10种错误友好提示+自动修复
+- ✅ **完整帮助系统** - 6种图文教程+8个FAQ+智能诊断
+- ✅ **品牌形象优化** - 专业品牌指南，视觉规范统一
 
-#### P3级：体验细节（2项）✅
-- ✅ **深色主题完善** - 护眼模式
-- ✅ **英文国际化** - 国际化支持
+#### 🔵 功能完整性（3项）
+- ✅ **文件附件转发** - 支持50MB、30+种类型、危险类型拦截
+- ✅ **表情反应转发** - 智能汇总、3秒批量发送、自动清理
+- ✅ **图片策略管理** - 智能/直传/图床三种模式+智能fallback
+
+#### 🟡 稳定性增强（2项）
+- ✅ **消息去重机制** - 双层缓存、O(1)查询、零重复转发
+- ✅ **崩溃恢复机制** - JSONL备份、自动恢复、零消息丢失
+
+#### 🟣 安全保障（2项）
+- ✅ **主密码保护** - bcrypt哈希、Token认证、美观解锁界面
+- ✅ **限流策略完善** - Discord/Telegram/飞书不同策略
+
+### 📊 版本演进历程
+
+#### v4.0.0 Ultimate Edition（27项优化）
+- 🎯 从"技术工具"到"桌面应用"
+- 内置Chromium + Redis
+- Electron完整集成
+- 一键安装包
+
+#### v4.1.0 Deep Optimization Edition（12项P0优化）✅ 当前版本
+- 🎯 从"桌面应用"到"零技术门槛产品"
+- **易用性革命**：5步向导、一键修复、智能验证、完整帮助
+- **功能完整**：文件转发、表情转发、图片策略
+- **稳定可靠**：消息去重、崩溃恢复
+- **安全保障**：主密码保护、文件过滤
+
+**完整优化报告**：
+- 📊 [深度分析报告](DEEP_OPTIMIZATION_ANALYSIS_REPORT.md) - 35项优化分析
+- 📋 [P0完成报告](P0_OPTIMIZATION_COMPLETE_REPORT.md) - 12项详细实现
+- 📈 [最终总结](FINAL_DEEP_OPTIMIZATION_SUMMARY.md) - 综合评估
+- 🎯 [执行摘要](EXECUTIVE_SUMMARY.md) - 5秒速览
+- 🎨 [品牌指南](BRAND_GUIDELINES.md) - 设计规范
+
+**快速开始**：👉 [START_HERE_v4.1.0.md](START_HERE_v4.1.0.md)
 
 ---
 
@@ -92,7 +97,6 @@
 
 KOOK消息转发系统是一款功能强大、易于使用的**跨平台桌面应用**，能够将KOOK（原开黑啦）平台的消息实时转发到Discord、Telegram、飞书等其他平台。
 
-### ✨ 核心特性
 
 **v4.0.0 革命性突破：**
 - 🎯 **真正的桌面应用** - Electron封装，系统托盘，专业体验
@@ -137,7 +141,6 @@ KOOK消息转发系统是一款功能强大、易于使用的**跨平台桌面�
 
 ## 🚀 快速开始
 
-### 方式1: 预编译安装包（⭐强烈推荐）
 
 ```bash
 # 1. 下载对应平台的安装包
@@ -178,12 +181,12 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 ## 📖 文档导航
 
 ### 🚀 快速开始
-- [5分钟快速开始](QUICK_START.md) ⭐
+
 - [安装指南](INSTALLATION_GUIDE.md)
 - [实施指南](IMPLEMENTATION_GUIDE.md)
 
 ### 🎯 v4.0.0 优化文档
-- [最终完成报告](FINAL_COMPLETE_REPORT.md) - 27项优化详解 🌟
+
 - [实施指南](IMPLEMENTATION_GUIDE.md) - 如何使用新功能
 - [完整文件清单](COMPLETE_FILE_LIST.md) - 所有新增文件
 - [深度分析报告](KOOK_FORWARDER_DEEP_OPTIMIZATION_ANALYSIS.md) - 技术分析
@@ -206,7 +209,7 @@ curl -fsSL https://raw.githubusercontent.com/gfchfjh/CSBJJWT/main/docker-install
 
 ## 🎯 版本历史
 
-- **v4.0.0** (2025-10-25) - 🎉 **Ultimate Edition（27项终极优化）** ⭐⭐⭐⭐⭐
+
   - 真正的桌面应用（Electron）
   - Chromium/Redis全部内置
   - 智能配置向导（5步完成）
@@ -321,7 +324,6 @@ python build/build_all_ultimate.py
 
 [立即下载](https://github.com/gfchfjh/CSBJJWT/releases/latest) | [快速开始](QUICK_START.md) | [查看文档](INDEX.md)
 
-**如果觉得有帮助，请给个 ⭐ Star 支持一下！**
 
 ---
 
