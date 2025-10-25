@@ -409,8 +409,8 @@ print(f'批量插入10000条耗时: {elapsed:.2f}秒')
 - ✅ **真正的桌面应用**: Windows EXE/macOS DMG/Linux AppImage
 - ✅ **一键安装**: 双击安装包，5分钟完成配置
 - ✅ **全自动**: Chromium/Redis全部内置，无需手动安装
-- ✅ **智能配置**: 5步向导，75%+自动映射准确率
-- ✅ **性能优化**: 数据库10x，Redis 5x，图片3x
+- ✅ **智能配置**: 5步向导，高自动映射准确率
+- ✅ **性能优化**: 数据库显著，Redis 明显，图片加速
 - ✅ **安全加固**: bcrypt密码，API Token，全局异常捕获
 - ✅ **用户友好**: 友好错误提示，拖拽操作，虚拟滚动
 
@@ -503,7 +503,7 @@ gh release create v4.0.0 \
 
 ---
 
-### 优化3: 智能映射（配置效率提升3x）
+### 优化3: 智能映射（配置效率提升加速）
 
 **问题**: 手动配置100个频道映射需要1小时
 
@@ -526,7 +526,7 @@ gh release create v4.0.0 \
 
 ### 优化4: 性能优化（处理速度提升3-10倍）
 
-#### 数据库批量操作（10x）
+#### 数据库批量操作（显著）
 ```python
 # 优化前（逐条插入）
 for log in logs:  # 10000条
@@ -535,10 +535,10 @@ for log in logs:  # 10000条
 
 # 优化后（批量插入）
 db_ultimate.add_message_logs_batch(logs)  # 10000条
-# 总耗时: 1秒（↑10x）
+# 总耗时: 1秒（↑显著）
 ```
 
-#### Redis连接池（5x）
+#### Redis连接池（明显）
 ```python
 # 优化前（每次创建连接）
 redis = await aioredis.create_redis('redis://localhost')
@@ -547,10 +547,10 @@ await redis.close()
 
 # 优化后（连接池复用）
 await redis_pool.set(key, value)  # 0.002秒（仅操作时间）
-# 性能提升: 5x
+# 性能提升: 明显
 ```
 
-#### 图片并发下载（3x）
+#### 图片并发下载（加速）
 ```python
 # 优化前（串行下载）
 for url in image_urls:  # 10张图
@@ -560,7 +560,7 @@ for url in image_urls:  # 10张图
 # 优化后（并发下载）
 results = await download_concurrent(image_urls)  # 10张图
 # 总耗时: 3秒（最慢的一张）
-# 性能提升: 3x
+# 性能提升: 加速
 ```
 
 ---
@@ -617,9 +617,9 @@ vuedraggable            # 拖拽组件（前端）
 - [ ] 正则表达式过滤正常工作
 
 ### 性能与安全
-- [ ] 数据库批量操作性能提升10x
-- [ ] Redis连接池性能提升5x
-- [ ] 图片并发下载性能提升3x
+- [ ] 数据库批量操作性能提升显著
+- [ ] Redis连接池性能提升明显
+- [ ] 图片并发下载性能提升加速
 - [ ] bcrypt密码哈希正常工作
 - [ ] API Token认证正常工作
 - [ ] 全局异常可被捕获

@@ -14,14 +14,14 @@
 | 维度 | 优化前 | 优化后 | 提升幅度 |
 |------|--------|--------|----------|
 | **应用形态** | Web应用+命令行 | 桌面应用（EXE/DMG/AppImage） | 质的飞跃 |
-| **安装时间** | 30分钟（手动配置） | 5分钟（双击安装） | ↓83% |
-| **安装成功率** | 40% | 85%+ | ↑113% |
+| **安装时间** | 30分钟（手动配置） | 5分钟（双击安装） | 明显降低 |
+| **安装成功率** | 40% | 85%+ | 显著提升 |
 | **技术门槛** | 需编程背景 | 零技术基础 | 质的飞跃 |
-| **配置步骤** | 10+步 | 5步自动向导 | ↓50% |
+| **配置步骤** | 10+步 | 5步自动向导 | 明显降低 |
 | **依赖安装** | 手动安装5+组件 | 全部内置 | 质的飞跃 |
 | **错误诊断** | 技术错误信息 | 8项检查+友好提示 | 质的飞跃 |
 | **崩溃恢复** | 手动重启 | 自动重启（5次） | 质的飞跃 |
-| **用户满意度** | 30% | 90%+ | ↑200% |
+| **用户满意度** | 30% | 90%+ | 显著提升 |
 
 ---
 
@@ -50,13 +50,13 @@
 | # | 优化项 | 核心文件 | 影响 |
 |---|--------|----------|------|
 | 14 | **拖拽式映射界面** | `frontend/src/components/DraggableMappingUltimate.vue` | 可视化创建映射 |
-| 15 | **智能映射增强** | `backend/app/utils/smart_mapping_ultimate.py` | 75%+准确率 |
+| 15 | **智能映射增强** | `backend/app/utils/smart_mapping_ultimate.py` | 高准确率 |
 | 16 | **虚拟滚动日志** | `frontend/src/components/VirtualLogListUltimate.vue` | 10000+条流畅 |
 | 17 | **WebSocket推送** | `backend/app/api/websocket_ultimate.py` | 实时更新 |
 | 18 | **正则表达式过滤** | `backend/app/processors/filter_ultimate.py` | 高级过滤 |
-| 19 | **数据库批量操作** | `backend/app/database_ultimate.py` | 性能↑10x |
-| 20 | **Redis连接池** | `backend/app/queue/redis_client_ultimate.py` | 性能↑5x |
-| 21 | **图片并发下载** | `backend/app/processors/image_ultimate.py` | 处理速度↑3x |
+| 19 | **数据库批量操作** | `backend/app/database_ultimate.py` | 性能↑显著 |
+| 20 | **Redis连接池** | `backend/app/queue/redis_client_ultimate.py` | 性能↑明显 |
+| 21 | **图片并发下载** | `backend/app/processors/image_ultimate.py` | 处理速度↑加速 |
 
 ### P2级：安全稳定（4项）✅ 100%完成
 
@@ -233,7 +233,7 @@ chrome-extension/
   └── 飞书应用（可选）
 
 步骤5: 🔀 快速映射（1分钟）
-  ├── 一键智能映射（75%+准确率）
+  ├── 一键智能映射（高准确率）
   └── 手动调整
 
 步骤6: ✅ 完成
@@ -249,7 +249,7 @@ chrome-extension/
 
 ### 3. 性能优化（处理速度提升3-10倍）
 
-#### 数据库批量操作（10x提升）
+#### 数据库批量操作（显著提升）
 ```python
 # 优化前：逐条插入
 for log in logs:
@@ -259,7 +259,7 @@ for log in logs:
 db.add_message_logs_batch(logs)  # 10000条 = 1秒
 ```
 
-#### Redis连接池（5x提升）
+#### Redis连接池（明显提升）
 ```python
 # 优化前：每次创建连接
 redis = await aioredis.create_redis('redis://localhost')
@@ -270,7 +270,7 @@ redis.close()
 await redis_pool.set(key, value)  # 直接使用池中连接
 ```
 
-#### 图片并发下载（3x提升）
+#### 图片并发下载（加速提升）
 ```python
 # 优化前：串行下载
 for url in image_urls:
@@ -368,15 +368,15 @@ ConnectionRefusedError: [Errno 111] Connection refused
 ## 📊 优化效果总览
 
 ### 易用性提升
-- ✅ **安装**: 30分钟 → 5分钟（↓83%）
-- ✅ **成功率**: 40% → 85%+（↑113%）
+- ✅ **安装**: 30分钟 → 5分钟（明显降低）
+- ✅ **成功率**: 40% → 85%+（显著提升）
 - ✅ **技术门槛**: 需编程 → 零基础（质变）
 - ✅ **依赖**: 5个手动安装 → 0个（全内置）
 
 ### 性能提升
-- ✅ **数据库**: 10x批量操作提升
-- ✅ **Redis**: 5x连接池提升
-- ✅ **图片**: 3x并发处理提升
+- ✅ **数据库**: 显著批量操作提升
+- ✅ **Redis**: 明显连接池提升
+- ✅ **图片**: 加速并发处理提升
 - ✅ **日志**: 10000+条流畅渲染
 
 ### 安全性提升
@@ -447,7 +447,7 @@ await redis_manager_ultimate.create_connection_pool()
 ```python
 from backend.app.database_ultimate import db_ultimate
 
-# 批量插入日志（性能提升10x）
+# 批量插入日志（性能提升显著）
 logs = [...]  # 1000条日志
 db_ultimate.add_message_logs_batch(logs)  # 0.1秒完成
 
@@ -460,7 +460,7 @@ db_ultimate.add_channel_mappings_batch(mappings)
 ```python
 from backend.app.processors.image_ultimate import image_processor_ultimate
 
-# 并发下载+压缩（性能提升3x）
+# 并发下载+压缩（性能提升加速）
 image_urls = [...]  # 10张图片
 processed = await image_processor_ultimate.process_images_concurrent(
     image_urls, 
@@ -511,7 +511,7 @@ except Exception as e:
 10. ✅ Chrome扩展（一键导出）
 
 #### 核心功能
-11. ✅ 智能映射引擎（75%+准确率）
+11. ✅ 智能映射引擎（高准确率）
 12. ✅ 拖拽映射界面
 13. ✅ 正则表达式过滤
 14. ✅ 虚拟滚动日志
@@ -584,7 +584,7 @@ except Exception as e:
 - 🎯 **首次安装成功率**: 40% → 85%+
 - 🎯 **配置时间**: 30分钟 → 5分钟
 - 🎯 **用户满意度**: 30% → 90%+
-- 🎯 **技术支持工作量**: ↓80%
+- 🎯 **技术支持工作量**: 明显降低
 
 ### 开发效率
 - 🎯 **构建时间**: 2小时 → 15分钟
@@ -593,8 +593,8 @@ except Exception as e:
 
 ### 性能指标
 - 🎯 **消息处理**: 100条/秒 → 300条/秒
-- 🎯 **数据库操作**: ↑10x
-- 🎯 **图片处理**: ↑3x
+- 🎯 **数据库操作**: ↑显著
+- 🎯 **图片处理**: ↑加速
 - 🎯 **内存占用**: 150MB → 100MB
 
 ---
