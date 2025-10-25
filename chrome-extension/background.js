@@ -1,48 +1,42 @@
-// ✅ P0-2: 浏览器扩展 - 后台脚本
+// KOOK Cookie Exporter - Background Script
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('KOOK Cookie导出助手已安装');
-});
+console.log('KOOK Cookie Exporter background script loaded');
 
-// 监听来自content script的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'exportCookies') {
-    // 导出Cookie
-    chrome.cookies.getAll({ domain: '.kookapp.cn' }, (cookies) => {
-      if (chrome.runtime.lastError) {
-        sendResponse({ 
-          success: false, 
-          error: chrome.runtime.lastError.message 
-        });
-        return;
-      }
-
-      if (!cookies || cookies.length === 0) {
-        sendResponse({ 
-          success: false, 
-          error: '未找到Cookie' 
-        });
-        return;
-      }
-
-      // 格式化Cookie
-      const formattedCookies = cookies.map(c => ({
-        name: c.name,
-        value: c.value,
-        domain: c.domain,
-        path: c.path,
-        expires: c.expirationDate,
-        httpOnly: c.httpOnly,
-        secure: c.secure
-      }));
-
-      sendResponse({ 
-        success: true, 
-        cookies: formattedCookies 
-      });
-    });
-
-    // 返回true表示会异步调用sendResponse
-    return true;
+// 安装时的欢迎消息
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    console.log('KOOK Cookie Exporter installed!');
+    
+    // 可选：打开欢迎页面
+    // chrome.tabs.create({
+    //   url: 'welcome.html'
+    // });
   }
 });
+
+// 监听来自popup的消息（如果需要后台处理）
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'exportCookies') {
+    // 处理Cookie导出
+    handleCookieExport().then(sendResponse);
+    return true; // 异步响应
+  }
+});
+
+async function handleCookieExport() {
+  try {
+    const cookies = await chrome.cookies.getAll({
+      domain: '.kookapp.cn'
+    });
+    
+    return {
+      success: true,
+      cookies: cookies
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}

@@ -456,7 +456,7 @@ v主版本.次版本.修订版本
 
 <div align="center">
 
-**如果觉得这个项目有帮助，请给个 ⭐ Star 支持一下！**
+**如果觉得这个项目有帮助，请给个  Star 支持一下！**
 
 Made with ❤️ by KOOK Forwarder Team
 
