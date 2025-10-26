@@ -17,7 +17,7 @@
 | `OPTIMIZATION_COMPLETION_REPORT.md` | 15KB | 优化完成报告，内容已整合 |
 | `OPTIMIZATION_FINAL_REPORT.md` | 18KB | v6.3最终优化报告，已过时 |
 | `DOCUMENTATION_CLEANUP_REPORT.md` | 4.9KB | 历史文档清理记录，无需保留 |
-| `RATING_COMPARISON_CLEANUP_REPORT.md` | 11KB | 评分对比清理报告，历史记录 |
+| `RATING_COMPARISON_CLEANUP_REPORT.md` | 11KB | 历史清理报告，历史记录 |
 
 ### 旧版本文档（3个）
 | 文档名 | 大小 | 删除原因 |
