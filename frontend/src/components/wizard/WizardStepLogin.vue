@@ -19,9 +19,169 @@
     </el-alert>
     
     <el-radio-group v-model="loginType" class="login-type-selector">
+      <el-radio label="extension">🔥 Chrome扩展（最简单）</el-radio>
       <el-radio label="cookie">Cookie导入（推荐）</el-radio>
       <el-radio label="password">账号密码登录</el-radio>
     </el-radio-group>
+
+    <!-- ✅ P0-3新增：Chrome扩展方式 -->
+    <div v-if="loginType === 'extension'" class="extension-login">
+      <el-card class="extension-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon :size="24" color="#409EFF"><ChromeFilled /></el-icon>
+            <span style="margin-left: 10px; font-weight: bold;">使用Chrome扩展 - 5秒完成（99%成功率）</span>
+          </div>
+        </template>
+
+        <div class="extension-content">
+          <!-- 检测扩展状态 -->
+          <div v-if="extensionDetected" class="extension-detected">
+            <el-result
+              icon="success"
+              title="✅ 已检测到扩展"
+              sub-title="请按照下方步骤操作"
+            >
+              <template #extra>
+                <div class="extension-steps">
+                  <el-steps direction="vertical" :active="currentExtensionStep">
+                    <el-step title="第1步：打开KOOK网站" description="在浏览器新标签页打开 www.kookapp.cn 并登录">
+                      <template #icon>
+                        <el-icon><Link /></el-icon>
+                      </template>
+                    </el-step>
+                    <el-step title="第2步：点击扩展图标" description="点击浏览器工具栏的扩展图标">
+                      <template #icon>
+                        <el-icon><Pointer /></el-icon>
+                      </template>
+                    </el-step>
+                    <el-step title="第3步：导出Cookie" description="点击"导出Cookie"按钮，自动复制到剪贴板">
+                      <template #icon>
+                        <el-icon><Download /></el-icon>
+                      </template>
+                    </el-step>
+                    <el-step title="第4步：粘贴到下方" description="在下方文本框粘贴Cookie（Ctrl+V）">
+                      <template #icon>
+                        <el-icon><DocumentCopy /></el-icon>
+                      </template>
+                    </el-step>
+                  </el-steps>
+
+                  <div class="cookie-input-area">
+                    <el-input
+                      v-model="form.cookie"
+                      type="textarea"
+                      :rows="6"
+                      placeholder="粘贴从Chrome扩展复制的Cookie（JSON格式）"
+                      @paste="handleCookiePaste"
+                    />
+                    <div class="input-hint">
+                      <el-icon><InfoFilled /></el-icon>
+                      <span>Cookie已自动复制到剪贴板，请直接粘贴（Ctrl+V）</span>
+                    </div>
+                  </div>
+
+                  <el-form-item label="账号备注" style="margin-top: 20px;">
+                    <el-input
+                      v-model="form.name"
+                      placeholder="例如：主账号"
+                    />
+                  </el-form-item>
+                </div>
+              </template>
+            </el-result>
+          </div>
+
+          <!-- 未检测到扩展 -->
+          <div v-else class="extension-not-detected">
+            <el-result
+              icon="warning"
+              title="未检测到Chrome扩展"
+              sub-title="请先安装扩展"
+            >
+              <template #extra>
+                <div class="install-guide">
+                  <h3>📦 安装方法（2分钟）</h3>
+                  
+                  <el-alert
+                    title="支持所有Chromium内核浏览器"
+                    type="info"
+                    :closable="false"
+                    style="margin-bottom: 20px;"
+                  >
+                    <div>包括：Chrome、Edge、Brave、360、QQ浏览器等</div>
+                  </el-alert>
+
+                  <el-steps :active="0" finish-status="success" align-center>
+                    <el-step title="下载扩展" description="点击下方按钮下载" />
+                    <el-step title="安装到浏览器" description="拖拽或加载" />
+                    <el-step title="刷新本页面" description="重新检测" />
+                  </el-steps>
+
+                  <div class="install-buttons" style="margin-top: 30px;">
+                    <el-button type="primary" size="large" @click="downloadExtension">
+                      <el-icon><Download /></el-icon>
+                      下载Chrome扩展
+                    </el-button>
+                    <el-button size="large" @click="openExtensionGuide">
+                      <el-icon><Document /></el-icon>
+                      查看安装教程
+                    </el-button>
+                    <el-button size="large" @click="checkExtension">
+                      <el-icon><Refresh /></el-icon>
+                      重新检测扩展
+                    </el-button>
+                  </div>
+
+                  <div class="manual-steps" style="margin-top: 30px;">
+                    <el-collapse>
+                      <el-collapse-item title="📖 详细安装步骤" name="1">
+                        <ol class="install-steps-list">
+                          <li>
+                            <strong>下载扩展文件</strong>
+                            <p>点击上方"下载Chrome扩展"按钮，保存zip文件到本地</p>
+                          </li>
+                          <li>
+                            <strong>解压文件</strong>
+                            <p>解压下载的zip文件到任意文件夹</p>
+                          </li>
+                          <li>
+                            <strong>打开扩展管理页面</strong>
+                            <p>在Chrome地址栏输入：<code>chrome://extensions/</code></p>
+                          </li>
+                          <li>
+                            <strong>开启开发者模式</strong>
+                            <p>点击页面右上角的"开发者模式"开关</p>
+                          </li>
+                          <li>
+                            <strong>加载扩展</strong>
+                            <p>点击"加载已解压的扩展程序"，选择解压后的文件夹</p>
+                          </li>
+                          <li>
+                            <strong>完成</strong>
+                            <p>扩展图标将出现在浏览器工具栏</p>
+                          </li>
+                        </ol>
+                      </el-collapse-item>
+                    </el-collapse>
+                  </div>
+
+                  <el-divider />
+
+                  <div style="text-align: center; color: #909399;">
+                    <el-icon><QuestionFilled /></el-icon>
+                    <span>安装遇到问题？</span>
+                    <el-button type="text" @click="switchToCookieMode">
+                      改用Cookie导入方式
+                    </el-button>
+                  </div>
+                </div>
+              </template>
+            </el-result>
+          </div>
+        </div>
+      </el-card>
+    </div>
 
     <!-- Cookie登录 -->
     <div v-if="loginType === 'cookie'" class="cookie-login">

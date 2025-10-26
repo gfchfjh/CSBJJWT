@@ -51,6 +51,86 @@
       </el-col>
     </el-row>
     
+    <!-- ✅ P1-1新增：服务控制卡片 -->
+    <el-card class="service-control-card" style="margin-top: 20px">
+      <template #header>
+        <span>🎮 服务控制</span>
+      </template>
+      
+      <div class="service-status">
+        <el-tag 
+          :type="systemStore.status.service_running ? 'success' : 'danger'"
+          size="large"
+          effect="dark"
+        >
+          {{ systemStore.status.service_running ? '🟢 运行中' : '🔴 已停止' }}
+        </el-tag>
+        
+        <span class="uptime" v-if="systemStore.status.service_running">
+          运行时长: {{ formatUptime(systemStore.status.uptime) }}
+        </span>
+      </div>
+
+      <div class="control-buttons">
+        <el-button 
+          v-if="!systemStore.status.service_running"
+          type="success" 
+          size="large"
+          :loading="starting"
+          @click="startService"
+        >
+          <el-icon><VideoPlay /></el-icon>
+          启动服务
+        </el-button>
+        
+        <el-button 
+          v-else
+          type="danger" 
+          size="large"
+          :loading="stopping"
+          @click="stopService"
+        >
+          <el-icon><VideoPause /></el-icon>
+          停止服务
+        </el-button>
+        
+        <el-button 
+          size="large"
+          :loading="restarting"
+          :disabled="!systemStore.status.service_running"
+          @click="restartService"
+        >
+          <el-icon><RefreshRight /></el-icon>
+          重启服务
+        </el-button>
+        
+        <el-button 
+          size="large"
+          @click="showServiceLog"
+        >
+          <el-icon><View /></el-icon>
+          查看日志
+        </el-button>
+      </div>
+
+      <div class="service-info">
+        <el-descriptions :column="2" size="small" border>
+          <el-descriptions-item label="活跃账号">
+            {{ systemStore.status.active_accounts || 0 }} 个
+          </el-descriptions-item>
+          <el-descriptions-item label="配置的Bot">
+            {{ systemStore.status.configured_bots || 0 }} 个
+          </el-descriptions-item>
+          <el-descriptions-item label="频道映射">
+            {{ systemStore.status.active_mappings || 0 }} 个
+          </el-descriptions-item>
+          <el-descriptions-item label="队列消息">
+            {{ systemStore.status.queue_size || 0 }} 条
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+    </el-card>
+
     <!-- 快捷操作 -->
     <el-card class="actions-card" style="margin-top: 20px">
       <template #header>

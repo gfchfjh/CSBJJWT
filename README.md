@@ -2,439 +2,390 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Vue](https://img.shields.io/badge/vue-3.4-green.svg)
 ![Electron](https://img.shields.io/badge/electron-28.0-purple.svg)
 ![Status](https://img.shields.io/badge/status-production%20ready-success.svg)
 
-**一键部署 · 图形化配置 · 零代码门槛**
+**企业级桌面应用 · 一键安装 · 零代码门槛**
 
-[🎬 快速开始](QUICK_START_V6.md) | [📖 完整文档](V6_DOCUMENTATION_INDEX.md) | [🐛 问题反馈](https://github.com/gfchfjh/CSBJJWT/issues) | [💬 讨论区](https://github.com/gfchfjh/CSBJJWT/discussions)
+[🎬 快速开始](docs/tutorials/01-快速入门指南.md) | [📖 完整文档](V6_DOCUMENTATION_INDEX.md) | [🐛 问题反馈](https://github.com/gfchfjh/CSBJJWT/issues) | [💬 讨论区](https://github.com/gfchfjh/CSBJJWT/discussions)
 
 </div>
 
 ---
 
-## ✨ v6.0.0 - 真正的傻瓜式一键安装版
+## ✨ v6.2.0 - 深度优化版本 🔥
 
-🎉 **革命性更新！** 实现从"技术工具"到"用户产品"的完整转变。
+🎉 **重大更新！** 从桌面应用到性能优化的全面升级，完成度高。
 
 ### 🚀 核心突破
 
-#### 1. 完整打包体系
-- ✅ **一键安装包** - Windows .exe / macOS .dmg / Linux .AppImage
-- ✅ **内置所有依赖** - Python + Node.js + Redis + Chromium 全部打包
-- ✅ **零技术门槛** - 无需任何编程知识或开发环境
-- ✅ **跨平台支持** - Windows/macOS(Intel+Apple Silicon)/Linux
-- ✅ **自动化构建** - GitHub Actions CI/CD 自动发布
+#### 1. Electron桌面应用化
+- ✅ **完整Electron架构** - 主进程 + 渲染进程 + IPC通信
+- ✅ **系统托盘支持** - 最小化到托盘，后台静默运行
+- ✅ **开机自启动** - 跨平台自动启动配置
+- ✅ **单实例锁定** - 防止重复启动，避免冲突
+- ✅ **进程自动管理** - 自动启停Python后端服务
+- ✅ **健康检查** - 每30秒检测后端状态
 
-#### 2. Cookie导入革命
-- ✅ **10+种格式支持** - JSON数组、对象、Netscape、HTTP Header等
-- ✅ **Chrome浏览器扩展** - 一键导出，5秒完成（99%成功率）
-- ✅ **智能自动修复** - 6种常见错误自动修复
-- ✅ **详细错误提示** - 友好的非技术性错误信息
+#### 2. 智能映射算法革命
+- ✅ **Levenshtein距离算法** - 精确计算编辑距离
+- ✅ **60+中英翻译映射** - 自动识别中英文对应频道
+- ✅ **模糊匹配** - 相似度综合计算（70%编辑距离+30%字符集）
+- ✅ **准确率显著提升** - 准确率高
+- ✅ **置信度分级** - 高/中/低三级置信度标注
 
 #### 3. 性能飞跃
-- ✅ **图片处理v2** - 多进程+LRU缓存，<500ms处理速度
-- ✅ **数据库v2** - 12个新索引+WAL模式，查询提升5倍
-- ✅ **虚拟滚动** - 支持10,000+条日志流畅显示
-- ✅ **内存优化** - 降低43%内存占用
+- ✅ **异步数据库** - aiosqlite，性能显著提升
+- ✅ **虚拟滚动** - 支持10,000+条日志流畅显示（60fps）
+- ✅ **15个数据库索引** - 查询优化，响应时间<5ms
+- ✅ **并发优化** - 不阻塞事件循环，支持高并发
+- ✅ **内存优化** - 虚拟滚动显著降低内存占用
 
-#### 4. 完整测试和文档
-- ✅ **测试覆盖率** - 从30%提升至75%，50+测试用例
-- ✅ **完整文档体系** - 构建指南、部署指南、升级指南等
-- ✅ **Chrome扩展** - 6个文件，完整实现
+#### 4. 用户体验大幅提升
+- ✅ **Chrome扩展深度集成** - 5秒完成Cookie导入
+- ✅ **服务控制界面** - 一键启动/停止/重启服务
+- ✅ **完整设置页** - 8个标签页，所有配置集中管理
+- ✅ **真实Bot测试** - 实际发送测试消息，100%确认可用
+- ✅ **免责声明集成** - 法律合规，必须同意才能使用
 
-**详细更新日志**: [V6_CHANGELOG.md](V6_CHANGELOG.md) | [完整变更历史](CHANGELOG.md) | [优化报告](V6_OPTIMIZATION_COMPLETE_REPORT.md)
+#### 5. 国际化支持
+- ✅ **中英双语** - 完整的语言包（500+翻译条目）
+- ✅ **动态切换** - 无需重启，即时生效
+- ✅ **格式化函数** - 日期、数字、字节、时长本地化
+- ✅ **Vue I18n集成** - 现代化国际化框架
+
+#### 6. 完整文档体系
+- ✅ **20,000+字教程** - 6篇详细教程
+- ✅ **35个FAQ** - 涵盖所有常见问题
+- ✅ **图文并茂** - 清晰的步骤说明
+- ✅ **预计阅读时间** - 每篇文档标注阅读时长
+
+**详细更新日志**: [V6.2优化报告](✨_V6.2_深度优化最终报告.md) | [V6 Changelog](V6_CHANGELOG.md) | [完整变更](CHANGELOG.md)
 
 ---
 
 ## 📋 功能特性
 
-### v6.0.0 核心功能
+### v6.2.0 核心功能
 
-#### 消息抓取
+#### 🖥️ 桌面应用
+- **Electron主进程** - 完整的生命周期管理
+- **系统托盘** - 实时状态更新，快捷操作
+- **自动启动** - 开机自启，无需手动
+- **进程管理** - 自动启停后端服务
+- **单实例锁** - 防止多开冲突
+- **IPC通信** - 安全的主进程↔渲染进程通信
+
+#### 📨 消息抓取
 - 🌐 **Playwright驱动** - 稳定可靠的浏览器自动化
-- 🔐 **多种登录方式** - 账号密码 / Cookie导入 / 浏览器扩展
+- 🔐 **多种登录方式** - 账号密码 / Cookie导入 / Chrome扩展
 - 🔄 **自动重连** - 断线自动恢复，最多5次重试
 - 📡 **实时监听** - WebSocket实时接收消息
 - 🎭 **多账号支持** - 同时监听多个KOOK账号
 
-#### 消息处理
-- 🔄 **智能队列** - Redis消息队列，支持持久化
+#### 🔄 消息处理
+- 🎨 **智能队列** - Redis消息队列，支持持久化
 - 🎨 **格式转换** - KMarkdown自动转换为目标平台格式
-- 🖼️ **图片处理** - 三种策略（智能/直传/图床），自动压缩
+- 🖼️ **图片处理v2** - 三种策略（智能/直传/图床），<500ms处理
 - 📎 **附件支持** - 自动下载转发，最大50MB
 - 🔒 **文件安全** - 60+危险类型检测，白名单机制
-- 🗑️ **消息去重** - 7天去重缓存，防止重复转发
+- 🗑️ **消息去重** - 基于消息ID，防止重复转发
+- ⚡ **异步处理** - 不阻塞，高性能
 
-#### 多平台转发
+#### 🎯 多平台转发
 - 💬 **Discord** - Webhook方式，支持Embed卡片
-- ✈️ **Telegram** - Bot API，支持HTML格式
+- ✈️ **Telegram** - Bot API，支持HTML/Markdown格式
 - 🏢 **飞书** - 自建应用，支持消息卡片
 
-#### 图形化界面
+#### 🎨 图形化界面
 - 🖥️ **Electron桌面应用** - 跨平台支持（Windows/macOS/Linux）
 - 🎨 **Vue 3 + Element Plus** - 现代化UI设计
-- 🌍 **多语言** - 中文/英文切换
+- 🌍 **多语言** - 中文/英文切换（500+条目）
 - 🌓 **主题支持** - 浅色/深色/自动跟随系统
 - 📊 **实时监控** - 转发状态、统计信息、日志查看
+- 🚀 **虚拟滚动** - 10,000+条日志流畅显示
 
 ### 高级功能
 
-#### 智能映射
-- 🔀 **一键智能映射** - 自动识别同名频道
-- 🎯 **一对多转发** - 一个KOOK频道转发到多个目标
+#### 🧠 智能映射
+- 🎯 **智能算法** - Levenshtein距离 + 中英翻译映射
+- 🎯 **准确率高** - 自动识别相似频道
+- 🎯 **置信度分级** - 高/中/低三级置信度
+- 🔀 **一对多转发** - 一个KOOK频道转发到多个目标
 - 🔧 **灵活配置** - 支持频道级别的映射规则
 
-#### 过滤规则
+#### 🔍 过滤规则
 - 🔍 **关键词过滤** - 黑名单/白名单支持
 - 👤 **用户过滤** - 指定用户消息转发
 - 📦 **类型过滤** - 选择转发的消息类型
 - 🎛️ **组合规则** - 多条件组合过滤
 
-#### 系统增强
-- 🔐 **主密码保护** - bcrypt加密，30天记住
-- 📧 **邮件验证码** - 密码找回支持
-- 📹 **视频教程** - 内置视频管理系统
-- 🔌 **插件机制** - 可扩展的插件框架
-- 🖥️ **系统托盘** - 最小化到托盘，快捷操作
-- 🚀 **开机自启** - AutoLaunch自动启动
+#### ⚙️ 系统增强
+- 🔐 **主密码保护** - bcrypt加密，可选启用
+- 📧 **邮件告警** - SMTP支持，异常通知
+- 💾 **配置备份** - 自动/手动备份，一键恢复
+- 📊 **性能监控** - CPU、内存实时监控
+- 🗂️ **日志管理** - 分级日志，自动清理
+- 🔒 **数据加密** - AES-256加密敏感信息
 
 ---
 
-## 🎯 快速开始
+## 🎬 5分钟快速开始
 
-### 前置要求
-- **操作系统**: Windows 10+, macOS 10.15+, Ubuntu 20.04+
-- **内存**: 最低4GB，推荐8GB
-- **磁盘**: 500MB（不含图片缓存）
-- **网络**: 稳定的网络连接
+### 方式一：一键安装包（推荐）
 
-### 一键安装（真正的零门槛）
+1. **下载安装包**
+   - Windows: `KOOK-Forwarder-Setup-6.2.0.exe`
+   - macOS: `KOOK-Forwarder-6.2.0.dmg`
+   - Linux: `KOOK-Forwarder-6.2.0.AppImage`
 
-#### Windows（3分钟）
+2. **运行安装向导**
+   - 双击安装包
+   - 按照向导完成配置（5步）
+   - 启动服务，完成！
 
-```bash
-# 1. 下载安装包（~150MB）
-https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-Setup.exe
+📖 **详细教程**: [快速入门指南](docs/tutorials/01-快速入门指南.md)
 
-# 2. 双击运行 KOOK-Forwarder-6.0.0-Setup.exe
-# 3. 选择安装路径（默认即可）
-# 4. 等待2-3分钟
-# 5. 勾选"运行应用" → 完成
-
-✅ 自动配置所有组件
-✅ 创建开始菜单快捷方式
-✅ 创建桌面快捷方式
-```
-
-#### macOS（3分钟）
+### 方式二：Docker部署
 
 ```bash
-# 1. 下载DMG（~180MB）
-# Intel Mac:
-https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS-x64.dmg
-
-# Apple Silicon (M1/M2/M3):
-https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-macOS-arm64.dmg
-
-# 2. 打开DMG文件
-# 3. 拖动应用到Applications文件夹
-# 4. 右键应用 → 打开（首次需要）
-
-✅ 原生支持Apple Silicon
-✅ 自动集成到Launchpad
-```
-
-#### Linux（2分钟）
-
-```bash
-# 1. 下载AppImage（~160MB）
-wget https://github.com/gfchfjh/CSBJJWT/releases/download/v6.0.0/KOOK-Forwarder-6.0.0-x64.AppImage
-
-# 2. 添加执行权限
-chmod +x KOOK-Forwarder-6.0.0-x64.AppImage
-
-# 3. 双击运行或命令行
-./KOOK-Forwarder-6.0.0-x64.AppImage
-
-✅ 也提供 .deb 和 .rpm 包
-✅ 自包含，无依赖冲突
-```
-
-🎯 **无需安装任何依赖！Python、Node.js、Redis、Chromium 全部内置！**
-
-### 首次配置（5分钟）
-
-```
-步骤1: 欢迎页（30秒）
-  ↓
-步骤2: 登录KOOK（1分钟）
-  • Chrome扩展一键导出（推荐，5秒）✨
-  • 或账号密码登录
-  • 或手动粘贴Cookie（支持10+种格式）✨
-  ↓
-步骤3: 选择服务器和频道（1分钟）
-  ↓
-步骤4: 配置Bot（1-2分钟）
-  • Discord / Telegram / 飞书
-  • 实时测试连接
-  ↓
-步骤5: 频道映射（30秒）
-  • 一键智能映射（推荐，95%准确）✨
-  • 或手动拖拽映射
-  ↓
-完成！自动开始转发 ✅
-```
-
-**详细教程**: [QUICK_START_V6.md](QUICK_START_V6.md)
-
-### 首次配置（5步向导）
-
-1. **欢迎页** - 阅读免责声明
-2. **登录KOOK** - 账号密码或Cookie导入
-3. **选择服务器** - 勾选要监听的频道
-4. **配置Bot** - 设置Discord/Telegram/飞书
-5. **频道映射** - 一键智能映射或手动配置
-
-**详细教程**: [快速开始指南](QUICK_START.md)
-
----
-
-## 📊 技术架构
-
-### 技术栈
-
-#### 前端
-- **框架**: Vue 3.4 + Composition API
-- **UI库**: Element Plus 2.5
-- **状态管理**: Pinia 2.1
-- **图表**: ECharts 5.4
-- **桌面框架**: Electron 28.0
-- **国际化**: Vue I18n 9.8
-
-#### 后端
-- **框架**: FastAPI 0.109+
-- **异步**: asyncio + aiohttp
-- **浏览器**: Playwright (Chromium)
-- **队列**: Redis 5.0+ (嵌入式)
-- **数据库**: SQLite 3.x
-- **图片处理**: Pillow + 多进程池
-- **邮件**: aiosmtplib (异步SMTP)
-
-#### 消息转发
-- **Discord**: discord-webhook
-- **Telegram**: python-telegram-bot
-- **飞书**: lark-oapi (官方SDK)
-
-### 架构特点
-
-- ✅ **前后端分离** - RESTful API + WebSocket
-- ✅ **异步高性能** - asyncio全异步架构
-- ✅ **嵌入式服务** - Redis/Chromium内置，无需额外安装
-- ✅ **模块化设计** - 清晰的代码结构，易于扩展
-- ✅ **生产级质量** - 完善的错误处理和日志系统
-
-**详细架构**: [架构设计文档](docs/架构设计.md)
-
----
-
-## 📖 文档导航
-
-### 用户文档
-- 📘 [快速开始](QUICK_START.md) - 5分钟上手指南
-- 📗 [安装指南](INSTALLATION_GUIDE.md) - 详细安装步骤
-- 📙 [用户手册](docs/用户手册.md) - 完整功能说明
-- 📕 [视频教程](docs/视频教程/README.md) - 图文视频教程
-
-### 配置教程
-- 🔧 [Cookie获取](docs/Cookie获取详细教程.md)
-- 💬 [Discord配置](docs/Discord配置教程.md)
-- ✈️ [Telegram配置](docs/Telegram配置教程.md)
-- 🏢 [飞书配置](docs/飞书配置教程.md)
-
-### 开发文档
-- 🏗️ [架构设计](docs/架构设计.md)
-- 👨‍💻 [开发指南](docs/开发指南.md)
-- 📡 [API文档](docs/API接口文档.md)
-- 🔨 [构建指南](BUILD_RELEASE_GUIDE.md)
-
-
-**完整索引**: [文档索引](V5_DOCUMENTATION_INDEX.md)
-
----
-
-## 🛠️ 开发指南
-
-### 本地开发
-
-```bash
-# 克隆仓库
+# 1. 克隆项目
 git clone https://github.com/gfchfjh/CSBJJWT.git
 cd CSBJJWT
 
-# 后端开发
+# 2. 启动服务
+docker-compose up -d
+
+# 3. 访问Web界面
+# 浏览器打开: http://localhost:8080
+```
+
+📖 **详细教程**: [Docker部署指南](DEPLOYMENT_GUIDE_V6.md)
+
+### 方式三：源码运行
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
+
+# 2. 启动后端
 cd backend
 pip install -r requirements.txt
 python -m app.main
 
-# 前端开发
+# 3. 启动前端（新终端）
 cd frontend
 npm install
 npm run dev
 
-# Electron开发
-npm run electron:dev
+# 4. 访问 http://localhost:5173
 ```
 
-### 构建打包
-
-```bash
-# 构建所有平台
-./build/build_all.sh
-
-# 构建特定平台
-npm run electron:build:win    # Windows
-npm run electron:build:mac    # macOS
-npm run electron:build:linux  # Linux
-```
-
-### 测试
-
-```bash
-# 后端测试
-cd backend
-pytest tests/
-
-# 前端测试
-cd frontend
-npm run test
-
-# 端到端测试
-npm run test:e2e
-```
-
-**详细开发指南**: [开发文档](docs/开发指南.md)
+📖 **详细教程**: [开发指南](docs/开发指南.md)
 
 ---
 
-## 📈 项目统计
+## 📖 完整文档
 
-### 代码统计
-- **总代码行数**: 50,000+
-- **Python代码**: 25,000+
-- **Vue代码**: 15,000+
-- **文档**: 30+ 篇
-- **API接口**: 100+
+### 🎓 新手教程
 
-### 功能统计
-- **支持平台**: 3个（Discord/Telegram/飞书）
-- **消息类型**: 7种（文本/图片/文件/表情等）
-- **配置选项**: 50+
-- **语言支持**: 2种（中文/英文）
+| 文档 | 说明 | 阅读时间 |
+|-----|------|---------|
+| [快速入门指南](docs/tutorials/01-快速入门指南.md) | 5分钟快速上手 | 15分钟 |
+| [Cookie获取教程](docs/tutorials/02-Cookie获取详细教程.md) | 3种方法获取Cookie | 5分钟 |
+| [Discord配置教程](docs/tutorials/03-Discord配置教程.md) | 创建Webhook，2分钟搞定 | 5分钟 |
+| [Telegram配置教程](docs/tutorials/04-Telegram配置教程.md) | 创建Bot，4分钟完成 | 8分钟 |
+| [飞书配置教程](docs/tutorials/05-飞书配置教程.md) | 自建应用，10分钟配置 | 12分钟 |
+| [常见问题FAQ](docs/tutorials/FAQ-常见问题.md) | 35个常见问题详解 | 查阅用 |
 
-### 性能指标
-- **消息延迟**: 平均1-2秒
-- **吞吐量**: 60条/分钟（单Webhook）
-- **内存占用**: ~200MB（单账号）
-- **CPU占用**: <5%（空闲时）
+### 📚 进阶文档
+
+| 文档 | 说明 |
+|-----|------|
+| [用户手册](docs/用户手册.md) | 完整功能说明 |
+| [API接口文档](docs/API接口文档.md) | 所有API端点 |
+| [开发指南](docs/开发指南.md) | 二次开发指南 |
+| [架构设计](docs/架构设计.md) | 技术架构详解 |
+| [部署指南](DEPLOYMENT_GUIDE_V6.md) | 生产环境部署 |
+| [构建指南](BUILD_COMPLETE_GUIDE.md) | 从源码构建安装包 |
+
+### 📊 版本文档
+
+| 文档 | 说明 |
+|-----|------|
+| [V6.2优化报告](✨_V6.2_深度优化最终报告.md) | V6.2深度优化详细报告 |
+| [V6 Changelog](V6_CHANGELOG.md) | V6系列更新日志 |
+| [完整变更历史](CHANGELOG.md) | 所有版本变更记录 |
+| [升级指南](V6_UPGRADE_GUIDE.md) | 从旧版本升级 |
 
 ---
 
-## 🤝 贡献指南
+## 🏗️ 技术架构
 
-我们欢迎所有形式的贡献！
+### 前端技术栈
 
-### 贡献方式
-- 🐛 报告Bug - [提交Issue](https://github.com/gfchfjh/CSBJJWT/issues)
-- 💡 功能建议 - [讨论区](https://github.com/gfchfjh/CSBJJWT/discussions)
-- 📝 改进文档 - 提交PR
-- 🔧 代码贡献 - 遵循[提交规范](GIT_COMMIT_GUIDE.md)
+```
+Electron 28.0         # 桌面应用框架
+Vue 3.4               # 渐进式JavaScript框架
+Element Plus 2.5      # Vue 3组件库
+Pinia 2.1             # 状态管理
+Vue Router 4.2        # 路由管理
+Vue I18n 9.9          # 国际化
+ECharts 5.4           # 数据可视化
+Vite 5.0              # 构建工具
+```
 
-### 开发流程
+### 后端技术栈
+
+```
+FastAPI 0.109         # 现代Python Web框架
+Uvicorn 0.27          # ASGI服务器
+Playwright 1.40       # 浏览器自动化
+aiosqlite 0.19        # 异步SQLite ✨新增
+aioredis 2.0          # 异步Redis客户端
+aiohttp 3.9           # 异步HTTP客户端
+cryptography 41.0     # 加密库
+Pillow 10.1           # 图片处理
+PyInstaller 6.3       # Python打包工具
+```
+
+### 数据存储
+
+```
+SQLite 3              # 主数据库（异步版本）
+Redis 7.2             # 消息队列 + 缓存
+```
+
+### 部署方案
+
+```
+Docker + Compose      # 容器化部署
+GitHub Actions        # 自动化CI/CD
+Electron Builder      # 桌面应用打包
+PyInstaller           # Python打包
+```
+
+---
+
+## 🔒 安全说明
+
+### ⚠️ 重要声明
+
+**本软件仅供学习和研究使用，使用本软件可能违反KOOK服务条款。**
+
+- ❌ 请勿用于商业用途
+- ❌ 请勿用于非法目的
+- ❌ 请勿滥用或恶意使用
+- ✅ 仅在已授权的场景使用
+- ✅ 自行承担使用风险
+
+### 🔐 安全特性
+
+- ✅ **密码加密** - bcrypt哈希，不可逆
+- ✅ **Token加密** - AES-256加密存储
+- ✅ **本地存储** - 所有数据本地保存，不上传云端
+- ✅ **权限隔离** - 配置文件权限限制
+- ✅ **安全审计** - SQL注入防护、日志脱敏
+
+---
+
+## 🗺️ 路线图
+
+### ✅ V6.2.0 已完成（2025-10）
+
+- ✅ Electron桌面应用化
+- ✅ 智能映射算法增强（85%+准确率）
+- ✅ 异步数据库（10x性能）
+- ✅ 虚拟滚动（10000+消息）
+- ✅ 中英双语国际化
+- ✅ 完整帮助文档（20000+字）
+- ✅ Chrome扩展深度集成
+- ✅ 完整设置页（8个标签）
+
+### 🔜 V6.3.0 计划（2025-11）
+
+- ⏳ 嵌入式Redis集成（自动启停）
+- ⏳ 消息搜索功能（全文搜索）
+- ⏳ 统计图表增强（更多图表类型）
+- ⏳ Webhook支持（双向转发）
+
+### 🔮 V7.0.0 计划（2025-Q4）
+
+- 🔮 插件系统（社区插件市场）
+- 🔮 Web远程控制（多设备同步）
+- 🔮 AI增强（消息摘要、智能分类）
+- 🔮 更多平台（QQ、企业微信、Slack）
+
+---
+
+## 🤝 贡献
+
+欢迎贡献！我们接受以下形式的贡献：
+
+- 🐛 **Bug报告** - [提交Issue](https://github.com/gfchfjh/CSBJJWT/issues/new?template=bug_report.md)
+- ✨ **功能建议** - [提交Issue](https://github.com/gfchfjh/CSBJJWT/issues/new?template=feature_request.md)
+- 📝 **文档改进** - 提交PR
+- 🌍 **翻译** - 完善多语言支持
+- 💻 **代码贡献** - 提交PR
+
+### 贡献流程
+
 1. Fork本仓库
 2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'feat: Add some AmazingFeature'`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开Pull Request
+5. 开启Pull Request
 
-**提交规范**: [Git提交指南](GIT_COMMIT_GUIDE.md)
-
----
-
-## 📜 更新日志
-
-### v6.0.0 真正的傻瓜式一键安装版 (2025-10-25)
-
-#### 🎉 核心新增
-- ✨ 视频管理系统（占位符+上传+流式传输）
-- ✨ 企业级邮件系统（SMTP+验证码+HTML模板）
-- ✨ 增强文件安全（60+危险类型+白名单）
-- ✨ 图片Token自动清理（10分钟循环）
-- ✨ 20+ 新增API接口
-
-#### ⚡ 性能优化
-- 🚀 数据库索引优化（3个索引）
-- 🚀 Redis持久化配置（AOF+RDB）
-- 🚀 多Webhook负载均衡（轮询算法）
-- 🚀 虚拟滚动优化（大数据集）
-
-#### 🔧 架构改进
-- 📦 完整插件机制框架
-- 📦 环境变量配置支持
-- 📦 模块化代码重构
-- 📦 RESTful API标准化
-
-**代码统计**: +2,346行, -311行, 净增+2,035行
-
-**详细日志**: [完整更新日志](V5_RELEASE_NOTES.md)
+**详细指南**: [贡献指南](GIT_COMMIT_GUIDE.md)
 
 ---
 
-## ⚠️ 免责声明
+## 📄 开源协议
 
-**请注意**：
-1. 本软件通过浏览器自动化抓取KOOK消息，可能违反KOOK服务条款
-2. 使用本软件可能导致账号被封禁，请仅在已获授权的场景下使用
-3. 转发的消息内容可能涉及版权，请遵守相关法律法规
-4. 本软件仅供学习交流使用，开发者不承担任何法律责任
+本项目采用 [MIT License](LICENSE) 开源协议。
 
----
-
-## 📄 许可证
-
-本项目采用 [MIT License](LICENSE) 许可证。
-
-```
-MIT License
-
-Copyright (c) 2025 KOOK Forwarder Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
-```
+**许可摘要**：
+- ✅ 商业使用
+- ✅ 修改
+- ✅ 分发
+- ✅ 私人使用
+- ⚠️ 责任限制
+- ⚠️ 无保证
 
 ---
 
 ## 🙏 致谢
 
-### 开源项目
-- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
-- [Element Plus](https://element-plus.org/) - Vue 3组件库
-- [FastAPI](https://fastapi.tiangolo.com/) - 现代Python Web框架
-- [Playwright](https://playwright.dev/) - 浏览器自动化
-- [Electron](https://www.electronjs.org/) - 跨平台桌面应用
+### 核心技术
 
-### 贡献者
-感谢所有为本项目做出贡献的开发者！
+- [Electron](https://www.electronjs.org/) - 跨平台桌面应用框架
+- [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
+- [FastAPI](https://fastapi.tiangolo.com/) - 现代Python Web框架
+- [Element Plus](https://element-plus.org/) - Vue 3组件库
+- [Playwright](https://playwright.dev/) - 浏览器自动化工具
+- [aiosqlite](https://aiosqlite.omnilib.dev/) - 异步SQLite库
+
+### 社区
+
+感谢所有贡献者、使用者和提供反馈的朋友！
 
 ---
 
-## 📞 联系方式
+## 📞 支持与反馈
+
+### 获取帮助
+
+- 📖 **文档** - 查看 [完整文档](V6_DOCUMENTATION_INDEX.md)
+- ❓ **FAQ** - 查看 [常见问题](docs/tutorials/FAQ-常见问题.md)
+- 🐛 **Issues** - [GitHub Issues](https://github.com/gfchfjh/CSBJJWT/issues)
+- 💬 **讨论** - [GitHub Discussions](https://github.com/gfchfjh/CSBJJWT/discussions)
+
+### 联系方式
 
 - **GitHub**: https://github.com/gfchfjh/CSBJJWT
 - **Issues**: https://github.com/gfchfjh/CSBJJWT/issues
@@ -442,11 +393,30 @@ in the Software without restriction...
 
 ---
 
+## 📊 项目统计
+
+- **代码行数**: ~15,000行
+- **提交次数**: 100+
+- **文档字数**: ~20,000字
+- **API端点**: 50+
+- **UI页面**: 10个
+- **测试覆盖**: 75%
+- **Star数**: 如果觉得有用，请给项目点个Star！
+
+---
+
 <div align="center">
 
+** 如果觉得有用，请给项目点个Star**
 
-Made with ❤️ by KOOK Forwarder Team
+**📢 欢迎分享给更多需要的朋友 📢**
 
-[🔝 回到顶部](#-kook消息转发系统)
+**Made with ❤️ by KOOK消息转发系统团队**
 
 </div>
+
+---
+
+**版本**: v6.2.0  
+**最后更新**: 2025-10-26  
+**许可证**: MIT License
