@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { setupInterceptors } from './interceptors'
 
 const API_BASE_URL = 'http://localhost:9527'
 
@@ -25,16 +26,21 @@ api.interceptors.request.use(
   }
 )
 
-// 响应拦截器
+// ✅ P0-2优化：使用友好错误提示的响应拦截器
+// 注意：这里先处理数据格式，友好错误在setupInterceptors中处理
 api.interceptors.response.use(
   response => {
     return response.data
   },
   error => {
-    console.error('API错误:', error)
+    // 不在这里处理错误，让setupInterceptors中的友好错误处理器处理
     return Promise.reject(error)
   }
 )
+
+// ✅ P0-2优化：设置友好错误拦截器（在最后执行）
+// 注意：这个要在上面的拦截器之后设置，这样可以捕获所有错误
+setupInterceptors(api)
 
 export default {
   // 系统

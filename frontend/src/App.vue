@@ -2,6 +2,9 @@
   <div class="app-container">
     <router-view />
     
+    <!-- ✅ P0-2新增：友好错误提示对话框 -->
+    <FriendlyErrorDialog ref="friendlyErrorDialogRef" />
+    
     <!-- 免责声明对话框 -->
     <el-dialog
       v-model="disclaimerVisible"
@@ -90,8 +93,13 @@
 import { ref, onMounted } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { useSystemStore } from './store/system'
+import FriendlyErrorDialog from './components/FriendlyErrorDialog.vue'
+import { setFriendlyErrorDialog } from './composables/useErrorHandler'
 
 const systemStore = useSystemStore()
+
+// ✅ P0-2新增：友好错误对话框引用
+const friendlyErrorDialogRef = ref(null)
 
 // 免责声明
 const disclaimerVisible = ref(false)
