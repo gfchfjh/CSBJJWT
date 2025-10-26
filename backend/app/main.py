@@ -241,6 +241,18 @@ app.include_router(image_storage_manager.router)  # 图床存储管理API 🆕 P
 app.include_router(rate_limit_monitor.router)  # 限流监控API 🆕 P0-5深度优化
 app.include_router(message_search.router)  # 消息搜索API 🆕 P1-1深度优化
 
+# ✅ P0-2深度优化：友好错误提示系统
+from .api import error_translator_api
+app.include_router(error_translator_api.router)  # 错误翻译API 🆕 P0-2深度优化
+
+# ✅ P0-4深度优化：验证码处理界面
+from .api import captcha_api
+app.include_router(captcha_api.router)  # 验证码API 🆕 P0-4深度优化
+
+# ✅ P1-1深度优化：托盘菜单实时统计
+from .api import system_stats_api
+app.include_router(system_stats_api.router)  # 系统统计API 🆕 P1-1深度优化
+
 
 @app.get("/")
 async def root():

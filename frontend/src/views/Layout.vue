@@ -17,17 +17,17 @@
           <span>概览</span>
         </el-menu-item>
         
-        <el-menu-item index="/accounts">
+        <el-menu-item index="/accounts" class="sidebar-accounts">
           <el-icon><User /></el-icon>
           <span>账号管理</span>
         </el-menu-item>
         
-        <el-menu-item index="/bots">
+        <el-menu-item index="/bots" class="sidebar-bots">
           <el-icon><Robot /></el-icon>
           <span>机器人配置</span>
         </el-menu-item>
         
-        <el-menu-item index="/mapping">
+        <el-menu-item index="/mapping" class="sidebar-mapping">
           <el-icon><Connection /></el-icon>
           <span>频道映射</span>
         </el-menu-item>
@@ -37,12 +37,12 @@
           <span>过滤规则</span>
         </el-menu-item>
         
-        <el-menu-item index="/logs">
+        <el-menu-item index="/logs" class="sidebar-logs">
           <el-icon><Document /></el-icon>
           <span>实时日志</span>
         </el-menu-item>
         
-        <el-menu-item index="/settings">
+        <el-menu-item index="/settings" class="sidebar-settings">
           <el-icon><Setting /></el-icon>
           <span>系统设置</span>
         </el-menu-item>
@@ -51,13 +51,18 @@
           <el-icon><Tools /></el-icon>
           <span>高级功能</span>
         </el-menu-item>
+        
+        <el-menu-item index="/help" class="sidebar-help">
+          <el-icon><QuestionFilled /></el-icon>
+          <span>帮助中心</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
     <!-- 主内容区 -->
     <el-container>
       <!-- 顶部栏 -->
-      <el-header class="header">
+      <el-header class="header app-header">
         <div class="header-left">
           <h3>{{ $route.meta.title || '概览' }}</h3>
         </div>
@@ -94,6 +99,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSystemStore } from '../store/system'
 import { ElMessage } from 'element-plus'
+import { startFirstTimeOnboarding } from '@/utils/onboarding'
 
 const route = useRoute()
 const systemStore = useSystemStore()
@@ -137,6 +143,9 @@ onMounted(() => {
   statusInterval = setInterval(() => {
     systemStore.fetchSystemStatus()
   }, 5000)
+  
+  // ✅ P0-1新增：首次启动引导
+  startFirstTimeOnboarding()
 })
 
 onUnmounted(() => {

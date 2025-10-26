@@ -42,6 +42,17 @@
                 <el-icon><MagicStick /></el-icon>
                 启动配置向导
               </el-button>
+              
+              <el-button type="success" size="large" @click="startQuickOnboarding">
+                <el-icon><TrendCharts /></el-icon>
+                快速引导（3步，1分钟）
+              </el-button>
+              
+              <el-button type="info" size="large" @click="startFullOnboarding">
+                <el-icon><Reading /></el-icon>
+                完整引导（8步，2分钟）
+              </el-button>
+              
               <el-button size="large" @click="watchVideo('quickstart')">
                 <el-icon><VideoPlay /></el-icon>
                 观看视频教程（10分钟）
@@ -241,6 +252,7 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import { createOnboarding } from '@/utils/onboarding'
 
 const router = useRouter()
 
@@ -597,6 +609,18 @@ const filteredFaqs = computed(() => {
 // 去配置向导
 const goToWizard = () => {
   router.push('/wizard')
+}
+
+// ✅ P0-1新增：启动快速引导
+const startQuickOnboarding = () => {
+  const onboarding = createOnboarding('quick')
+  onboarding.drive()
+}
+
+// ✅ P0-1新增：启动完整引导
+const startFullOnboarding = () => {
+  const onboarding = createOnboarding('full')
+  onboarding.drive()
 }
 
 // 观看视频

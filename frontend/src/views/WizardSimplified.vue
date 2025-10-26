@@ -56,7 +56,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@/api'
@@ -64,6 +64,9 @@ import WizardStepWelcome from '@/components/wizard/WizardStepWelcome.vue'
 import WizardStepLogin from '@/components/wizard/WizardStepLogin.vue'
 import WizardStepServers from '@/components/wizard/WizardStepServers.vue'
 import VideoTutorial from '@/components/VideoTutorial.vue'
+
+// ✅ P0-3优化：导入自定义样式
+import '@/assets/wizard-complete.css'
 
 const router = useRouter()
 

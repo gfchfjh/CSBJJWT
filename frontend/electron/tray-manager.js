@@ -12,11 +12,18 @@ class TrayManager {
     this.tray = null;
     this.status = 'offline'; // online, connecting, error, offline
     this.stats = {
-      today_total: 0,
+      messages_today: 0,
       success_rate: 0,
       avg_latency: 0,
       queue_size: 0,
+      active_accounts: 0,
+      configured_bots: 0,
+      uptime_seconds: 0
     };
+    
+    // ✅ P1-1优化：添加统计刷新定时器
+    this.statsUpdateInterval = null;
+    this.backendUrl = 'http://localhost:9527';
     
     // 图标路径
     this.icons = {
@@ -52,9 +59,67 @@ class TrayManager {
         this.showMainWindow();
       });
       
+      // ✅ P1-1优化：启动统计自动刷新（每5秒）
+      this.startStatsUpdate();
+      
       console.log('[TrayManager] 系统托盘已创建');
     } catch (error) {
       console.error('[TrayManager] 创建托盘失败:', error);
+    }
+  }
+  
+  // ✅ P1-1新增：启动统计自动刷新
+  startStatsUpdate() {
+    // 立即获取一次
+    this.fetchStats();
+    
+    // 每5秒自动刷新
+    this.statsUpdateInterval = setInterval(() => {
+      this.fetchStats();
+    }, 5000);
+    
+    console.log('[TrayManager] 统计自动刷新已启动（每5秒）');
+  }
+  
+  // ✅ P1-1新增：停止统计自动刷新
+  stopStatsUpdate() {
+    if (this.statsUpdateInterval) {
+      clearInterval(this.statsUpdateInterval);
+      this.statsUpdateInterval = null;
+      console.log('[TrayManager] 统计自动刷新已停止');
+    }
+  }
+  
+  // ✅ P1-1新增：从后端获取统计数据
+  async fetchStats() {
+    try {
+      const fetch = require('node-fetch');
+      const response = await fetch(`${this.backendUrl}/api/system/stats/realtime`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 更新统计数据
+        this.stats = {
+          messages_today: data.messages_today || 0,
+          success_rate: data.success_rate || 0,
+          avg_latency: data.avg_latency || 0,
+          queue_size: data.queue_size || 0,
+          active_accounts: data.active_accounts || 0,
+          configured_bots: data.configured_bots || 0,
+          uptime_seconds: data.uptime_seconds || 0
+        };
+        
+        // 更新上下文菜单
+        this.updateContextMenu();
+        
+        console.log('[TrayManager] 统计数据已更新');
+      } else {
+        console.warn('[TrayManager] 获取统计失败:', response.status);
+      }
+    } catch (error) {
+      // 静默失败，避免频繁报错
+      // console.error('[TrayManager] 获取统计异常:', error.message);
     }
   }
   
@@ -108,14 +173,24 @@ class TrayManager {
     if (!this.tray) return;
     
     try {
+      // ✅ P1-1优化：格式化运行时长
+      const formatUptime = (seconds) => {
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) {
+          return `${hours}小时${mins}分钟`;
+        }
+        return `${mins}分钟`;
+      };
+      
       const menu = Menu.buildFromTemplate([
-        // 统计信息区域
+        // ✅ P1-1优化：增强的统计信息区域（7项统计）
         {
-          label: '📊 今日统计',
+          label: '📊 实时统计（每5秒刷新）',
           enabled: false,
         },
         {
-          label: `  转发消息: ${this.stats.today_total} 条`,
+          label: `  今日转发: ${this.stats.messages_today} 条`,
           enabled: false,
         },
         {
@@ -127,7 +202,19 @@ class TrayManager {
           enabled: false,
         },
         {
-          label: `  队列消息: ${this.stats.queue_size}`,
+          label: `  队列中: ${this.stats.queue_size} 条`,
+          enabled: false,
+        },
+        {
+          label: `  活跃账号: ${this.stats.active_accounts} 个`,
+          enabled: false,
+        },
+        {
+          label: `  配置Bot: ${this.stats.configured_bots} 个`,
+          enabled: false,
+        },
+        {
+          label: `  运行时长: ${formatUptime(this.stats.uptime_seconds)}`,
           enabled: false,
         },
         { type: 'separator' },
@@ -297,6 +384,9 @@ class TrayManager {
   }
   
   destroy() {
+    // ✅ P1-1优化：停止统计刷新
+    this.stopStatsUpdate();
+    
     if (this.tray) {
       this.tray.destroy();
       this.tray = null;
