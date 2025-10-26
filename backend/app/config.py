@@ -113,9 +113,3 @@ settings = Settings()
 
 # 创建日志目录
 settings.log_dir.mkdir(parents=True, exist_ok=True)
-
-    # ✅ P0-6优化: 图片处理策略配置
-    image_strategy: str = "smart"  # smart/direct/image_bed
-    smart_mode_direct_timeout: int = 10  # 直传超时时间（秒）
-    smart_mode_fallback_to_bed: bool = True  # 失败时使用图床
-    smart_mode_save_failed: bool = True  # 失败时保存本地
