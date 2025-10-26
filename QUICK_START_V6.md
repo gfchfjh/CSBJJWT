@@ -1,6 +1,6 @@
-# 🎬 KOOK消息转发系统 - 快速开始指南 V6.4
+# 🎬 KOOK消息转发系统 - 快速开始指南 V6.5
 
-> **5分钟快速上手 · 零代码基础 · 企业级桌面应用 · 真正的一键安装**
+> **3步配置 · 5分钟上手 · 零代码基础 · 企业级桌面应用 · 极致易用**
 
 ---
 
@@ -59,10 +59,10 @@
 
 | 操作系统 | 文件名 | 大小 |
 |---------|--------|------|
-| Windows | `KOOK-Forwarder-Setup-6.2.0.exe` | ~250MB |
-| macOS (Intel) | `KOOK-Forwarder-6.2.0-x64.dmg` | ~300MB |
-| macOS (M1/M2) | `KOOK-Forwarder-6.2.0-arm64.dmg` | ~280MB |
-| Linux | `KOOK-Forwarder-6.2.0.AppImage` | ~280MB |
+| Windows | `KOOK-Forwarder-Setup-6.5.0.exe` | ~250MB |
+| macOS (Intel) | `KOOK-Forwarder-6.5.0-x64.dmg` | ~300MB |
+| macOS (M1/M2) | `KOOK-Forwarder-6.5.0-arm64.dmg` | ~280MB |
+| Linux | `KOOK-Forwarder-6.5.0.AppImage` | ~280MB |
 
 ### 步骤2：安装应用
 
@@ -90,12 +90,12 @@
 
 1. 赋予执行权限：
    ```bash
-   chmod +x KOOK-Forwarder-6.2.0.AppImage
+   chmod +x KOOK-Forwarder-6.5.0.AppImage
    ```
 
 2. 双击运行，或命令行：
    ```bash
-   ./KOOK-Forwarder-6.2.0.AppImage
+   ./KOOK-Forwarder-6.5.0.AppImage
    ```
 
 3. 首次运行可能需要安装FUSE：

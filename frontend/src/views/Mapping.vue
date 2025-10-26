@@ -1,6 +1,24 @@
 <template>
   <div class="mapping-view">
-    <el-card>
+    <!-- 视图切换 -->
+    <div class="view-switcher">
+      <el-radio-group v-model="viewMode" size="large">
+        <el-radio-button value="visual">
+          <el-icon><Connection /></el-icon>
+          可视化编辑器
+        </el-radio-button>
+        <el-radio-button value="table">
+          <el-icon><List /></el-icon>
+          表格模式
+        </el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <!-- 可视化编辑器 -->
+    <MappingVisualEditor v-if="viewMode === 'visual'" />
+
+    <!-- 传统表格模式 -->
+    <el-card v-else>
       <template #header>
         <div class="card-header">
           <span>🔀 频道映射配置</span>
