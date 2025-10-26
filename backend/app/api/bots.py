@@ -68,7 +68,13 @@ async def delete_bot_config(bot_id: int):
 
 @router.post("/{bot_id}/test")
 async def test_bot_config(bot_id: int):
-    """测试Bot配置"""
+    """
+    ✅ P1-2增强：测试Bot配置（真实发送测试消息）
+    """
+    import time
+    from datetime import datetime
+    from ..utils.logger import logger
+    
     # 获取配置
     configs = db.get_bot_configs()
     config = next((c for c in configs if c['id'] == bot_id), None)
@@ -78,6 +84,14 @@ async def test_bot_config(bot_id: int):
     
     platform = config['platform']
     bot_config = config['config']
+    test_message = f"🧪 这是来自 KOOK消息转发系统 的测试消息\n测试时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    
+    test_result = {
+        "success": False,
+        "message": "",
+        "details": {},
+        "timestamp": int(time.time())
+    }
     
     # 测试连接
     if platform == 'discord':
@@ -85,7 +99,15 @@ async def test_bot_config(bot_id: int):
         if not webhook_url:
             raise HTTPException(status_code=400, detail="缺少webhook_url")
         
+        # ✅ 真实发送测试消息
         success, message = await discord_forwarder.test_webhook(webhook_url)
+        test_result["success"] = success
+        test_result["message"] = message if message else ("测试成功！已发送测试消息到Discord" if success else "测试失败")
+        test_result["details"] = {
+            "platform": "Discord",
+            "webhook_url": webhook_url[:50] + "...",
+            "message_sent": success
+        }
         
     elif platform == 'telegram':
         token = bot_config.get('token')
@@ -93,7 +115,16 @@ async def test_bot_config(bot_id: int):
         if not token or not chat_id:
             raise HTTPException(status_code=400, detail="缺少token或chat_id")
         
+        # ✅ 真实发送测试消息
         success, message = await telegram_forwarder.test_bot(token, chat_id)
+        test_result["success"] = success
+        test_result["message"] = message if message else ("测试成功！已发送测试消息到Telegram" if success else "测试失败")
+        test_result["details"] = {
+            "platform": "Telegram",
+            "bot_token": token[:10] + "...",
+            "chat_id": chat_id,
+            "message_sent": success
+        }
         
     elif platform == 'feishu':
         app_id = bot_config.get('app_id')
@@ -102,12 +133,32 @@ async def test_bot_config(bot_id: int):
         if not app_id or not app_secret or not chat_id:
             raise HTTPException(status_code=400, detail="缺少app_id、app_secret或chat_id")
         
+        # ✅ 真实发送测试消息  
         success, message = await feishu_forwarder.test_connection(app_id, app_secret, chat_id)
+        test_result["success"] = success
+        test_result["message"] = message if message else ("测试成功！已发送测试消息到飞书" if success else "测试失败")
+        test_result["details"] = {
+            "platform": "飞书",
+            "app_id": app_id,
+            "chat_id": chat_id,
+            "message_sent": success
+        }
         
     else:
         raise HTTPException(status_code=400, detail="不支持的平台")
     
-    return {"success": success, "message": message}
+    # ✅ 记录测试结果到数据库
+    try:
+        import json
+        db.execute(
+            "UPDATE bot_configs SET status = ? WHERE id = ?",
+            ("active" if test_result["success"] else "error", bot_id)
+        )
+        logger.info(f"✅ Bot测试完成 - ID: {bot_id}, 平台: {platform}, 结果: {test_result['success']}")
+    except Exception as e:
+        logger.error(f"❌ 更新测试结果失败: {str(e)}")
+    
+    return test_result
 
 
 @router.get("/telegram/chat-ids")
