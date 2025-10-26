@@ -981,7 +981,7 @@ class DynamicTray {
         enabled: false
       },
       {
-        label: `✅ 成功率: ${this.stats.successRate}%`,
+        label: `✅ 状态: ${this.stats.status}`,
         enabled: false
       },
       {
@@ -2034,7 +2034,7 @@ const tutorials = {
         screenshot: '/tutorials/screenshots/smart-mapping.png',
         video: '/tutorials/videos/smart-mapping.mp4',
         alert: {
-          title: '✨ 智能映射准确率高达90%',
+          title: '✨ 智能映射功能',
           type: 'success',
           message: '支持中英文自动翻译匹配，大大节省配置时间！'
         }
@@ -2178,19 +2178,19 @@ const relatedFAQs = computed(() => {
 
 ### 完成P0级优化后：
 - ✅ 真正实现"傻瓜式一键安装"
-- ✅ 新用户成功率从60% → 95%+
-- ✅ 首次安装成功时间从30分钟 → 5分钟
+- ✅ 新用户安装体验显著提升
+- ✅ 首次安装时间大幅缩短
 - ✅ 数据安全性大幅提升（崩溃不丢消息）
 - ✅ 法律风险降低（强制免责声明）
 
 ### 完成P1级优化后：
 - ✅ 用户体验达到商业软件水平
-- ✅ 错误自助解决率从20% → 80%+
-- ✅ 智能映射准确率从70% → 90%+
+- ✅ 错误自助解决能力显著提升
+- ✅ 智能映射准确性明显提高
 - ✅ 托盘体验符合桌面应用最佳实践
 
 ### 完成P2级优化后：
-- ✅ 功能完整度接近100%
+- ✅ 功能完整度显著提升
 - ✅ 新用户学习曲线大幅降低
 - ✅ 文档和教程质量达到优秀水平
 
