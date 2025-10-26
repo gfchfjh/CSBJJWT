@@ -178,7 +178,7 @@ After (v6.0.0):
   - 成功率: 95%+              (📈 +35%)
   - 耗时: 5秒（使用扩展）      (📉 95%)
   - 格式支持: 10+种           (3倍)
-  - 错误提示: 详细+建议        (⭐⭐⭐⭐⭐)
+  - 错误提示: 详细+建议        ()
   - Chrome扩展: 一键导出       (全新)
 ```
 
@@ -324,7 +324,7 @@ chrome-extension/
 
 Made with ❤️ by KOOK Forwarder Team
 
-⭐ **如果觉得有用，请在GitHub给我们一个Star！**
+ **如果觉得有用，请在GitHub给我们一个Star！**
 
 https://github.com/gfchfjh/CSBJJWT
 

@@ -975,4 +975,4 @@ cp ~/Documents/KookForwarder/data/config.db ~/Documents/KookForwarder/data/confi
 **更新日期**: 2025-10-25  
 **下载地址**: https://github.com/gfchfjh/CSBJJWT/releases/tag/v6.0.0
 
-⭐ **如果觉得有用，请在GitHub给我们一个Star！**
+ **如果觉得有用，请在GitHub给我们一个Star！**
