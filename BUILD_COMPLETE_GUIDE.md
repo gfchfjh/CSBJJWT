@@ -1,7 +1,7 @@
 # 🚀 KOOK消息转发系统 - 完整构建指南
 
-**版本**: v6.0.0  
-**日期**: 2025-10-25  
+**版本**: v6.4.0  
+**日期**: 2025-10-26  
 **作者**: KOOK Forwarder Team  
 
 ---
@@ -11,13 +11,15 @@
 本指南详细说明如何从源码构建KOOK消息转发系统的完整安装包。
 
 **构建产物**:
-- Windows: `KOOK-Forwarder-6.0.0-Setup.exe` (~150MB)
-- macOS: `KOOK-Forwarder-6.0.0-macOS.dmg` (~180MB)
-- Linux: `KOOK-Forwarder-6.0.0-x64.AppImage` (~160MB)
+- Windows: `KOOK-Forwarder-Setup-6.4.0.exe` (~250MB)
+- macOS: `KOOK-Forwarder-6.4.0.dmg` (~300MB)
+- Linux: `KOOK-Forwarder-6.4.0.AppImage` (~280MB)
 
-**构建时间**:
-- 首次构建: 30-45分钟
-- 后续构建: 15-20分钟
+**构建时间**（v6.4.0优化）:
+- 首次构建: 15-20分钟
+- 后续构建: 5-8分钟
+
+**v6.4.0新增**: 统一构建脚本 `build_unified_enhanced.py`
 
 ---
 
