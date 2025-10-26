@@ -1,13 +1,14 @@
 <template>
   <div class="wizard-container">
     <el-card class="wizard-card">
-      <!-- ✅ P0-1优化完成: 扩展为5步完整向导 -->
+      <!-- ✅ P0-2优化完成: 扩展为6步完整向导（增加测试步骤） -->
       <el-steps :active="currentStep" finish-status="success" align-center>
         <el-step title="欢迎" description="开始配置" />
         <el-step title="登录KOOK" description="添加账号" />
         <el-step title="选择服务器" description="监听频道" />
         <el-step title="配置Bot" description="转发目标" />
-        <el-step title="频道映射" description="完成配置" />
+        <el-step title="频道映射" description="设置映射" />
+        <el-step title="测试验证" description="确认配置" />
       </el-steps>
 
       <div class="wizard-content">
@@ -55,9 +56,16 @@
           v-else-if="currentStep === 4"
           :selected-channels="selectedChannels"
           :configured-bots="configuredBots"
-          @next="finishWizard"
+          @next="nextStep"
           @prev="prevStep"
+          @complete="nextStep"
+        />
+
+        <!-- ✅ P0-2新增：步骤6: 测试验证 -->
+        <WizardStepTesting
+          v-else-if="currentStep === 5"
           @complete="finishWizard"
+          @back="prevStep"
         />
       </div>
     </el-card>
@@ -74,6 +82,7 @@ import WizardStepLogin from '@/components/wizard/WizardStepLogin.vue'
 import WizardStepServers from '@/components/wizard/WizardStepServers.vue'
 import WizardStepBotConfig from '@/components/wizard/WizardStepBotConfig.vue'
 import WizardStepQuickMapping from '@/components/wizard/WizardStepQuickMapping.vue'
+import WizardStepTesting from '@/components/wizard/WizardStepTesting.vue'  // ✅ P0-2新增
 
 const router = useRouter()
 
@@ -100,7 +109,7 @@ const selectedChannelsCount = computed(() => {
 
 // 步骤导航
 const nextStep = () => {
-  if (currentStep.value < 4) {
+  if (currentStep.value < 5) {  // ✅ P0-2: 从4改为5（增加测试步骤）
     currentStep.value++
     
     // 如果进入到服务器选择步骤，自动加载服务器列表

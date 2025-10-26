@@ -1,231 +1,218 @@
 """
-崩溃恢复管理器
-功能：程序崩溃时自动保存待发送消息，重启后自动恢复
+✅ P0-5深度优化: 崩溃恢复系统
+自动保存未发送消息，程序重启后自动恢复
 """
-
-import pickle
 import json
-import time
+import asyncio
 from pathlib import Path
+from typing import List, Dict, Any
 from datetime import datetime
-from typing import List, Dict, Any, Optional
-from ..config import settings
-from ..utils.logger import logger
+from .logger import logger
+from ..config import DATA_DIR
 
 
 class CrashRecoveryManager:
     """崩溃恢复管理器"""
     
     def __init__(self):
-        self.recovery_dir = Path(settings.data_dir) / "recovery"
+        self.recovery_dir = DATA_DIR / "recovery"
         self.recovery_dir.mkdir(parents=True, exist_ok=True)
         
-        # 当前会话ID（时间戳）
-        self.session_id = int(time.time())
-        self.recovery_file = self.recovery_dir / f"session_{self.session_id}.pkl"
+        # 未发送消息文件
+        self.pending_file = self.recovery_dir / "pending_messages.json"
         
-        # 恢复数据缓存
-        self._pending_messages = []
-        self._last_save_time = 0
-        self._save_interval = 5  # 每5秒保存一次
+        # 失败消息文件
+        self.failed_file = self.recovery_dir / "failed_messages.json"
         
-        logger.info(f"崩溃恢复管理器初始化: 会话ID={self.session_id}")
-    
-    def add_pending_message(self, message: Dict[str, Any]):
+        # 锁文件
+        self.lock_file = self.recovery_dir / "recovery.lock"
+        
+    async def save_pending_message(self, message: Dict[str, Any]):
         """
-        添加待发送消息到恢复队列
+        保存待发送消息
         
         Args:
             message: 消息数据
         """
-        self._pending_messages.append({
-            'message': message,
-            'timestamp': time.time(),
-            'retry_count': 0,
-        })
-        
-        # 如果距离上次保存超过interval，则保存
-        current_time = time.time()
-        if current_time - self._last_save_time >= self._save_interval:
-            self.save_pending_messages()
-    
-    def remove_pending_message(self, message_id: str):
-        """
-        从恢复队列中移除已成功发送的消息
-        
-        Args:
-            message_id: 消息ID
-        """
-        self._pending_messages = [
-            m for m in self._pending_messages
-            if m['message'].get('message_id') != message_id
-        ]
-    
-    def save_pending_messages(self):
-        """保存待发送消息到文件"""
-        if not self._pending_messages:
-            return
-        
         try:
-            data = {
-                'version': settings.app_version,
-                'session_id': self.session_id,
-                'timestamp': datetime.now().isoformat(),
-                'message_count': len(self._pending_messages),
-                'messages': self._pending_messages,
-            }
+            # 读取现有消息
+            pending_messages = await self._load_pending_messages()
             
-            # 使用pickle序列化（支持复杂对象）
-            with open(self.recovery_file, 'wb') as f:
-                pickle.dump(data, f)
+            # 添加新消息
+            message['saved_at'] = datetime.now().isoformat()
+            message['status'] = 'pending'
+            pending_messages.append(message)
             
-            self._last_save_time = time.time()
+            # 保存
+            await self._save_pending_messages(pending_messages)
             
-            logger.debug(f"已保存 {len(self._pending_messages)} 条待发送消息到恢复文件")
+            logger.debug(f"✅ 保存待发送消息: {message.get('kook_message_id')}")
             
         except Exception as e:
-            logger.error(f"保存恢复文件失败: {str(e)}")
+            logger.error(f"保存待发送消息失败: {e}")
     
-    def load_pending_messages(self) -> List[Dict[str, Any]]:
+    async def save_failed_message(self, message: Dict[str, Any], error: str):
         """
-        加载未完成的消息（程序启动时调用）
+        保存失败消息
         
-        Returns:
-            待恢复的消息列表
+        Args:
+            message: 消息数据
+            error: 错误信息
         """
         try:
-            # 查找所有恢复文件（按时间倒序）
-            recovery_files = sorted(
-                self.recovery_dir.glob("session_*.pkl"),
-                key=lambda x: x.stat().st_mtime,
-                reverse=True
-            )
+            # 读取现有失败消息
+            failed_messages = await self._load_failed_messages()
             
-            if not recovery_files:
-                logger.info("没有待恢复的消息")
-                return []
+            # 添加新消息
+            message['failed_at'] = datetime.now().isoformat()
+            message['error'] = error
+            message['retry_count'] = message.get('retry_count', 0) + 1
+            failed_messages.append(message)
             
-            # 加载最新的恢复文件
-            latest_file = recovery_files[0]
+            # 保存
+            await self._save_failed_messages(failed_messages)
             
-            with open(latest_file, 'rb') as f:
-                data = pickle.load(f)
+            logger.warning(f"⚠️ 保存失败消息: {message.get('kook_message_id')}")
             
-            messages = data.get('messages', [])
+        except Exception as e:
+            logger.error(f"保存失败消息失败: {e}")
+    
+    async def recover_pending_messages(self) -> List[Dict[str, Any]]:
+        """
+        恢复待发送消息
+        
+        Returns:
+            待发送消息列表
+        """
+        try:
+            messages = await self._load_pending_messages()
             
             if messages:
-                logger.warning("=" * 60)
-                logger.warning("⚠️ 检测到上次程序未正常退出")
-                logger.warning(f"   恢复文件时间: {data.get('timestamp')}")
-                logger.warning(f"   待恢复消息数: {len(messages)}")
-                logger.warning(f"   会话ID: {data.get('session_id')}")
-                logger.warning("=" * 60)
-                
-                # 显示恢复提示（前5条）
-                logger.info("待恢复的消息（前5条）：")
-                for i, msg_data in enumerate(messages[:5]):
-                    msg = msg_data['message']
-                    logger.info(f"  {i+1}. {msg.get('channel_id')} - {msg.get('content', '')[:50]}...")
-                
-                if len(messages) > 5:
-                    logger.info(f"  ... 还有 {len(messages) - 5} 条消息")
-            
-            # 删除已使用的恢复文件
-            latest_file.unlink()
-            logger.info(f"✅ 已删除恢复文件: {latest_file.name}")
-            
-            # 清理7天前的旧恢复文件
-            self.cleanup_old_recovery_files()
+                logger.info(f"🔄 发现 {len(messages)} 条待发送消息，准备恢复")
             
             return messages
             
         except Exception as e:
-            logger.error(f"加载恢复文件失败: {str(e)}")
+            logger.error(f"恢复待发送消息失败: {e}")
             return []
     
-    def cleanup_old_recovery_files(self, days: int = 7):
+    async def recover_failed_messages(self) -> List[Dict[str, Any]]:
         """
-        清理旧的恢复文件
-        
-        Args:
-            days: 保留天数
-        """
-        try:
-            cutoff_time = time.time() - (days * 86400)
-            cleaned_count = 0
-            
-            for file in self.recovery_dir.glob("session_*.pkl"):
-                if file.stat().st_mtime < cutoff_time:
-                    file.unlink()
-                    cleaned_count += 1
-                    logger.debug(f"已清理旧恢复文件: {file.name}")
-            
-            if cleaned_count > 0:
-                logger.info(f"✅ 已清理 {cleaned_count} 个过期恢复文件（>{days}天）")
-                
-        except Exception as e:
-            logger.error(f"清理恢复文件失败: {str(e)}")
-    
-    def get_recovery_stats(self) -> Dict[str, Any]:
-        """
-        获取恢复统计信息
+        恢复失败消息
         
         Returns:
-            统计信息字典
+            失败消息列表
         """
         try:
-            recovery_files = list(self.recovery_dir.glob("session_*.pkl"))
+            messages = await self._load_failed_messages()
             
-            total_messages = 0
-            oldest_file = None
-            newest_file = None
+            # 只恢复重试次数<5的消息
+            recoverable = [m for m in messages if m.get('retry_count', 0) < 5]
             
-            for file in recovery_files:
-                try:
-                    with open(file, 'rb') as f:
-                        data = pickle.load(f)
-                        total_messages += len(data.get('messages', []))
-                    
-                    mtime = file.stat().st_mtime
-                    if oldest_file is None or mtime < oldest_file[1]:
-                        oldest_file = (file, mtime)
-                    if newest_file is None or mtime > newest_file[1]:
-                        newest_file = (file, mtime)
-                        
-                except:
-                    continue
+            if recoverable:
+                logger.info(f"🔄 发现 {len(recoverable)} 条可恢复的失败消息")
+            
+            return recoverable
+            
+        except Exception as e:
+            logger.error(f"恢复失败消息失败: {e}")
+            return []
+    
+    async def clear_pending_message(self, message_id: str):
+        """清除已发送的待发送消息"""
+        try:
+            messages = await self._load_pending_messages()
+            messages = [m for m in messages if m.get('kook_message_id') != message_id]
+            await self._save_pending_messages(messages)
+            logger.debug(f"✅ 清除待发送消息: {message_id}")
+        except Exception as e:
+            logger.error(f"清除待发送消息失败: {e}")
+    
+    async def clear_all_pending(self):
+        """清除所有待发送消息"""
+        try:
+            await self._save_pending_messages([])
+            logger.info("✅ 清除所有待发送消息")
+        except Exception as e:
+            logger.error(f"清除失败: {e}")
+    
+    async def _load_pending_messages(self) -> List[Dict[str, Any]]:
+        """加载待发送消息"""
+        if not self.pending_file.exists():
+            return []
+        
+        try:
+            with open(self.pending_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+    
+    async def _save_pending_messages(self, messages: List[Dict[str, Any]]):
+        """保存待发送消息"""
+        with open(self.pending_file, 'w', encoding='utf-8') as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+    
+    async def _load_failed_messages(self) -> List[Dict[str, Any]]:
+        """加载失败消息"""
+        if not self.failed_file.exists():
+            return []
+        
+        try:
+            with open(self.failed_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+    
+    async def _save_failed_messages(self, messages: List[Dict[str, Any]]):
+        """保存失败消息"""
+        with open(self.failed_file, 'w', encoding='utf-8') as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+    
+    def get_recovery_stats(self) -> Dict[str, int]:
+        """
+        获取恢复统计
+        
+        Returns:
+            统计信息
+        """
+        try:
+            pending = len(self._load_pending_messages_sync())
+            failed = len(self._load_failed_messages_sync())
             
             return {
-                'total_files': len(recovery_files),
-                'total_pending_messages': total_messages,
-                'current_session_messages': len(self._pending_messages),
-                'oldest_file_time': datetime.fromtimestamp(oldest_file[1]).isoformat() if oldest_file else None,
-                'newest_file_time': datetime.fromtimestamp(newest_file[1]).isoformat() if newest_file else None,
+                "pending_count": pending,
+                "failed_count": failed,
+                "total_count": pending + failed
             }
-            
-        except Exception as e:
-            logger.error(f"获取恢复统计失败: {str(e)}")
-            return {}
+        except:
+            return {
+                "pending_count": 0,
+                "failed_count": 0,
+                "total_count": 0
+            }
     
-    def force_save(self):
-        """强制保存（在程序即将退出时调用）"""
-        if self._pending_messages:
-            logger.info(f"💾 程序退出前保存 {len(self._pending_messages)} 条待发送消息...")
-            self.save_pending_messages()
-            logger.info("✅ 恢复数据已保存")
-    
-    def clear_recovery_data(self):
-        """清空所有恢复数据"""
+    def _load_pending_messages_sync(self) -> List[Dict[str, Any]]:
+        """同步加载待发送消息"""
+        if not self.pending_file.exists():
+            return []
+        
         try:
-            for file in self.recovery_dir.glob("session_*.pkl"):
-                file.unlink()
-            
-            self._pending_messages = []
-            logger.info("✅ 已清空所有恢复数据")
-            
-        except Exception as e:
-            logger.error(f"清空恢复数据失败: {str(e)}")
+            with open(self.pending_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
+    
+    def _load_failed_messages_sync(self) -> List[Dict[str, Any]]:
+        """同步加载失败消息"""
+        if not self.failed_file.exists():
+            return []
+        
+        try:
+            with open(self.failed_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return []
 
 
-# 全局实例
-crash_recovery_manager = CrashRecoveryManager()
+# 全局单例
+crash_recovery = CrashRecoveryManager()
