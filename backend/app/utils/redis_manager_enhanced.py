@@ -1,6 +1,13 @@
 """
-Redis嵌入式管理器（v1.8.1增强版）
-自动检测、启动和管理Redis服务
+✅ P0-3深度优化: Redis嵌入式管理器（增强版）
+自动检测、下载、启动和管理Redis服务
+
+新功能：
+- 自动检测系统Redis
+- 自动下载内置Redis（如未安装）
+- 实时下载进度
+- 跨平台支持
+- 完整错误处理
 """
 import os
 import sys
@@ -10,8 +17,9 @@ import time
 import socket
 import asyncio
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Callable, Dict, Any
 from .logger import logger
+from .redis_auto_installer import ensure_redis_installed  # ✅ P0-3新增
 
 
 class RedisManager:
@@ -32,6 +40,12 @@ class RedisManager:
         self.redis_path: Optional[Path] = None
         self.config_file: Optional[Path] = None
         self.is_managed = False  # 是否由本管理器启动
+        
+        # ✅ P0-3新增：下载进度回调
+        self.download_progress_callback: Optional[Callable] = None
+        
+        # Redis安装目录
+        self.redis_install_dir = Path(__file__).parent.parent.parent.parent / 'redis'
         
     def is_port_in_use(self) -> bool:
         """
@@ -145,12 +159,13 @@ class RedisManager:
         logger.info("ℹ️ 未找到Redis配置文件，将使用默认配置")
         return None
     
-    async def start(self, force_start: bool = False) -> Tuple[bool, str]:
+    async def start(self, force_start: bool = False, auto_install: bool = True) -> Tuple[bool, str]:
         """
-        启动Redis服务
+        启动Redis服务（✅ P0-3增强：支持自动下载）
         
         Args:
             force_start: 是否强制启动（即使端口已被占用）
+            auto_install: 是否自动下载安装Redis（默认True）
         
         Returns:
             (是否成功, 消息)
@@ -166,6 +181,26 @@ class RedisManager:
             
             # 查找Redis可执行文件
             self.redis_path = self.find_redis_executable()
+            
+            # ✅ P0-3新增：如果未找到且允许自动安装，则下载
+            if not self.redis_path and auto_install:
+                logger.info("📥 未找到Redis，开始自动下载安装...")
+                
+                success, msg = await ensure_redis_installed(
+                    self.redis_install_dir,
+                    progress_callback=self.download_progress_callback
+                )
+                
+                if not success:
+                    error_msg = f"Redis自动安装失败: {msg}\n\n{self._get_install_instructions()}"
+                    logger.error(error_msg)
+                    return False, error_msg
+                
+                logger.info("✅ Redis自动安装成功")
+                
+                # 重新查找Redis
+                self.redis_path = self.find_redis_executable()
+            
             if not self.redis_path:
                 error_msg = self._get_install_instructions()
                 logger.error(f"❌ 未找到Redis服务器\n{error_msg}")
@@ -374,6 +409,15 @@ class RedisManager:
         
         return status
     
+    def set_download_progress_callback(self, callback: Callable[[Dict[str, Any]], None]):
+        """
+        ✅ P0-3新增：设置下载进度回调
+        
+        Args:
+            callback: 回调函数，接收进度信息字典
+        """
+        self.download_progress_callback = callback
+    
     def _get_install_instructions(self) -> str:
         """
         获取Redis安装说明
@@ -384,7 +428,9 @@ class RedisManager:
         system = platform.system()
         
         instructions = [
-            "未找到Redis服务器，请选择以下方法之一安装：",
+            "✨ 推荐方式：系统会自动下载安装Redis（无需手动操作）",
+            "",
+            "如果自动下载失败，您也可以手动安装：",
             ""
         ]
         
@@ -393,20 +439,20 @@ class RedisManager:
                 "Windows:",
                 "  1. 下载: https://github.com/tporadowski/redis/releases",
                 "  2. 解压到项目的redis目录或C:\\Redis",
-                "  3. 或使用一键安装脚本: install.bat",
+                "  3. 重新启动应用",
             ])
         elif system == 'Darwin':  # macOS
             instructions.extend([
                 "macOS:",
                 "  brew install redis",
-                "  或使用一键安装脚本: ./install.sh",
+                "  或下载: https://download.redis.io/redis-stable.tar.gz",
             ])
         else:  # Linux
             instructions.extend([
                 "Linux:",
                 "  Ubuntu/Debian: sudo apt install redis-server",
                 "  CentOS/RHEL: sudo yum install redis",
-                "  或使用一键安装脚本: ./install.sh",
+                "  或下载: https://download.redis.io/redis-stable.tar.gz",
             ])
         
         return "\n".join(instructions)
