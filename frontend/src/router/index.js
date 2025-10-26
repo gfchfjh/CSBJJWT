@@ -11,6 +11,8 @@ import Advanced from '../views/Advanced.vue'
 import Selectors from '../views/Selectors.vue'
 import Help from '../views/Help.vue'
 import Wizard from '../views/Wizard.vue'
+import WizardSimplified from '../views/WizardSimplified.vue'
+import QuickSetup from '../views/QuickSetup.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -23,8 +25,20 @@ const routes = [
   {
     path: '/wizard',
     name: 'Wizard',
-    component: Wizard,
+    component: WizardSimplified,  // 使用简化版向导
     meta: { title: '配置向导', requiresAuth: true }
+  },
+  {
+    path: '/wizard-full',
+    name: 'WizardFull',
+    component: Wizard,  // 保留完整版向导
+    meta: { title: '完整配置向导', requiresAuth: true }
+  },
+  {
+    path: '/quick-setup',
+    name: 'QuickSetup',
+    component: QuickSetup,
+    meta: { title: '快速配置', requiresAuth: true }
   },
   {
     path: '/',
