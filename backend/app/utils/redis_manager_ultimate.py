@@ -1,422 +1,361 @@
 """
-Redis嵌入式管理器（终极版）
-==========================
-功能：
-1. 自动检测Redis二进制文件
-2. 自动启动Redis服务
-3. 健康监控（心跳检测）
-4. 自动重启（崩溃恢复）
-5. 数据备份与恢复
-6. 动态端口分配（避免冲突）
-7. 跨平台支持
-
-作者：KOOK Forwarder Team
-日期：2025-10-25
+Redis管理器 - 终极版本
+功能：完全嵌入式，自动下载、安装、启动、健康检查
+用户完全无感知
 """
 
 import os
 import sys
-import subprocess
 import platform
+import subprocess
 import asyncio
-import aioredis
-import socket
+import time
+import shutil
+import urllib.request
+import zipfile
 from pathlib import Path
 from typing import Optional, Tuple
-from datetime import datetime
 from ..utils.logger import logger
+from ..config import settings
 
 
 class RedisManagerUltimate:
-    """Redis嵌入式管理器（终极版）"""
+    """Redis管理器 - 终极版本（用户无感知）"""
     
-    def __init__(self, redis_dir: Path = None, port: int = 6379):
-        self.system = platform.system()
-        self.redis_dir = redis_dir or self._get_default_redis_dir()
-        self.port = port
-        self.process: Optional[subprocess.Popen] = None
+    def __init__(self):
+        self.redis_process: Optional[subprocess.Popen] = None
         self.is_running = False
-        self.redis_pool: Optional[aioredis.Redis] = None
+        self.host = settings.redis_host
+        self.port = settings.redis_port
         
-        # 监控配置
-        self.health_check_interval = 5  # 秒
-        self.max_restart_attempts = 5
-        self.restart_count = 0
+        # Redis可执行文件路径
+        self.redis_dir = Path(settings.data_dir) / "redis"
+        self.redis_dir.mkdir(parents=True, exist_ok=True)
         
-    def _get_default_redis_dir(self) -> Path:
-        """获取默认Redis目录"""
-        # 开发环境
-        dev_redis = Path(__file__).parent.parent.parent.parent / "dist" / "redis"
-        if dev_redis.exists():
-            return dev_redis
-        
-        # 打包后环境
-        if getattr(sys, 'frozen', False):
-            # PyInstaller打包后
-            base_path = Path(sys._MEIPASS)
-            return base_path / "redis"
-        
-        # 相对路径
-        return Path("./redis")
-    
-    def _get_redis_executable(self) -> Path:
-        """获取Redis可执行文件路径"""
-        if self.system == "Windows":
-            return self.redis_dir / "redis-server.exe"
+        # 根据平台确定Redis可执行文件名
+        if platform.system() == "Windows":
+            self.redis_executable = self.redis_dir / "redis-server.exe"
+            self.download_url = "https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip"
         else:
-            return self.redis_dir / "redis-server"
+            self.redis_executable = self.redis_dir / "redis-server"
+            # Linux/macOS使用不同的下载源
+            if platform.system() == "Darwin":
+                self.download_url = "https://download.redis.io/redis-stable.tar.gz"
+            else:
+                self.download_url = "https://download.redis.io/redis-stable.tar.gz"
+        
+        # Redis配置文件
+        self.redis_conf = self.redis_dir / "redis.conf"
+        
+        # Redis日志文件
+        self.redis_log = self.redis_dir / "redis.log"
+        
+        # Redis PID文件
+        self.redis_pid = self.redis_dir / "redis.pid"
+        
+        logger.info(f"Redis管理器初始化: {self.host}:{self.port}")
     
-    def _get_redis_config(self) -> Path:
-        """获取Redis配置文件路径"""
-        return self.redis_dir / "redis.conf"
+    def _check_redis_installed(self) -> bool:
+        """检查Redis是否已安装"""
+        return self.redis_executable.exists()
     
-    def _is_port_available(self, port: int) -> bool:
-        """检查端口是否可用"""
+    async def _download_redis(self) -> bool:
+        """自动下载Redis"""
+        logger.info("📥 Redis未安装，开始自动下载...")
+        logger.info(f"   下载地址: {self.download_url}")
+        
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
-            result = sock.connect_ex(('127.0.0.1', port))
-            sock.close()
-            return result != 0
-        except:
+            # 显示下载进度
+            def show_progress(block_num, block_size, total_size):
+                downloaded = block_num * block_size
+                percent = min(downloaded / total_size * 100, 100)
+                logger.info(f"   下载进度: {percent:.1f}% ({downloaded / 1024 / 1024:.1f}MB / {total_size / 1024 / 1024:.1f}MB)")
+            
+            # 下载文件
+            download_file = self.redis_dir / "redis_download.zip"
+            
+            logger.info("   正在下载Redis...")
+            await asyncio.to_thread(
+                urllib.request.urlretrieve,
+                self.download_url,
+                download_file,
+                show_progress
+            )
+            
+            logger.info("✅ Redis下载完成，开始解压...")
+            
+            # 解压
+            if platform.system() == "Windows":
+                await self._extract_redis_windows(download_file)
+            else:
+                await self._extract_redis_unix(download_file)
+            
+            # 删除下载的压缩包
+            download_file.unlink()
+            
+            logger.info("✅ Redis安装完成")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Redis下载失败: {str(e)}")
+            logger.error("   请手动下载Redis并放置到: " + str(self.redis_dir))
             return False
     
-    def _find_available_port(self, start_port: int = 6379, max_attempts: int = 10) -> Optional[int]:
-        """查找可用端口"""
-        for i in range(max_attempts):
-            port = start_port + i
-            if self._is_port_available(port):
-                return port
-        return None
-    
-    async def start(self, auto_find_port: bool = True) -> Tuple[bool, str]:
-        """
-        启动Redis服务
+    async def _extract_redis_windows(self, zip_file: Path):
+        """解压Redis（Windows）"""
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(self.redis_dir)
         
-        Args:
-            auto_find_port: 端口被占用时自动寻找可用端口
+        # 查找redis-server.exe
+        for file in self.redis_dir.rglob("redis-server.exe"):
+            # 移动到根目录
+            shutil.move(str(file), str(self.redis_executable))
+            break
+    
+    async def _extract_redis_unix(self, tar_file: Path):
+        """解压并编译Redis（Linux/macOS）"""
+        import tarfile
+        
+        # 解压
+        with tarfile.open(tar_file, 'r:gz') as tar:
+            tar.extractall(self.redis_dir)
+        
+        # 查找redis目录
+        redis_source_dir = None
+        for dir in self.redis_dir.iterdir():
+            if dir.is_dir() and dir.name.startswith('redis'):
+                redis_source_dir = dir
+                break
+        
+        if redis_source_dir:
+            logger.info("   正在编译Redis...")
             
+            # 编译
+            result = await asyncio.to_thread(
+                subprocess.run,
+                ["make"],
+                cwd=redis_source_dir,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                # 复制可执行文件
+                src_exec = redis_source_dir / "src" / "redis-server"
+                shutil.copy(str(src_exec), str(self.redis_executable))
+                os.chmod(self.redis_executable, 0o755)
+                logger.info("✅ Redis编译完成")
+            else:
+                logger.error(f"❌ Redis编译失败: {result.stderr}")
+                raise Exception("Redis编译失败")
+    
+    def _create_redis_config(self):
+        """创建Redis配置文件"""
+        if not self.redis_conf.exists():
+            logger.info("创建Redis配置文件...")
+            
+            config_content = f"""
+# Redis配置文件（自动生成）
+# KOOK消息转发系统专用
+
+# 网络配置
+bind {self.host}
+port {self.port}
+timeout 0
+tcp-keepalive 300
+
+# 通用配置
+daemonize no
+supervised no
+pidfile {self.redis_pid}
+loglevel notice
+logfile {self.redis_log}
+
+# 持久化配置
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir {self.redis_dir}
+
+# 内存配置
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+
+# 安全配置
+# requirepass your-password-here
+
+# 限制
+maxclients 10000
+
+# 慢查询日志
+slowlog-log-slower-than 10000
+slowlog-max-len 128
+
+# 事件通知
+notify-keyspace-events ""
+"""
+            
+            self.redis_conf.write_text(config_content)
+            logger.info(f"✅ Redis配置文件已创建: {self.redis_conf}")
+    
+    async def start(self) -> Tuple[bool, str]:
+        """
+        启动Redis服务（智能模式）
+        
         Returns:
             (是否成功, 消息)
         """
         try:
-            logger.info("=" * 60)
-            logger.info("🚀 启动Redis嵌入式服务...")
-            logger.info("=" * 60)
+            # 1. 检查是否已在运行
+            if await self._check_redis_running():
+                logger.info("✅ 检测到Redis已在运行")
+                self.is_running = True
+                return True, "Redis已在运行"
             
-            # 检查Redis文件是否存在
-            redis_executable = self._get_redis_executable()
-            redis_config = self._get_redis_config()
+            # 2. 检查是否已安装
+            if not self._check_redis_installed():
+                logger.warning("⚠️ Redis未安装，将自动下载...")
+                
+                # 自动下载
+                download_success = await self._download_redis()
+                if not download_success:
+                    return False, "Redis自动下载失败，请检查网络连接"
             
-            if not redis_executable.exists():
-                error_msg = f"❌ Redis可执行文件不存在: {redis_executable}"
-                logger.error(error_msg)
-                return False, error_msg
+            # 3. 创建配置文件
+            self._create_redis_config()
             
-            if not redis_config.exists():
-                logger.warning(f"⚠️  Redis配置文件不存在: {redis_config}，将使用默认配置")
-                redis_config = None
+            # 4. 启动Redis
+            logger.info("🚀 启动Redis服务...")
             
-            # 检查端口是否可用
-            if not self._is_port_available(self.port):
-                if auto_find_port:
-                    logger.warning(f"⚠️  端口 {self.port} 已被占用，尝试查找可用端口...")
-                    available_port = self._find_available_port(self.port)
-                    if available_port:
-                        logger.info(f"✅ 找到可用端口: {available_port}")
-                        self.port = available_port
-                    else:
-                        error_msg = f"❌ 无法找到可用端口（尝试了{self.port}-{self.port+9}）"
-                        logger.error(error_msg)
-                        return False, error_msg
-                else:
-                    error_msg = f"❌ 端口 {self.port} 已被占用"
-                    logger.error(error_msg)
-                    return False, error_msg
-            
-            # 准备启动参数
-            cmd = [str(redis_executable)]
-            
-            if redis_config:
-                cmd.append(str(redis_config))
-            
-            # 覆盖配置参数
-            cmd.extend([
-                "--port", str(self.port),
-                "--bind", "127.0.0.1",
-                "--protected-mode", "yes",
-                "--daemonize", "no",  # 不后台运行（由程序管理）
-                "--loglevel", "notice",
-            ])
-            
-            # 设置数据目录
-            data_dir = Path("./data/redis")
-            data_dir.mkdir(parents=True, exist_ok=True)
-            cmd.extend(["--dir", str(data_dir)])
-            
-            logger.info(f"📦 Redis版本: {self._get_redis_version()}")
-            logger.info(f"🔌 监听端口: {self.port}")
-            logger.info(f"📁 数据目录: {data_dir}")
-            logger.info(f"🚀 启动命令: {' '.join(cmd)}")
-            
-            # 启动Redis进程
-            self.process = subprocess.Popen(
-                cmd,
+            self.redis_process = subprocess.Popen(
+                [str(self.redis_executable), str(self.redis_conf)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=self.redis_dir
             )
             
-            logger.info(f"⏳ Redis进程已启动 (PID: {self.process.pid})，等待服务就绪...")
+            # 5. 等待启动并验证
+            await asyncio.sleep(2)
             
-            # 等待Redis启动完成（最多10秒）
-            ready = await self._wait_for_ready(timeout=10)
-            
-            if not ready:
-                self.stop()
-                error_msg = "❌ Redis启动超时（10秒）"
-                logger.error(error_msg)
-                return False, error_msg
-            
-            self.is_running = True
-            logger.info("✅ Redis服务启动成功！")
-            logger.info("=" * 60)
-            
-            # 启动健康监控
-            asyncio.create_task(self._health_monitor())
-            
-            return True, f"Redis服务已启动 (端口: {self.port})"
-            
-        except Exception as e:
-            error_msg = f"❌ Redis启动失败: {str(e)}"
-            logger.error(error_msg)
-            import traceback
-            logger.error(traceback.format_exc())
-            return False, error_msg
-    
-    def _get_redis_version(self) -> str:
-        """获取Redis版本"""
-        try:
-            redis_executable = self._get_redis_executable()
-            result = subprocess.run(
-                [str(redis_executable), "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                return result.stdout.strip()
+            if await self._check_redis_running():
+                self.is_running = True
+                logger.info("✅ Redis启动成功")
+                logger.info(f"   进程ID: {self.redis_process.pid}")
+                logger.info(f"   监听地址: {self.host}:{self.port}")
+                logger.info(f"   日志文件: {self.redis_log}")
+                return True, f"Redis启动成功 (PID: {self.redis_process.pid})"
             else:
-                return "未知版本"
-        except:
-            return "未知版本"
-    
-    async def _wait_for_ready(self, timeout: int = 10) -> bool:
-        """
-        等待Redis就绪
-        
-        Args:
-            timeout: 超时时间（秒）
+                logger.error("❌ Redis启动失败")
+                return False, "Redis启动失败"
             
-        Returns:
-            是否就绪
-        """
-        start_time = asyncio.get_event_loop().time()
-        
-        while (asyncio.get_event_loop().time() - start_time) < timeout:
-            try:
-                # 尝试连接Redis
-                redis = await aioredis.create_redis_pool(
-                    f'redis://127.0.0.1:{self.port}',
-                    minsize=1,
-                    maxsize=1
-                )
-                
-                # 执行PING测试
-                pong = await redis.ping()
-                
-                # 关闭测试连接
-                redis.close()
-                await redis.wait_closed()
-                
-                if pong:
-                    logger.info("✅ Redis服务就绪，PING测试通过")
-                    return True
-                    
-            except Exception as e:
-                # 继续等待
-                await asyncio.sleep(0.5)
-        
-        return False
+        except FileNotFoundError:
+            logger.error(f"❌ Redis可执行文件不存在: {self.redis_executable}")
+            return False, "Redis可执行文件不存在"
+        except Exception as e:
+            logger.error(f"❌ 启动Redis异常: {str(e)}")
+            return False, f"启动失败: {str(e)}"
     
-    async def create_connection_pool(self) -> bool:
-        """
-        创建Redis连接池
-        
-        Returns:
-            是否成功
-        """
+    async def _check_redis_running(self) -> bool:
+        """检查Redis是否在运行"""
         try:
-            if self.redis_pool:
-                logger.info("ℹ️  Redis连接池已存在")
-                return True
+            import redis
             
-            logger.info("🔌 创建Redis连接池...")
-            
-            self.redis_pool = await aioredis.create_redis_pool(
-                f'redis://127.0.0.1:{self.port}',
-                minsize=5,
-                maxsize=20,
-                encoding='utf-8'
+            # 尝试连接
+            client = redis.Redis(
+                host=self.host,
+                port=self.port,
+                socket_connect_timeout=2,
+                socket_timeout=2
             )
             
-            logger.info("✅ Redis连接池创建成功（最小5连接，最大20连接）")
+            # Ping测试
+            await asyncio.to_thread(client.ping)
             return True
             
-        except Exception as e:
-            logger.error(f"❌ 创建Redis连接池失败: {str(e)}")
+        except Exception:
             return False
     
     def stop(self):
         """停止Redis服务"""
         try:
-            logger.info("🛑 停止Redis服务...")
-            
-            self.is_running = False
-            
-            # 关闭连接池
-            if self.redis_pool:
-                self.redis_pool.close()
-                # await self.redis_pool.wait_closed()  # 同步方法中无法await
-                self.redis_pool = None
-                logger.info("✅ Redis连接池已关闭")
-            
-            # 终止Redis进程
-            if self.process:
-                self.process.terminate()
-                try:
-                    self.process.wait(timeout=5)
-                    logger.info(f"✅ Redis进程已停止 (PID: {self.process.pid})")
-                except subprocess.TimeoutExpired:
-                    logger.warning("⚠️  Redis进程未响应，强制终止...")
-                    self.process.kill()
-                    self.process.wait()
-                    logger.info("✅ Redis进程已强制终止")
+            if self.redis_process:
+                logger.info("🛑 停止Redis服务...")
                 
-                self.process = None
+                self.redis_process.terminate()
+                
+                # 等待进程结束
+                try:
+                    self.redis_process.wait(timeout=5)
+                    logger.info("✅ Redis已停止")
+                except subprocess.TimeoutExpired:
+                    logger.warning("⚠️ Redis未响应，强制终止...")
+                    self.redis_process.kill()
+                    self.redis_process.wait()
+                    logger.info("✅ Redis已强制终止")
+                
+                self.redis_process = None
+                self.is_running = False
             
-            logger.info("✅ Redis服务已完全停止")
+            # 清理PID文件
+            if self.redis_pid.exists():
+                self.redis_pid.unlink()
             
         except Exception as e:
             logger.error(f"❌ 停止Redis失败: {str(e)}")
     
-    async def _health_monitor(self):
-        """健康监控（后台任务）"""
-        logger.info(f"💓 启动Redis健康监控（间隔{self.health_check_interval}秒）")
-        
-        while self.is_running:
-            try:
-                await asyncio.sleep(self.health_check_interval)
-                
-                # 检查进程是否存活
-                if self.process and self.process.poll() is not None:
-                    logger.error(f"❌ Redis进程已退出 (退出码: {self.process.returncode})")
-                    
-                    # 尝试自动重启
-                    if self.restart_count < self.max_restart_attempts:
-                        self.restart_count += 1
-                        logger.warning(f"🔄 尝试重启Redis ({self.restart_count}/{self.max_restart_attempts})...")
-                        
-                        success, msg = await self.start(auto_find_port=True)
-                        if success:
-                            logger.info("✅ Redis重启成功")
-                            self.restart_count = 0  # 重置计数
-                        else:
-                            logger.error(f"❌ Redis重启失败: {msg}")
-                    else:
-                        logger.error(f"❌ Redis已达到最大重启次数({self.max_restart_attempts})，停止监控")
-                        self.is_running = False
-                        break
-                
-                # PING测试
-                if self.redis_pool:
-                    try:
-                        await self.redis_pool.ping()
-                        # logger.debug("✅ Redis PING测试通过")
-                    except Exception as e:
-                        logger.warning(f"⚠️  Redis PING测试失败: {str(e)}")
-                
-            except Exception as e:
-                logger.error(f"❌ 健康监控异常: {str(e)}")
-    
-    async def backup_data(self, backup_path: Path = None) -> Tuple[bool, str]:
-        """
-        备份Redis数据
-        
-        Args:
-            backup_path: 备份文件路径
-            
-        Returns:
-            (是否成功, 消息)
-        """
+    async def health_check(self) -> dict:
+        """健康检查"""
         try:
-            if not backup_path:
-                backup_dir = Path("./data/redis/backups")
-                backup_dir.mkdir(parents=True, exist_ok=True)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup_path = backup_dir / f"redis_backup_{timestamp}.rdb"
+            import redis
             
-            logger.info(f"💾 开始备份Redis数据...")
-            logger.info(f"📁 备份路径: {backup_path}")
+            client = redis.Redis(
+                host=self.host,
+                port=self.port,
+                socket_connect_timeout=2,
+                socket_timeout=2
+            )
             
-            if not self.redis_pool:
-                return False, "Redis连接池未初始化"
+            # 获取info
+            info = await asyncio.to_thread(client.info)
             
-            # 执行BGSAVE
-            await self.redis_pool.execute('BGSAVE')
-            
-            # 等待备份完成（检查LASTSAVE时间）
-            last_save_before = await self.redis_pool.execute('LASTSAVE')
-            
-            max_wait = 60  # 最多等待60秒
-            waited = 0
-            while waited < max_wait:
-                await asyncio.sleep(1)
-                waited += 1
-                last_save_after = await self.redis_pool.execute('LASTSAVE')
-                if last_save_after > last_save_before:
-                    break
-            
-            # 复制dump.rdb到备份位置
-            dump_file = Path("./data/redis/dump.rdb")
-            if dump_file.exists():
-                import shutil
-                shutil.copy2(dump_file, backup_path)
-                
-                size_mb = backup_path.stat().st_size / (1024 * 1024)
-                msg = f"✅ Redis数据备份成功 (大小: {size_mb:.2f} MB)"
-                logger.info(msg)
-                return True, msg
-            else:
-                msg = "❌ dump.rdb文件不存在"
-                logger.error(msg)
-                return False, msg
+            return {
+                'status': 'healthy',
+                'version': info.get('redis_version'),
+                'uptime_seconds': info.get('uptime_in_seconds'),
+                'connected_clients': info.get('connected_clients'),
+                'used_memory_human': info.get('used_memory_human'),
+                'total_commands_processed': info.get('total_commands_processed'),
+            }
             
         except Exception as e:
-            msg = f"❌ Redis备份失败: {str(e)}"
-            logger.error(msg)
-            return False, msg
+            return {
+                'status': 'unhealthy',
+                'error': str(e)
+            }
     
-    def get_stats(self) -> dict:
-        """获取Redis统计信息"""
-        return {
-            'is_running': self.is_running,
-            'port': self.port,
-            'pid': self.process.pid if self.process else None,
-            'restart_count': self.restart_count,
-            'redis_dir': str(self.redis_dir),
-            'has_pool': self.redis_pool is not None
-        }
+    async def auto_restart_on_failure(self):
+        """自动重启（当检测到故障时）"""
+        logger.warning("⚠️ 检测到Redis故障，尝试自动重启...")
+        
+        # 停止旧进程
+        self.stop()
+        
+        # 等待2秒
+        await asyncio.sleep(2)
+        
+        # 重新启动
+        success, message = await self.start()
+        
+        if success:
+            logger.info("✅ Redis自动重启成功")
+        else:
+            logger.error("❌ Redis自动重启失败")
+        
+        return success
 
 
 # 全局实例
