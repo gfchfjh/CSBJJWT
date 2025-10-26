@@ -7,6 +7,7 @@ from collections import OrderedDict
 from typing import Dict, Any, List, Optional
 from ..utils.logger import logger
 from ..utils.error_diagnosis import ErrorDiagnostic, diagnostic_logger
+from ..utils.memory_monitor import create_lru_cache  # ✅ P0-3优化：使用全局LRU
 from ..database import db
 from ..processors.filter import message_filter
 from ..processors.formatter import formatter
@@ -19,44 +20,8 @@ from ..forwarders.feishu import feishu_forwarder
 from .redis_client import redis_queue
 
 
-class LRUCache:
-    """简单的LRU缓存，防止无限增长"""
-    
-    def __init__(self, max_size: int = 10000):
-        """
-        初始化LRU缓存
-        
-        Args:
-            max_size: 最大缓存大小
-        """
-        self.cache = OrderedDict()
-        self.max_size = max_size
-    
-    def add(self, key: str):
-        """
-        添加键到缓存
-        
-        Args:
-            key: 键
-        """
-        if key in self.cache:
-            # 已存在，移到末尾（最近使用）
-            self.cache.move_to_end(key)
-        else:
-            # 新增
-            self.cache[key] = True
-            # 检查是否超出限制
-            if len(self.cache) > self.max_size:
-                # 删除最旧的项（最前面的）
-                self.cache.popitem(last=False)
-    
-    def __contains__(self, key: str) -> bool:
-        """检查键是否存在"""
-        return key in self.cache
-    
-    def __len__(self) -> int:
-        """获取缓存大小"""
-        return len(self.cache)
+# ✅ P0-3优化：移除本地LRU实现，使用全局memory_monitor
+# LRUCache 现在从 memory_monitor 导入
 
 
 class MessageWorker:
@@ -64,8 +29,8 @@ class MessageWorker:
     
     def __init__(self):
         self.is_running = False
-        # 使用LRU缓存防止内存泄漏（最多保留10000条消息ID）
-        self.processed_messages = LRUCache(max_size=10000)
+        # ✅ P0-3优化：使用全局注册的LRU缓存（自动监控）
+        self.processed_messages = create_lru_cache(name="processed_messages", max_size=10000)
     
     async def start(self):
         """启动Worker（✅ P1-3+P2-4优化：批量处理+异常恢复）"""

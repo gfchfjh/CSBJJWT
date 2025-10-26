@@ -16,6 +16,8 @@ from .api import file_security_api
 from .api import performance  # v1.12.0 性能监控API
 # ✅ v6.0.0新增: Cookie导入增强版API
 from .api import cookie_import_enhanced
+# ✅ P0-3优化: 内存监控API
+from .api import memory_stats
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
@@ -27,6 +29,7 @@ from .utils.scheduler import setup_scheduled_tasks, shutdown_scheduled_tasks
 from .utils.health import health_checker
 from .utils.update_checker import update_checker
 from .utils.redis_manager_enhanced import redis_manager  # v1.8.1使用增强版
+from .utils.memory_monitor import memory_monitor  # ✅ P0-3优化
 from .config import settings
 from .database import db
 import asyncio
@@ -110,6 +113,10 @@ async def lifespan(app: FastAPI):
             background_tasks.append(update_check_task)
             logger.info("✅ 更新检查器已启动")
         
+        # ✅ P0-3优化：启动内存监控器
+        await memory_monitor.start()
+        logger.info("✅ 内存监控器已启动")
+        
     except Exception as e:
         logger.error(f"❌ 启动失败: {str(e)}")
     
@@ -130,6 +137,10 @@ async def lifespan(app: FastAPI):
         # 停止更新检查器
         await update_checker.stop()
         logger.info("✅ 更新检查器已停止")
+        
+        # ✅ P0-3优化：停止内存监控器
+        await memory_monitor.stop()
+        logger.info("✅ 内存监控器已停止")
         
         # 停止Worker
         await message_worker.stop()
@@ -227,6 +238,7 @@ app.include_router(video_api.router)  # 视频管理API 🆕 P0-1优化
 app.include_router(email_api.router)  # 邮件管理API 🆕 P0-2优化
 app.include_router(file_security_api.router)  # 文件安全API 🆕 P0-4优化
 app.include_router(cookie_import_enhanced.router)  # Cookie导入增强API 🆕 v6.0.0
+app.include_router(memory_stats.router)  # 内存监控API 🆕 P0-3优化
 
 
 @app.get("/")

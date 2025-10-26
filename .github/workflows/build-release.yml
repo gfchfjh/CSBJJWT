@@ -5,238 +5,231 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  APP_NAME: KOOK-Forwarder
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
 
 jobs:
-  # ==================== Windows ====================
+  # Windows 构建
   build-windows:
-    name: Build Windows Installer
     runs-on: windows-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Install Python dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
-        run: |
-          cd frontend
-          npm ci
-      
-      - name: Build Python backend
+          pip install pyinstaller playwright
+          playwright install chromium --with-deps
+
+      - name: Build backend
         run: |
           cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
+          pyinstaller build_backend_enhanced.spec --clean --noconfirm
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
         run: |
           cd frontend
           npm run build
-      
-      - name: Build Electron installer
+
+      - name: Build Electron (Windows)
         run: |
           cd frontend
           npm run electron:build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload Windows artifact
+
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v3
         with:
           name: windows-installer
-          path: frontend/dist-electron/*.exe
-  
-  # ==================== macOS ====================
+          path: dist/*.exe
+
+  # macOS 构建
   build-macos:
-    name: Build macOS Installer
     runs-on: macos-latest
-    
+    strategy:
+      matrix:
+        arch: [x64, arm64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install Python dependencies
-        run: |
-          cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
-        run: |
-          cd frontend
-          npm ci
-      
-      - name: Prepare Redis
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
         run: |
           brew install redis
-          mkdir -p redis
-          cp $(which redis-server) redis/redis-server-mac
-      
-      - name: Build Python backend
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller playwright
+          playwright install chromium
+
+      - name: Build backend
         run: |
           cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
+          pyinstaller build_backend_enhanced.spec --clean --noconfirm
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
         run: |
           cd frontend
           npm run build
-      
-      - name: Build Electron installer
+
+      - name: Build Electron (macOS ${{ matrix.arch }})
         run: |
           cd frontend
-          npm run electron:build:mac
+          npm run electron:build:mac -- --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 如需代码签名，添加以下环境变量
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      
-      - name: Upload macOS artifact
+          CSC_LINK: ${{ secrets.MACOS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: macos-installer
-          path: frontend/dist-electron/*.dmg
-  
-  # ==================== Linux ====================
+          name: macos-${{ matrix.arch }}-installer
+          path: dist/*.dmg
+
+  # Linux 构建
   build-linux:
-    name: Build Linux Installer
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          cache: 'pip'
-      
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libgtk-3-dev libnotify-dev libnss3 libxss1 libxtst6
-      
+          sudo apt-get install -y build-essential libssl-dev
+
+      - name: Build Redis
+        run: |
+          wget https://download.redis.io/releases/redis-7.0.0.tar.gz
+          tar xzf redis-7.0.0.tar.gz
+          cd redis-7.0.0
+          make
+          mkdir -p ../build/redis
+          cp src/redis-server ../build/redis/
+
       - name: Install Python dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
-        run: |
-          cd frontend
-          npm ci
-      
-      - name: Build Redis
-        run: |
-          wget https://download.redis.io/releases/redis-7.0.15.tar.gz
-          tar -xzf redis-7.0.15.tar.gz
-          cd redis-7.0.15
-          make -j$(nproc)
-          mkdir -p ../redis
-          cp src/redis-server ../redis/redis-server-linux
-          cd ..
-          rm -rf redis-7.0.15 redis-7.0.15.tar.gz
-      
-      - name: Build Python backend
+          pip install pyinstaller playwright
+          playwright install chromium --with-deps
+
+      - name: Build backend
         run: |
           cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
+          pyinstaller build_backend_enhanced.spec --clean --noconfirm
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build frontend
         run: |
           cd frontend
           npm run build
-      
-      - name: Build Electron installer
+
+      - name: Build Electron (Linux)
         run: |
           cd frontend
           npm run electron:build:linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: linux-installers
+          name: linux-installer
           path: |
-            frontend/dist-electron/*.AppImage
-            frontend/dist-electron/*.deb
-            frontend/dist-electron/*.rpm
-  
-  # ==================== Release ====================
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+
+  # 创建 Release
   create-release:
-    name: Create GitHub Release
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
       - name: Download all artifacts
         uses: actions/download-artifact@v3
-      
-      - name: List artifacts
-        run: |
-          ls -R
-      
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             windows-installer/*.exe
-            macos-installer/*.dmg
-            linux-installers/*.AppImage
-            linux-installers/*.deb
-            linux-installers/*.rpm
-          body_path: RELEASE_NOTES_v6.0.0.md
+            macos-x64-installer/*.dmg
+            macos-arm64-installer/*.dmg
+            linux-installer/*.AppImage
+            linux-installer/*.deb
+            linux-installer/*.rpm
           draft: false
           prerelease: false
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Notify success
+
+      - name: Upload to Storage (Optional)
+        if: env.AWS_S3_BUCKET != ''
         run: |
-          echo "✅ Release created successfully!"
-          echo "Download URL: https://github.com/${{ github.repository }}/releases/latest"
+          aws s3 sync windows-installer s3://${{ secrets.AWS_S3_BUCKET }}/releases/${{ github.ref_name }}/windows/
+          aws s3 sync macos-x64-installer s3://${{ secrets.AWS_S3_BUCKET }}/releases/${{ github.ref_name }}/macos-x64/
+          aws s3 sync macos-arm64-installer s3://${{ secrets.AWS_S3_BUCKET }}/releases/${{ github.ref_name }}/macos-arm64/
+          aws s3 sync linux-installer s3://${{ secrets.AWS_S3_BUCKET }}/releases/${{ github.ref_name }}/linux/
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
