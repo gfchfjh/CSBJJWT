@@ -3,15 +3,16 @@
  * KOOK消息转发系统 v6.1.0
  */
 
-const { app, BrowserWindow, ipcMain, Tray, Menu, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const AutoLaunch = require('auto-launch');
 const fs = require('fs');
+const TrayManager = require('./tray-manager'); // ✅ 新增：导入托盘管理器
 
 // 全局变量
 let mainWindow = null;
-let tray = null;
+let trayManager = null; // ✅ 新增：托盘管理器实例
 let backendProcess = null;
 let isQuitting = false;
 
@@ -390,9 +391,11 @@ app.whenReady().then(async () => {
     console.log('[Main] 正在创建主窗口...');
     createWindow();
 
-    // 创建托盘
+    // 创建托盘（使用新的托盘管理器）
     console.log('[Main] 正在创建系统托盘...');
-    createTray();
+    trayManager = new TrayManager(mainWindow);
+    trayManager.create();
+    trayManager.updateStatus('offline', '后端服务未启动');
 
     // 设置IPC通信
     setupIPC();
