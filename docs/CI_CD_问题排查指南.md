@@ -609,7 +609,6 @@ def encrypt_password(password: str) -> str:
     """
     return crypto_manager.encrypt(password)
 
-
 def decrypt_password(encrypted_password: str) -> str:
     """
     解密密码（快捷函数）
