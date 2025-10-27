@@ -13,6 +13,7 @@ import Help from '../views/Help.vue'
 import Wizard from '../views/Wizard.vue'
 import WizardQuick3Steps from '../views/WizardQuick3Steps.vue'
 import WizardUltimate3Steps from '../views/WizardUltimate3Steps.vue'
+import WizardUnified from '../views/WizardUnified.vue'  // ✅ v9.0.0新增：统一向导
 import QuickSetup from '../views/QuickSetup.vue'
 import Login from '../views/Login.vue'
 
@@ -26,7 +27,13 @@ const routes = [
   {
     path: '/wizard',
     name: 'Wizard',
-    component: WizardUltimate3Steps,  // ✅ P0-9优化: 使用终极3步向导（符合需求文档）
+    component: WizardUnified,  // ✅ v9.0.0优化: 使用统一向导（快速/专业双模式）
+    meta: { title: '配置向导', requiresAuth: true }
+  },
+  {
+    path: '/wizard-ultimate',
+    name: 'WizardUltimate',
+    component: WizardUltimate3Steps,  // 保留终极向导作为备选
     meta: { title: '快速配置向导（3步）', requiresAuth: true }
   },
   {

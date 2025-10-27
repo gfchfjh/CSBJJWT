@@ -264,6 +264,18 @@ app.include_router(tray_stats_enhanced.router)  # 托盘统计增强API 🆕 P0-
 from .api import captcha_websocket
 app.include_router(captcha_websocket.router)  # 验证码WebSocket 🆕 P0-3深度优化
 
+# ✅ v9.0.0新增：智能向导API
+from .api import wizard_smart_setup
+app.include_router(wizard_smart_setup.router)  # 智能向导设置 🆕 v9.0.0
+
+# ✅ v9.0.0新增：数据库优化API
+from .api import database_optimizer_api
+app.include_router(database_optimizer_api.router)  # 数据库优化 🆕 v9.0.0
+
+# ✅ v9.0.0新增：映射学习引擎API
+from .api import mapping_learning_api
+app.include_router(mapping_learning_api.router)  # 映射学习 🆕 v9.0.0
+
 
 @app.get("/")
 async def root():
