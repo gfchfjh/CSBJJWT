@@ -1,6 +1,7 @@
 /**
  * Electron 主进程
- * KOOK消息转发系统 v6.1.0
+ * KOOK消息转发系统
+ * 版本从根目录VERSION文件读取
  */
 
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
@@ -8,6 +9,17 @@ const path = require('path');
 const { spawn } = require('child_process');
 const AutoLaunch = require('auto-launch');
 const fs = require('fs');
+
+// 读取统一版本号
+const VERSION = (() => {
+  try {
+    const versionFile = path.join(__dirname, '../../VERSION');
+    return fs.readFileSync(versionFile, 'utf-8').trim();
+  } catch (error) {
+    console.error('Failed to read VERSION file:', error);
+    return '7.0.0';  // 默认版本
+  }
+})();
 const TrayManager = require('./tray-manager'); // ✅ 新增：导入托盘管理器
 
 // 全局变量
@@ -108,68 +120,7 @@ function createWindow() {
   });
 }
 
-/**
- * 创建系统托盘
- */
-function createTray() {
-  const iconPath = path.join(__dirname, '../build/icon.png');
-  tray = new Tray(iconPath);
-
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '显示主窗口',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-          if (process.platform === 'darwin') {
-            app.dock.show();
-          }
-        }
-      },
-    },
-    { type: 'separator' },
-    {
-      label: '启动服务',
-      click: () => {
-        mainWindow?.webContents.send('tray-action', 'start-service');
-      },
-    },
-    {
-      label: '停止服务',
-      click: () => {
-        mainWindow?.webContents.send('tray-action', 'stop-service');
-      },
-    },
-    { type: 'separator' },
-    {
-      label: '打开日志',
-      click: () => {
-        mainWindow?.webContents.send('tray-action', 'open-logs');
-      },
-    },
-    { type: 'separator' },
-    {
-      label: '退出',
-      click: () => {
-        isQuitting = true;
-        app.quit();
-      },
-    },
-  ]);
-
-  tray.setToolTip('KOOK消息转发系统');
-  tray.setContextMenu(contextMenu);
-
-  // 双击托盘图标显示窗口
-  tray.on('double-click', () => {
-    if (mainWindow) {
-      mainWindow.show();
-      if (process.platform === 'darwin') {
-        app.dock.show();
-      }
-    }
-  });
-}
+// ✅ P1-1优化: 已删除旧版createTray函数，统一使用TrayManager
 
 /**
  * 启动后端服务
@@ -379,7 +330,7 @@ function setupIPC() {
  */
 app.whenReady().then(async () => {
   console.log('='.repeat(60));
-  console.log('KOOK消息转发系统 v6.1.0');
+  console.log(`KOOK消息转发系统 v${VERSION}`);
   console.log('='.repeat(60));
 
   try {
