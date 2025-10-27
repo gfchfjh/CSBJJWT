@@ -1,0 +1,290 @@
+{
+  "templates": [
+    {
+      "id": "gaming_community",
+      "name": "游戏社区标准配置",
+      "description": "适用于游戏公会、战队等游戏社区",
+      "icon": "🎮",
+      "mappings": [
+        {
+          "kook_channel": "#公告频道",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#announcements",
+              "webhook_name": "游戏公告Bot"
+            },
+            {
+              "platform": "telegram",
+              "chat_name": "公告群",
+              "bot_name": "游戏公告TG Bot"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#活动频道",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#events"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#更新日志",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#changelog"
+            },
+            {
+              "platform": "feishu",
+              "group_name": "运营群"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#招募频道",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#recruitment"
+            }
+          ]
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": ["广告", "代练", "外挂", "脚本"],
+        "keywords_whitelist": [],
+        "user_blacklist": [],
+        "message_types": ["text", "image", "link", "file"]
+      }
+    },
+    {
+      "id": "tech_community",
+      "name": "技术社区标准配置",
+      "description": "适用于开发者社区、技术交流群",
+      "icon": "💻",
+      "mappings": [
+        {
+          "kook_channel": "#技术讨论",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#tech-discussion"
+            },
+            {
+              "platform": "telegram",
+              "chat_name": "技术交流群"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#bug反馈",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#bug-reports"
+            },
+            {
+              "platform": "feishu",
+              "group_name": "开发团队"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#功能建议",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#feature-requests"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#资源分享",
+          "targets": [
+            {
+              "platform": "telegram",
+              "chat_name": "资源分享群"
+            }
+          ]
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": [],
+        "keywords_whitelist": [],
+        "user_blacklist": [],
+        "message_types": ["text", "image", "link", "file", "code"]
+      }
+    },
+    {
+      "id": "content_creator",
+      "name": "内容创作者配置",
+      "description": "适用于UP主、主播等内容创作者",
+      "icon": "🎬",
+      "mappings": [
+        {
+          "kook_channel": "#粉丝动态",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#fan-updates"
+            },
+            {
+              "platform": "telegram",
+              "chat_name": "粉丝群"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#直播通知",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#live-notifications"
+            },
+            {
+              "platform": "telegram",
+              "chat_name": "直播通知"
+            }
+          ]
+        },
+        {
+          "kook_channel": "#作品发布",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#content-releases"
+            }
+          ]
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": ["引流", "广告"],
+        "keywords_whitelist": ["直播", "视频", "新作品"],
+        "user_blacklist": [],
+        "message_types": ["text", "image", "link", "video"]
+      }
+    },
+    {
+      "id": "cross_platform_mirror",
+      "name": "跨平台完全镜像",
+      "description": "将KOOK的所有内容镜像到其他平台",
+      "icon": "🔄",
+      "mappings": [
+        {
+          "kook_channel": "#全部频道",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#kook-mirror"
+            },
+            {
+              "platform": "telegram",
+              "chat_name": "KOOK镜像群"
+            },
+            {
+              "platform": "feishu",
+              "group_name": "KOOK备份群"
+            }
+          ],
+          "note": "将所有KOOK频道的消息都转发到同一个目标频道"
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": [],
+        "keywords_whitelist": [],
+        "user_blacklist": [],
+        "message_types": ["all"]
+      }
+    },
+    {
+      "id": "official_only",
+      "name": "仅官方消息",
+      "description": "只转发管理员和官方人员的消息",
+      "icon": "👑",
+      "mappings": [
+        {
+          "kook_channel": "#所有频道",
+          "targets": [
+            {
+              "platform": "discord",
+              "channel": "#official-only"
+            }
+          ]
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": [],
+        "keywords_whitelist": ["官方", "公告", "通知"],
+        "user_whitelist": ["官方管理员", "运营团队", "社区经理"],
+        "user_blacklist": [],
+        "message_types": ["text", "image", "link"]
+      }
+    },
+    {
+      "id": "alerts_only",
+      "name": "仅重要警报",
+      "description": "只转发包含重要关键词的消息",
+      "icon": "🚨",
+      "mappings": [
+        {
+          "kook_channel": "#所有频道",
+          "targets": [
+            {
+              "platform": "telegram",
+              "chat_name": "重要警报"
+            },
+            {
+              "platform": "feishu",
+              "group_name": "管理团队"
+            }
+          ]
+        }
+      ],
+      "filters": {
+        "keywords_blacklist": [],
+        "keywords_whitelist": [
+          "紧急",
+          "重要",
+          "警告",
+          "故障",
+          "维护",
+          "@全体成员",
+          "CRITICAL",
+          "URGENT"
+        ],
+        "user_blacklist": [],
+        "message_types": ["text"]
+      }
+    }
+  ],
+  
+  "usage_guide": {
+    "how_to_use": [
+      "1. 在应用中进入 [频道映射] 页面",
+      "2. 点击 [导入模板] 按钮",
+      "3. 选择合适的模板",
+      "4. 根据实际情况修改频道名称和Bot配置",
+      "5. 保存并启用",
+      "6. 测试转发效果"
+    ],
+    "customization": [
+      "• 可以修改任何字段以适应您的需求",
+      "• 可以添加或删除目标平台",
+      "• 可以调整过滤规则",
+      "• 可以组合多个模板",
+      "• 建议先测试后再大规模启用"
+    ],
+    "notes": [
+      "⚠️  模板中的频道名称和Bot名称需要替换为实际值",
+      "⚠️  导入模板会覆盖现有的同名映射",
+      "⚠️  建议在导入前备份现有配置",
+      "💡 可以基于模板创建自己的自定义模板"
+    ]
+  },
+  
+  "version": "1.0.0",
+  "last_updated": "2025-10-23"
+}
