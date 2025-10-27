@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "KOOK Cookie 导出工具",
+  "version": "1.0.0",
+  "description": "一键导出KOOK Cookie到剪贴板，配合KOOK消息转发系统使用。支持自动识别、验证和格式化Cookie。",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "clipboardWrite",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.kookapp.cn/*",
+    "*://*.kaiheila.cn/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "导出KOOK Cookie"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.kookapp.cn/*", "*://*.kaiheila.cn/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

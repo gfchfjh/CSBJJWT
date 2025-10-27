@@ -1,0 +1,161 @@
+name: Tests
+
+# 每次push和PR都运行测试
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Job 1: Python后端测试
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-dev.txt
+      
+      - name: Install Playwright browsers
+        run: playwright install chromium --with-deps
+      
+      - name: Run pytest
+        run: |
+          cd backend
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # Job 2: 前端测试
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+      
+      - name: Run unit tests
+        run: |
+          cd frontend
+          npm run test:unit
+      
+      - name: Run E2E tests
+        run: |
+          cd frontend
+          npm run test:e2e
+        env:
+          CI: true
+
+  # Job 3: 代码质量检查
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install linting tools
+        run: |
+          pip install flake8 black isort mypy
+      
+      - name: Run flake8
+        run: |
+          cd backend
+          flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
+      
+      - name: Run black
+        run: |
+          cd backend
+          black --check app/
+      
+      - name: Run isort
+        run: |
+          cd backend
+          isort --check-only app/
+      
+      - name: Run mypy
+        run: |
+          cd backend
+          mypy app/ || true  # 允许失败但显示警告
+
+  # Job 4: Docker镜像测试
+  test-docker:
+    name: Test Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: kook-forwarder:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Run Docker container
+        run: |
+          docker run -d --name test-container -p 9527:9527 kook-forwarder:test
+          sleep 10
+      
+      - name: Test health endpoint
+        run: |
+          curl -f http://localhost:9527/health || exit 1
+      
+      - name: Stop container
+        run: docker stop test-container

@@ -1,0 +1,60 @@
+/* 配置完成对话框样式 */
+.wizard-complete-dialog {
+  width: 600px !important;
+  max-width: 90vw;
+}
+
+.wizard-complete-dialog .el-message-box__header {
+  padding: 20px 20px 10px;
+}
+
+.wizard-complete-dialog .el-message-box__title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.wizard-complete-dialog .el-message-box__content {
+  padding: 10px 20px 30px;
+}
+
+.wizard-complete-dialog .el-message-box__message {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.wizard-complete-dialog .el-message-box__btns {
+  padding: 10px 20px 20px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.wizard-complete-dialog .el-message-box__btns .el-button {
+  padding: 12px 30px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wizard-complete-dialog .el-button--primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.wizard-complete-dialog .el-button--primary:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .wizard-complete-dialog {
+    width: 95vw !important;
+  }
+  
+  .wizard-complete-dialog .el-message-box__btns {
+    flex-direction: column;
+  }
+  
+  .wizard-complete-dialog .el-message-box__btns .el-button {
+    width: 100%;
+  }
+}
