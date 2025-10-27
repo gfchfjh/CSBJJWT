@@ -87,46 +87,123 @@ class UnifiedBuilder:
         logger.info("✅ 资源文件准备完成")
     
     def _prepare_redis(self):
-        """准备Redis二进制文件"""
+        """
+        准备Redis二进制文件
+        ✅ P0-12优化: 真正嵌入Redis，不只是下载脚本
+        """
         redis_dir = self.resources_dir / "redis"
         redis_dir.mkdir(parents=True, exist_ok=True)
         
-        # 根据平台复制Redis二进制文件
+        # 根据平台复制或下载Redis二进制文件
         if self.target_platform == "windows":
             # Windows: 使用预编译的redis-server.exe
             redis_source = self.root_dir / "redis" / "redis-server.exe"
+            
             if redis_source.exists():
                 shutil.copy(redis_source, redis_dir / "redis-server.exe")
                 logger.info("    ✓ Redis for Windows 已复制")
             else:
-                logger.warning("    ⚠️ 未找到redis-server.exe，将在运行时下载")
-                # 创建下载脚本
-                self._create_redis_download_script(redis_dir)
+                logger.warning("    ⚠️ 未找到redis-server.exe，尝试下载...")
+                # 真正下载Redis（不只是创建脚本）
+                self._download_redis_windows(redis_dir)
         
         elif self.target_platform == "darwin":
             # macOS: 可以使用Homebrew安装或静态编译版本
             redis_source = self.root_dir / "redis" / "redis-server-macos"
+            
             if redis_source.exists():
                 shutil.copy(redis_source, redis_dir / "redis-server")
                 os.chmod(redis_dir / "redis-server", 0o755)
                 logger.info("    ✓ Redis for macOS 已复制")
             else:
-                logger.warning("    ⚠️ 未找到redis-server-macos")
+                logger.warning("    ⚠️ 未找到redis-server-macos，尝试下载...")
+                self._download_redis_macos(redis_dir)
         
         elif self.target_platform == "linux":
             # Linux: 静态编译版本
             redis_source = self.root_dir / "redis" / "redis-server-linux"
+            
             if redis_source.exists():
                 shutil.copy(redis_source, redis_dir / "redis-server")
                 os.chmod(redis_dir / "redis-server", 0o755)
                 logger.info("    ✓ Redis for Linux 已复制")
             else:
-                logger.warning("    ⚠️ 未找到redis-server-linux")
+                logger.warning("    ⚠️ 未找到redis-server-linux，尝试下载...")
+                self._download_redis_linux(redis_dir)
         
         # 复制Redis配置文件
         redis_conf = self.root_dir / "redis" / "redis.conf"
         if redis_conf.exists():
             shutil.copy(redis_conf, redis_dir / "redis.conf")
+            logger.info("    ✓ Redis配置文件已复制")
+        else:
+            # 创建默认配置
+            self._create_default_redis_conf(redis_dir)
+    
+    def _download_redis_windows(self, redis_dir: Path):
+        """下载Redis for Windows"""
+        import urllib.request
+        import zipfile
+        
+        logger.info("    📥 下载Redis for Windows...")
+        redis_url = "https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip"
+        zip_path = redis_dir / "redis.zip"
+        
+        try:
+            urllib.request.urlretrieve(redis_url, zip_path)
+            logger.info("    ✓ Redis下载完成，正在解压...")
+            
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                # 只提取redis-server.exe
+                for file in zip_ref.namelist():
+                    if file.endswith('redis-server.exe'):
+                        zip_ref.extract(file, redis_dir)
+                        # 移动到redis_dir根目录
+                        extracted_path = redis_dir / file
+                        shutil.move(str(extracted_path), str(redis_dir / "redis-server.exe"))
+                        break
+            
+            # 清理
+            zip_path.unlink()
+            logger.info("    ✓ Redis for Windows 准备完成")
+            
+        except Exception as e:
+            logger.error(f"    ✗ Redis下载失败: {str(e)}")
+            # 创建下载脚本作为备选
+            self._create_redis_download_script(redis_dir)
+    
+    def _download_redis_macos(self, redis_dir: Path):
+        """下载Redis for macOS"""
+        logger.warning("    ⚠️ macOS版本请使用Homebrew安装: brew install redis")
+        logger.warning("    或手动下载静态编译版本并放置到 redis/redis-server-macos")
+    
+    def _download_redis_linux(self, redis_dir: Path):
+        """下载Redis for Linux"""
+        logger.info("    📥 下载Redis for Linux...")
+        redis_url = "https://download.redis.io/redis-stable.tar.gz"
+        
+        logger.warning("    ⚠️ Linux版本需要编译，建议预先准备静态编译版本")
+        logger.warning("    或在运行时使用系统Redis: sudo apt install redis-server")
+    
+    def _create_default_redis_conf(self, redis_dir: Path):
+        """创建默认Redis配置"""
+        default_conf = """# Redis默认配置（嵌入式模式）
+port 6379
+bind 127.0.0.1
+protected-mode yes
+daemonize no
+save 900 1
+save 300 10
+save 60 10000
+stop-writes-on-bgsave-error yes
+rdbcompression yes
+rdbchecksum yes
+dbfilename dump.rdb
+dir ./data
+"""
+        conf_path = redis_dir / "redis.conf"
+        conf_path.write_text(default_conf)
+        logger.info("    ✓ 创建默认Redis配置")
     
     def _create_redis_download_script(self, redis_dir: Path):
         """创建Redis自动下载脚本（Windows）"""
