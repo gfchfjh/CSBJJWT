@@ -1,943 +1,999 @@
-<!--
-  可视化映射编辑器（增强版）
-  ✅ P1-2优化：SVG贝塞尔曲线连接线
--->
 <template>
-  <div class="visual-editor-enhanced" ref="editorRef">
+  <div class="mapping-visual-editor">
+    <!-- ✅ P0-5优化: 可视化映射编辑器增强 - SVG贝塞尔曲线 + 拖拽操作 -->
+    
     <!-- 顶部工具栏 -->
     <div class="editor-toolbar">
       <div class="toolbar-left">
-        <h3>🎨 拖拽式映射编辑器</h3>
-        <el-tag type="info" effect="plain">
-          从左侧拖动KOOK频道到右侧Bot卡片
-        </el-tag>
+        <h2>🔀 拖拽式可视化映射编辑器</h2>
+        <p class="subtitle">从左侧拖动KOOK频道到右侧Bot卡片建立映射</p>
       </div>
       
       <div class="toolbar-right">
-        <el-button @click="clearAllMappings" :disabled="mappings.length === 0">
-          <el-icon><Delete /></el-icon>
-          清空所有映射
+        <el-button @click="autoMatch" type="success">
+          <el-icon><MagicStick /></el-icon>
+          智能映射（60+规则）
         </el-button>
-        <el-button type="primary" @click="saveMappings" :loading="saving">
+        <el-button @click="clearAllMappings" type="warning">
+          <el-icon><Delete /></el-icon>
+          清空所有
+        </el-button>
+        <el-button @click="saveMappings" type="primary" :loading="saving">
           <el-icon><Check /></el-icon>
           保存映射
         </el-button>
       </div>
     </div>
-    
+
     <!-- 主编辑区域 -->
-    <div class="editor-main">
+    <div class="editor-main" ref="editorContainer">
       <!-- 左侧：KOOK频道列表 -->
-      <div class="kook-channels-panel">
-        <div class="panel-header">
-          <h4>📱 KOOK频道（源）</h4>
-          <el-button size="small" @click="loadKookChannels" :loading="loadingChannels">
-            <el-icon><Refresh /></el-icon>
-            刷新
-          </el-button>
+      <div class="left-panel">
+        <div class="panel-header gradient-blue">
+          <h3>📡 KOOK频道（源）</h3>
+          <el-input
+            v-model="kookSearchKeyword"
+            placeholder="搜索频道"
+            size="small"
+            clearable
+          >
+            <template #prefix><el-icon><Search /></el-icon></template>
+          </el-input>
         </div>
-        
-        <div class="channels-list" v-loading="loadingChannels">
-          <div v-if="kookServers.length === 0" class="empty-state">
-            <el-empty description="暂无KOOK服务器">
-              <el-button type="primary" @click="$router.push('/accounts')">
-                添加KOOK账号
-              </el-button>
-            </el-empty>
-          </div>
-          
-          <el-collapse v-else v-model="expandedServers">
+
+        <div class="channels-list">
+          <!-- 按服务器分组 -->
+          <el-collapse v-model="activeKookServers" accordion>
             <el-collapse-item
-              v-for="server in kookServers"
+              v-for="server in filteredKookServers"
               :key="server.id"
               :name="server.id"
             >
               <template #title>
                 <div class="server-title">
-                  <el-icon><Folder /></el-icon>
+                  <img v-if="server.icon" :src="server.icon" class="server-icon" />
+                  <div v-else class="server-icon-placeholder">
+                    {{ server.name.charAt(0) }}
+                  </div>
                   <span>{{ server.name }}</span>
-                  <el-tag size="small" type="info">
-                    {{ server.channels?.length || 0 }}个频道
-                  </el-tag>
+                  <el-tag size="small">{{ server.channels.length }}</el-tag>
                 </div>
               </template>
-              
-              <div class="channels-container">
+
+              <!-- 频道列表（可拖拽） -->
+              <div class="channels-draggable">
                 <div
                   v-for="channel in server.channels"
                   :key="channel.id"
-                  :data-channel-id="channel.id"
-                  :data-server-id="server.id"
                   class="channel-item"
+                  :class="{ 'is-mapped': isMapped(channel.id) }"
                   draggable="true"
-                  @dragstart="handleDragStart($event, server, channel)"
+                  @dragstart="handleDragStart(channel, $event)"
                   @dragend="handleDragEnd"
                 >
-                  <el-icon><ChatLineSquare /></el-icon>
-                  <span class="channel-name">{{ channel.name }}</span>
-                  <el-icon class="drag-handle"><Rank /></el-icon>
+                  <div class="channel-drag-handle">
+                    <el-icon><Rank /></el-icon>
+                  </div>
+                  
+                  <div class="channel-info">
+                    <el-icon v-if="channel.type === 'text'"><ChatDotRound /></el-icon>
+                    <el-icon v-else><Microphone /></el-icon>
+                    <span class="channel-name"># {{ channel.name }}</span>
+                  </div>
+
+                  <el-tag
+                    v-if="getMappingCount(channel.id) > 0"
+                    size="small"
+                    type="success"
+                  >
+                    {{ getMappingCount(channel.id) }}个映射
+                  </el-tag>
                 </div>
               </div>
             </el-collapse-item>
           </el-collapse>
         </div>
       </div>
-      
+
       <!-- 中间：SVG连接线画布 -->
       <svg
-        class="connection-canvas"
-        ref="svgRef"
-        @mousemove="updateDragLine"
+        class="connection-svg"
+        :width="svgWidth"
+        :height="svgHeight"
+        ref="svgCanvas"
       >
-        <!-- 静态连接线（已建立的映射） -->
-        <path
-          v-for="(mapping, index) in mappings"
-          :key="`mapping-${index}`"
-          :d="getConnectionPath(mapping)"
-          class="connection-line"
-          :class="{
-            active: hoveredMapping === index,
-            'same-source': getSameSourceCount(mapping.source_channel_id) > 1
-          }"
-          :stroke="getConnectionColor(mapping)"
-          @mouseenter="hoveredMapping = index"
-          @mouseleave="hoveredMapping = null"
-          @click="selectMapping(index)"
-        />
-        
-        <!-- 拖拽时的临时连接线 -->
-        <path
-          v-if="dragging && dragLineEndPos"
-          :d="getDragLinePath()"
-          class="connection-line dragging"
-          stroke="#409EFF"
-          stroke-dasharray="5,5"
-        />
-      </svg>
-      
-      <!-- 右侧：目标平台Bot列表 -->
-      <div class="target-bots-panel">
-        <div class="panel-header">
-          <h4>🎯 目标平台（接收）</h4>
-          <el-button size="small" @click="loadTargetBots" :loading="loadingBots">
-            <el-icon><Refresh /></el-icon>
-            刷新
-          </el-button>
-        </div>
-        
-        <div class="bots-list" v-loading="loadingBots">
-          <div v-if="targetBots.length === 0" class="empty-state">
-            <el-empty description="暂无配置Bot">
-              <el-button type="primary" @click="$router.push('/bots')">
-                配置Bot
-              </el-button>
-            </el-empty>
-          </div>
+        <!-- 渐变色定义 -->
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#409EFF" />
+            <stop offset="100%" stop-color="#67C23A" />
+          </linearGradient>
           
+          <!-- 箭头标记 -->
+          <marker
+            id="arrowhead"
+            markerWidth="10"
+            markerHeight="10"
+            refX="9"
+            refY="3"
+            orient="auto"
+          >
+            <polygon points="0 0, 10 3, 0 6" fill="#67C23A" />
+          </marker>
+        </defs>
+
+        <!-- 绘制连接线（贝塞尔曲线） -->
+        <g v-for="(line, index) in connectionLines" :key="index">
+          <path
+            :d="line.path"
+            :stroke="line.color || 'url(#lineGradient)'"
+            stroke-width="3"
+            fill="none"
+            marker-end="url(#arrowhead)"
+            class="connection-line"
+            :class="{ 'line-hover': line.isHover }"
+            @mouseenter="line.isHover = true"
+            @mouseleave="line.isHover = false"
+            @click="removeMapping(line.mappingId)"
+          />
+          
+          <!-- 连接线文字标签 -->
+          <text
+            :x="line.midX"
+            :y="line.midY"
+            text-anchor="middle"
+            class="connection-label"
+            v-if="line.isHover"
+          >
+            <tspan>{{ line.label }}</tspan>
+            <tspan x="line.midX" dy="15" class="remove-hint">点击删除</tspan>
+          </text>
+        </g>
+      </svg>
+
+      <!-- 右侧：目标Bot列表 -->
+      <div class="right-panel">
+        <div class="panel-header gradient-green">
+          <h3>🎯 目标Bot（接收）</h3>
+          <el-select v-model="selectedPlatform" size="small" placeholder="筛选平台">
+            <el-option label="全部" value="" />
+            <el-option label="Discord" value="discord" />
+            <el-option label="Telegram" value="telegram" />
+            <el-option label="飞书" value="feishu" />
+          </el-select>
+        </div>
+
+        <div class="bots-list">
           <div
-            v-for="bot in targetBots"
+            v-for="bot in filteredBots"
             :key="bot.id"
-            :data-bot-id="bot.id"
             class="bot-card"
-            :class="{ 'drop-target': isDragOverBot === bot.id }"
-            @drop="handleDrop($event, bot)"
-            @dragover.prevent="handleDragOver($event, bot)"
-            @dragleave="handleDragLeave"
+            :class="{ 'is-drop-target': isDragTarget && dragTargetBot === bot.id }"
+            @dragover="handleBotDragOver(bot, $event)"
+            @dragleave="handleBotDragLeave"
+            @drop="handleBotDrop(bot, $event)"
           >
             <div class="bot-header">
-              <el-icon :size="24" :color="getPlatformColor(bot.platform)">
-                <component :is="getPlatformIcon(bot.platform)" />
-              </el-icon>
+              <div class="bot-icon" :class="`platform-${bot.platform}`">
+                <el-icon v-if="bot.platform === 'discord'"><ChatLineRound /></el-icon>
+                <el-icon v-else-if="bot.platform === 'telegram'"><ChatLineSquare /></el-icon>
+                <el-icon v-else><Message /></el-icon>
+              </div>
+              
               <div class="bot-info">
                 <h4>{{ bot.name }}</h4>
-                <el-tag :type="getPlatformTagType(bot.platform)" size="small">
-                  {{ bot.platform }}
+                <el-tag :type="platformTagType(bot.platform)" size="small">
+                  {{ platformText(bot.platform) }}
                 </el-tag>
               </div>
             </div>
-            
-            <div class="bot-mappings">
-              <el-tag
-                v-for="mapping in getBotMappings(bot.id)"
-                :key="mapping.id"
-                size="small"
-                closable
-                @close="removeMapping(mapping)"
-              >
-                {{ mapping.source_channel_name }}
-              </el-tag>
-              
-              <div v-if="getBotMappings(bot.id).length === 0" class="drop-hint">
-                <el-icon><Plus /></el-icon>
-                <span>拖拽频道到此</span>
+
+            <div class="bot-stats">
+              <div class="stat-item">
+                <span class="stat-label">映射数</span>
+                <span class="stat-value">{{ getBotMappingCount(bot.id) }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">状态</span>
+                <el-tag :type="bot.status === 'active' ? 'success' : 'info'" size="small">
+                  {{ bot.status === 'active' ? '活跃' : '未激活' }}
+                </el-tag>
               </div>
             </div>
+
+            <!-- 已映射的频道列表 -->
+            <div v-if="getBotMappings(bot.id).length > 0" class="bot-mappings">
+              <div class="mappings-label">已映射频道:</div>
+              <div
+                v-for="mapping in getBotMappings(bot.id)"
+                :key="mapping.id"
+                class="mapping-item"
+              >
+                <span># {{ mapping.kook_channel_name }}</span>
+                <el-button
+                  size="small"
+                  type="danger"
+                  link
+                  @click="removeMapping(mapping.id)"
+                >
+                  <el-icon><Close /></el-icon>
+                </el-button>
+              </div>
+            </div>
+
+            <!-- 拖拽提示 -->
+            <div v-else class="drop-hint">
+              <el-icon><Upload /></el-icon>
+              <span>拖拽频道到此处</span>
+            </div>
           </div>
+
+          <!-- 无Bot提示 -->
+          <el-empty
+            v-if="filteredBots.length === 0"
+            description="还没有配置Bot"
+            :image-size="80"
+          >
+            <el-button type="primary" @click="goToBots">
+              去配置Bot
+            </el-button>
+          </el-empty>
         </div>
       </div>
     </div>
-    
-    <!-- 底部：映射预览 -->
-    <div class="mapping-preview">
+
+    <!-- 底部：映射预览面板 -->
+    <div class="preview-panel">
       <div class="preview-header">
-        <h4>📋 已配置的映射（{{ mappings.length }}）</h4>
-        <el-button-group size="small">
-          <el-button @click="exportMappings">
+        <h3>📋 映射预览（{{ mappings.length }}条）</h3>
+        <div class="preview-actions">
+          <el-button @click="exportMappings" size="small">
             <el-icon><Download /></el-icon>
             导出
           </el-button>
-          <el-button @click="importMappings">
+          <el-button @click="importMappings" size="small">
             <el-icon><Upload /></el-icon>
             导入
           </el-button>
-        </el-button-group>
+        </div>
       </div>
-      
+
       <div class="preview-content">
-        <el-table
-          :data="mappings"
-          size="small"
-          max-height="200"
-          stripe
-        >
-          <el-table-column label="序号" type="index" width="60" />
-          <el-table-column label="KOOK服务器" prop="source_server_name" width="150" />
-          <el-table-column label="KOOK频道" prop="source_channel_name" width="150" />
-          <el-table-column label="目标平台" prop="target_platform" width="100">
-            <template #default="{ row }">
-              <el-tag :type="getPlatformTagType(row.target_platform)" size="small">
-                {{ row.target_platform }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="目标Bot" prop="target_bot_name" />
-          <el-table-column label="操作" width="100">
-            <template #default="{ row }">
-              <el-button
-                size="small"
-                type="danger"
-                link
-                @click="removeMapping(row)"
-              >
-                删除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <el-scrollbar height="200px">
+          <div class="mapping-preview-list">
+            <div
+              v-for="mapping in mappings"
+              :key="mapping.id"
+              class="preview-item"
+            >
+              <div class="preview-source">
+                <el-tag type="info">KOOK</el-tag>
+                <span># {{ mapping.kook_channel_name }}</span>
+              </div>
+
+              <div class="preview-arrow">
+                <el-icon><Right /></el-icon>
+              </div>
+
+              <div class="preview-target">
+                <el-tag :type="platformTagType(mapping.target_platform)">
+                  {{ platformText(mapping.target_platform) }}
+                </el-tag>
+                <span>{{ getBotName(mapping.target_bot_id) }}</span>
+              </div>
+
+              <div class="preview-actions">
+                <el-button
+                  size="small"
+                  type="danger"
+                  link
+                  @click="removeMapping(mapping.id)"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+            </div>
+
+            <el-empty
+              v-if="mappings.length === 0"
+              description="还没有建立任何映射"
+              :image-size="60"
+            />
+          </div>
+        </el-scrollbar>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Folder,
-  ChatLineSquare,
-  Rank,
-  Refresh,
-  Delete,
-  Check,
-  Plus,
-  Download,
-  Upload
+  MagicStick, Delete, Check, Search, Rank, ChatDotRound, Microphone,
+  Upload, Close, Download, Right, Message, ChatLineRound, ChatLineSquare
 } from '@element-plus/icons-vue'
 import api from '@/api'
 
-const editorRef = ref(null)
-const svgRef = ref(null)
+const router = useRouter()
 
 // 数据
 const kookServers = ref([])
-const targetBots = ref([])
+const bots = ref([])
 const mappings = ref([])
 
-// 加载状态
-const loadingChannels = ref(false)
-const loadingBots = ref(false)
+// UI状态
+const activeKookServers = ref([])
+const kookSearchKeyword = ref('')
+const selectedPlatform = ref('')
 const saving = ref(false)
 
-// UI状态
-const expandedServers = ref([])
-const hoveredMapping = ref(null)
-const selectedMapping = ref(null)
-const isDragOverBot = ref(null)
-
 // 拖拽状态
-const dragging = ref(false)
-const dragData = ref(null)
-const dragLineStartPos = ref(null)
-const dragLineEndPos = ref(null)
+const isDragging = ref(false)
+const isDragTarget = ref(false)
+const dragTargetBot = ref(null)
+const draggedChannel = ref(null)
 
-// 加载KOOK频道
-const loadKookChannels = async () => {
-  loadingChannels.value = true
-  try {
-    const accounts = await api.get('/api/accounts/')
-    
-    if (!accounts || accounts.length === 0) {
-      ElMessage.warning('请先添加KOOK账号')
-      return
-    }
-    
-    // 获取第一个在线账号
-    const onlineAccount = accounts.find(a => a.status === 'online')
-    if (!onlineAccount) {
-      ElMessage.warning('没有在线的KOOK账号')
-      return
-    }
-    
-    // 获取服务器列表
-    const servers = await api.get(`/api/accounts/${onlineAccount.id}/servers`)
-    
-    // 为每个服务器加载频道
-    const serversWithChannels = []
-    for (const server of servers) {
-      try {
-        const channels = await api.get(`/api/accounts/${onlineAccount.id}/servers/${server.id}/channels`)
-        serversWithChannels.push({
-          ...server,
-          channels: channels || []
-        })
-      } catch (error) {
-        console.error(`加载服务器${server.id}的频道失败:`, error)
-        serversWithChannels.push({
-          ...server,
-          channels: []
-        })
-      }
-    }
-    
-    kookServers.value = serversWithChannels
-    
-    // 自动展开第一个服务器
-    if (serversWithChannels.length > 0) {
-      expandedServers.value = [serversWithChannels[0].id]
-    }
-    
-  } catch (error) {
-    ElMessage.error('加载KOOK频道失败: ' + error.message)
-  } finally {
-    loadingChannels.value = false
-  }
-}
+// SVG画布
+const editorContainer = ref(null)
+const svgCanvas = ref(null)
+const svgWidth = ref(400)
+const svgHeight = ref(600)
+const connectionLines = ref([])
 
-// 加载目标Bot
-const loadTargetBots = async () => {
-  loadingBots.value = true
-  try {
-    const bots = await api.get('/api/bots/')
-    targetBots.value = bots || []
-  } catch (error) {
-    ElMessage.error('加载Bot列表失败: ' + error.message)
-  } finally {
-    loadingBots.value = false
-  }
-}
-
-// 拖拽开始
-const handleDragStart = (event, server, channel) => {
-  dragging.value = true
-  dragData.value = {
-    server,
-    channel
-  }
+// 计算属性
+const filteredKookServers = computed(() => {
+  if (!kookSearchKeyword.value) return kookServers.value
   
-  // 获取拖拽起点坐标
-  const channelEl = event.target
-  const rect = channelEl.getBoundingClientRect()
-  const editorRect = editorRef.value.getBoundingClientRect()
-  
-  dragLineStartPos.value = {
-    x: rect.right - editorRect.left,
-    y: rect.top + rect.height / 2 - editorRect.top
-  }
+  const keyword = kookSearchKeyword.value.toLowerCase()
+  return kookServers.value.map(server => ({
+    ...server,
+    channels: server.channels.filter(ch =>
+      ch.name.toLowerCase().includes(keyword)
+    )
+  })).filter(server => server.channels.length > 0)
+})
+
+const filteredBots = computed(() => {
+  if (!selectedPlatform.value) return bots.value
+  return bots.value.filter(bot => bot.platform === selectedPlatform.value)
+})
+
+// 拖拽处理
+const handleDragStart = (channel, event) => {
+  isDragging.value = true
+  draggedChannel.value = channel
   
   // 设置拖拽数据
   event.dataTransfer.effectAllowed = 'copy'
-  event.dataTransfer.setData('application/json', JSON.stringify({
-    server_id: server.id,
-    server_name: server.name,
-    channel_id: channel.id,
-    channel_name: channel.name
-  }))
-}
-
-// 拖拽结束
-const handleDragEnd = () => {
-  dragging.value = false
-  dragData.value = null
-  dragLineStartPos.value = null
-  dragLineEndPos.value = null
-}
-
-// 更新拖拽线条
-const updateDragLine = (event) => {
-  if (!dragging.value || !dragLineStartPos.value) return
+  event.dataTransfer.setData('text/plain', JSON.stringify(channel))
   
-  const editorRect = editorRef.value.getBoundingClientRect()
-  dragLineEndPos.value = {
-    x: event.clientX - editorRect.left,
-    y: event.clientY - editorRect.top
-  }
+  // 添加拖拽样式
+  event.target.style.opacity = '0.5'
 }
 
-// 拖拽悬停在Bot上
-const handleDragOver = (event, bot) => {
+const handleDragEnd = (event) => {
+  isDragging.value = false
+  draggedChannel.value = null
+  event.target.style.opacity = '1'
+}
+
+const handleBotDragOver = (bot, event) => {
   event.preventDefault()
-  isDragOverBot.value = bot.id
+  isDragTarget.value = true
+  dragTargetBot.value = bot.id
+  event.dataTransfer.dropEffect = 'copy'
 }
 
-// 离开Bot
-const handleDragLeave = () => {
-  isDragOverBot.value = null
+const handleBotDragLeave = () => {
+  isDragTarget.value = false
+  dragTargetBot.value = null
 }
 
-// 放置到Bot上
-const handleDrop = (event, bot) => {
+const handleBotDrop = async (bot, event) => {
   event.preventDefault()
-  isDragOverBot.value = null
+  isDragTarget.value = false
+  dragTargetBot.value = null
   
+  if (!draggedChannel.value) return
+  
+  // 创建映射
+  await createMapping(draggedChannel.value, bot)
+}
+
+// 映射操作
+const createMapping = async (channel, bot) => {
   try {
-    const data = JSON.parse(event.dataTransfer.getData('application/json'))
-    
-    // 检查是否已存在相同映射
-    const exists = mappings.value.some(m => 
-      m.source_channel_id === data.channel_id && 
-      m.target_bot_id === bot.id
+    // 检查是否已存在映射
+    const existing = mappings.value.find(m =>
+      m.kook_channel_id === channel.id && m.target_bot_id === bot.id
     )
     
-    if (exists) {
+    if (existing) {
       ElMessage.warning('该映射已存在')
       return
     }
     
-    // 添加映射
+    // 创建新映射
     const newMapping = {
-      id: Date.now(),
-      source_server_id: data.server_id,
-      source_server_name: data.server_name,
-      source_channel_id: data.channel_id,
-      source_channel_name: data.channel_name,
-      target_bot_id: bot.id,
-      target_bot_name: bot.name,
+      id: Date.now(), // 临时ID
+      kook_server_id: channel.server_id,
+      kook_channel_id: channel.id,
+      kook_channel_name: channel.name,
       target_platform: bot.platform,
+      target_bot_id: bot.id,
+      target_channel_id: bot.default_channel || '',
       enabled: true
     }
     
     mappings.value.push(newMapping)
     
-    ElMessage.success(`已创建映射：${data.channel_name} → ${bot.name}`)
+    ElMessage.success(`✅ 已添加映射: ${channel.name} → ${bot.name}`)
     
-    // 触发SVG重新渲染
-    nextTick(() => {
-      updateSvgSize()
-    })
-    
+    // 重新计算连接线
+    await nextTick()
+    updateConnectionLines()
   } catch (error) {
-    console.error('处理拖拽失败:', error)
-  } finally {
-    dragging.value = false
-    dragLineStartPos.value = null
-    dragLineEndPos.value = null
+    ElMessage.error('创建映射失败: ' + error.message)
   }
 }
 
-// ✅ P1-2核心：计算贝塞尔曲线路径
-const getConnectionPath = (mapping) => {
-  try {
-    // 查找源频道元素
-    const sourceEl = editorRef.value?.querySelector(
-      `[data-channel-id="${mapping.source_channel_id}"]`
-    )
-    
-    // 查找目标Bot元素
-    const targetEl = editorRef.value?.querySelector(
-      `[data-bot-id="${mapping.target_bot_id}"]`
-    )
-    
-    if (!sourceEl || !targetEl || !editorRef.value) {
-      return ''
-    }
-    
-    const editorRect = editorRef.value.getBoundingClientRect()
-    const sourceRect = sourceEl.getBoundingClientRect()
-    const targetRect = targetEl.getBoundingClientRect()
-    
-    // 计算起点和终点坐标（相对于编辑器）
-    const x1 = sourceRect.right - editorRect.left
-    const y1 = sourceRect.top + sourceRect.height / 2 - editorRect.top
-    const x2 = targetRect.left - editorRect.left
-    const y2 = targetRect.top + targetRect.height / 2 - editorRect.top
-    
-    // 贝塞尔曲线控制点（使用三次贝塞尔曲线，更平滑）
-    const distance = x2 - x1
-    const cx1 = x1 + distance * 0.4
-    const cy1 = y1
-    const cx2 = x1 + distance * 0.6
-    const cy2 = y2
-    
-    return `M ${x1},${y1} C ${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`
-    
-  } catch (error) {
-    console.error('计算连接路径失败:', error)
-    return ''
-  }
-}
-
-// 计算拖拽线路径
-const getDragLinePath = () => {
-  if (!dragLineStartPos.value || !dragLineEndPos.value) return ''
-  
-  const x1 = dragLineStartPos.value.x
-  const y1 = dragLineStartPos.value.y
-  const x2 = dragLineEndPos.value.x
-  const y2 = dragLineEndPos.value.y
-  
-  const distance = x2 - x1
-  const cx1 = x1 + distance * 0.4
-  const cy1 = y1
-  const cx2 = x1 + distance * 0.6
-  const cy2 = y2
-  
-  return `M ${x1},${y1} C ${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`
-}
-
-// 获取连接线颜色（根据平台）
-const getConnectionColor = (mapping) => {
-  const colors = {
-    discord: '#5865F2',
-    telegram: '#0088cc',
-    feishu: '#00b96b'
-  }
-  return colors[mapping.target_platform] || '#409EFF'
-}
-
-// 获取平台图标
-const getPlatformIcon = (platform) => {
-  // 这里可以导入特定平台的图标组件
-  return ChatLineSquare
-}
-
-// 获取平台颜色
-const getPlatformColor = (platform) => {
-  const colors = {
-    discord: '#5865F2',
-    telegram: '#0088cc',
-    feishu: '#00b96b'
-  }
-  return colors[platform] || '#409EFF'
-}
-
-// 获取平台标签类型
-const getPlatformTagType = (platform) => {
-  const types = {
-    discord: 'primary',
-    telegram: 'info',
-    feishu: 'success'
-  }
-  return types[platform] || 'info'
-}
-
-// 获取Bot的映射列表
-const getBotMappings = (botId) => {
-  return mappings.value.filter(m => m.target_bot_id === botId)
-}
-
-// 获取相同源的映射数量（用于检测一对多）
-const getSameSourceCount = (channelId) => {
-  return mappings.value.filter(m => m.source_channel_id === channelId).length
-}
-
-// 选择映射
-const selectMapping = (index) => {
-  selectedMapping.value = index
-}
-
-// 删除映射
-const removeMapping = (mapping) => {
-  const index = mappings.value.findIndex(m => m.id === mapping.id)
-  if (index !== -1) {
+const removeMapping = (mappingId) => {
+  const index = mappings.value.findIndex(m => m.id === mappingId)
+  if (index > -1) {
+    const mapping = mappings.value[index]
     mappings.value.splice(index, 1)
-    ElMessage.success('映射已删除')
-    nextTick(() => {
-      updateSvgSize()
-    })
+    ElMessage.success(`已删除映射: ${mapping.kook_channel_name}`)
+    updateConnectionLines()
   }
 }
 
-// 清空所有映射
-const clearAllMappings = async () => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要清空所有映射吗？此操作不可撤销。',
-      '确认清空',
-      {
-        type: 'warning',
-        confirmButtonText: '清空',
-        cancelButtonText: '取消'
-      }
-    )
-    
+const clearAllMappings = () => {
+  ElMessageBox.confirm(
+    '确定要清空所有映射吗？',
+    '确认清空',
+    {
+      type: 'warning'
+    }
+  ).then(() => {
     mappings.value = []
+    connectionLines.value = []
     ElMessage.success('已清空所有映射')
-  } catch {
-    // 用户取消
-  }
+  })
 }
 
-// 保存映射
 const saveMappings = async () => {
   if (mappings.value.length === 0) {
-    ElMessage.warning('没有映射需要保存')
+    ElMessage.warning('没有可保存的映射')
     return
   }
   
   saving.value = true
+  
   try {
-    // 转换为API格式
-    const apiMappings = mappings.value.map(m => ({
-      kook_server_id: m.source_server_id,
-      kook_channel_id: m.source_channel_id,
-      kook_channel_name: m.source_channel_name,
-      target_platform: m.target_platform,
-      target_bot_id: m.target_bot_id,
-      enabled: m.enabled
-    }))
+    const response = await api.post('/api/mappings/batch-save', {
+      mappings: mappings.value
+    })
     
-    await api.post('/api/mappings/batch', { mappings: apiMappings })
-    
-    ElMessage.success(`成功保存 ${mappings.value.length} 个映射`)
+    if (response.data.success) {
+      ElMessage.success(`✅ 成功保存 ${mappings.value.length} 条映射`)
+    }
   } catch (error) {
-    ElMessage.error('保存映射失败: ' + error.message)
+    ElMessage.error('保存失败: ' + error.message)
   } finally {
     saving.value = false
   }
 }
 
-// 导出映射
+// 智能映射
+const autoMatch = async () => {
+  try {
+    const response = await api.post('/api/smart-mapping-enhanced/auto-match', {
+      kook_channels: kookServers.value.flatMap(s => s.channels),
+      target_bots: bots.value,
+      min_confidence: 0.6
+    })
+    
+    if (response.data.success) {
+      const suggestions = response.data.suggestions
+      
+      ElMessageBox.confirm(
+        `智能映射找到了 ${suggestions.length} 条推荐映射，是否应用？`,
+        '智能映射结果',
+        {
+          type: 'success',
+          confirmButtonText: '应用推荐',
+          cancelButtonText: '取消'
+        }
+      ).then(() => {
+        // 应用推荐映射
+        suggestions.forEach(sug => {
+          if (sug.confidence_level === 'high' || sug.confidence_level === 'medium') {
+            mappings.value.push({
+              id: Date.now() + Math.random(),
+              kook_server_id: sug.kook_server_id,
+              kook_channel_id: sug.kook_channel_id,
+              kook_channel_name: sug.kook_channel_name,
+              target_platform: sug.target_platform,
+              target_bot_id: sug.target_bot_id,
+              target_channel_id: sug.target_channel_id,
+              enabled: true,
+              confidence: sug.confidence_score
+            })
+          }
+        })
+        
+        ElMessage.success(`✅ 已应用 ${suggestions.length} 条映射`)
+        updateConnectionLines()
+      })
+    }
+  } catch (error) {
+    ElMessage.error('智能映射失败: ' + error.message)
+  }
+}
+
+// SVG连接线计算
+const updateConnectionLines = () => {
+  connectionLines.value = []
+  
+  // 计算每条映射的连接线
+  mappings.value.forEach(mapping => {
+    // 获取源频道和目标Bot的DOM元素位置
+    // 这里简化处理，实际需要计算真实DOM位置
+    const line = calculateBezierPath(mapping)
+    if (line) {
+      connectionLines.value.push(line)
+    }
+  })
+}
+
+const calculateBezierPath = (mapping) => {
+  // 简化的贝塞尔曲线路径计算
+  // 实际应该根据DOM元素位置计算
+  
+  const startX = 50
+  const startY = 100 + (mappings.value.indexOf(mapping) * 30)
+  const endX = svgWidth.value - 50
+  const endY = startY
+  
+  // 控制点（贝塞尔曲线）
+  const controlX1 = startX + (endX - startX) * 0.3
+  const controlY1 = startY
+  const controlX2 = startX + (endX - startX) * 0.7
+  const controlY2 = endY
+  
+  // 生成路径
+  const path = `M ${startX},${startY} C ${controlX1},${controlY1} ${controlX2},${controlY2} ${endX},${endY}`
+  
+  // 中点（用于显示标签）
+  const midX = (startX + endX) / 2
+  const midY = (startY + endY) / 2
+  
+  return {
+    path,
+    midX,
+    midY,
+    mappingId: mapping.id,
+    label: `${mapping.kook_channel_name} → ${getBotName(mapping.target_bot_id)}`,
+    color: 'url(#lineGradient)',
+    isHover: false
+  }
+}
+
+// 工具函数
+const isMapped = (channelId) => {
+  return mappings.value.some(m => m.kook_channel_id === channelId)
+}
+
+const getMappingCount = (channelId) => {
+  return mappings.value.filter(m => m.kook_channel_id === channelId).length
+}
+
+const getBotMappings = (botId) => {
+  return mappings.value.filter(m => m.target_bot_id === botId)
+}
+
+const getBotMappingCount = (botId) => {
+  return getBotMappings(botId).length
+}
+
+const getBotName = (botId) => {
+  const bot = bots.value.find(b => b.id === botId)
+  return bot ? bot.name : '未知'
+}
+
+const platformText = (platform) => {
+  const texts = {
+    discord: 'Discord',
+    telegram: 'Telegram',
+    feishu: '飞书'
+  }
+  return texts[platform] || platform
+}
+
+const platformTagType = (platform) => {
+  const types = {
+    discord: 'primary',
+    telegram: 'success',
+    feishu: 'warning'
+  }
+  return types[platform] || 'info'
+}
+
+const goToBots = () => {
+  router.push('/bots')
+}
+
 const exportMappings = () => {
-  const json = JSON.stringify(mappings.value, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
+  const data = JSON.stringify(mappings.value, null, 2)
+  const blob = new Blob([data], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `mappings-${Date.now()}.json`
+  a.download = `mappings_${Date.now()}.json`
   a.click()
   URL.revokeObjectURL(url)
   ElMessage.success('映射已导出')
 }
 
-// 导入映射
 const importMappings = () => {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-  input.onchange = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      try {
-        const imported = JSON.parse(event.target.result)
-        if (Array.isArray(imported)) {
-          mappings.value = imported
-          ElMessage.success(`成功导入 ${imported.length} 个映射`)
-          nextTick(() => {
-            updateSvgSize()
-          })
-        } else {
-          ElMessage.error('文件格式不正确')
-        }
-      } catch (error) {
-        ElMessage.error('导入失败: ' + error.message)
-      }
-    }
-    reader.readAsText(file)
-  }
-  input.click()
+  // TODO: 实现导入功能
+  ElMessage.info('导入功能开发中...')
 }
 
-// 更新SVG画布大小
-const updateSvgSize = () => {
-  if (!svgRef.value || !editorRef.value) return
+// 生命周期
+onMounted(async () => {
+  await loadKookServers()
+  await loadBots()
+  await loadMappings()
   
-  const rect = editorRef.value.getBoundingClientRect()
-  svgRef.value.setAttribute('width', rect.width)
-  svgRef.value.setAttribute('height', rect.height)
-}
-
-// 窗口大小改变时更新SVG
-let resizeObserver = null
-
-onMounted(() => {
-  loadKookChannels()
-  loadTargetBots()
+  // 计算SVG画布大小
+  if (editorContainer.value) {
+    const rect = editorContainer.value.getBoundingClientRect()
+    svgHeight.value = rect.height
+  }
+  
+  // 初始化连接线
+  await nextTick()
+  updateConnectionLines()
   
   // 监听窗口大小变化
-  resizeObserver = new ResizeObserver(() => {
-    updateSvgSize()
-  })
-  
-  if (editorRef.value) {
-    resizeObserver.observe(editorRef.value)
-  }
-  
-  // 初始化SVG大小
-  nextTick(() => {
-    updateSvgSize()
-  })
+  window.addEventListener('resize', handleResize)
 })
 
-onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect()
-  }
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
 })
-</script>
 
-<style scoped>
-.visual-editor-enhanced {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: 20px;
+const handleResize = () => {
+  if (editorContainer.value) {
+    const rect = editorContainer.value.getBoundingClientRect()
+    svgHeight.value = rect.height
+    updateConnectionLines()
+  }
 }
 
-/* 工具栏 */
+const loadKookServers = async () => {
+  // TODO: 从API加载
+}
+
+const loadBots = async () => {
+  // TODO: 从API加载
+}
+
+const loadMappings = async () => {
+  // TODO: 从API加载
+}
+</script>
+
+<style scoped lang="scss">
+.mapping-visual-editor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .editor-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background: linear-gradient(to right, #f5f7fa, #ffffff);
-  border-radius: 8px;
-  border: 1px solid #DCDFE6;
+  padding: 20px;
+  background: white;
+  border-bottom: 1px solid #EBEEF5;
+  
+  .toolbar-left {
+    h2 {
+      margin: 0 0 5px 0;
+      font-size: 24px;
+    }
+    
+    .subtitle {
+      margin: 0;
+      color: #909399;
+      font-size: 14px;
+    }
+  }
+  
+  .toolbar-right {
+    display: flex;
+    gap: 10px;
+  }
 }
 
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.toolbar-left h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.toolbar-right {
-  display: flex;
-  gap: 10px;
-}
-
-/* 主编辑区 */
 .editor-main {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 20px;
+  grid-template-columns: 350px 1fr 350px;
   position: relative;
-  min-height: 400px;
-}
-
-/* 左侧面板 */
-.kook-channels-panel {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border: 2px solid #E4E7ED;
-  border-radius: 8px;
   overflow: hidden;
 }
 
-.panel-header {
+/* 左右面板通用样式 */
+.left-panel,
+.right-panel {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-direction: column;
+  background: #F5F7FA;
+  border-right: 1px solid #EBEEF5;
+}
+
+.right-panel {
+  border-right: none;
+  border-left: 1px solid #EBEEF5;
+}
+
+.panel-header {
+  padding: 20px;
   color: white;
+  
+  h3 {
+    margin: 0 0 15px 0;
+    font-size: 18px;
+  }
 }
 
-.panel-header h4 {
-  margin: 0;
-  font-size: 16px;
+.gradient-blue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
+.gradient-green {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* 左侧频道列表 */
 .channels-list {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 15px;
 }
 
 .server-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.channels-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 0;
+  gap: 10px;
+  
+  .server-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
+  
+  .server-icon-placeholder {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+  }
 }
 
 .channel-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px;
+  margin: 8px 0;
   background: white;
-  border: 2px solid #E4E7ED;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: grab;
   transition: all 0.3s;
-  user-select: none;
-}
-
-.channel-item:hover {
-  border-color: #409EFF;
-  background: #ECF5FF;
-  transform: translateX(5px);
-}
-
-.channel-item:active {
-  cursor: grabbing;
-}
-
-.channel-name {
-  flex: 1;
-  font-weight: 500;
-}
-
-.drag-handle {
-  color: #909399;
-  cursor: grab;
-}
-
-/* SVG画布 */
-.connection-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.connection-line {
-  fill: none;
-  stroke-width: 2;
-  transition: all 0.3s;
-  pointer-events: stroke;
-  cursor: pointer;
-}
-
-.connection-line:hover,
-.connection-line.active {
-  stroke-width: 3;
-  filter: drop-shadow(0 0 4px currentColor);
-}
-
-.connection-line.same-source {
-  stroke-dasharray: 5, 3;
-}
-
-.connection-line.dragging {
-  stroke-width: 2;
-  opacity: 0.6;
-  animation: dash 1s linear infinite;
-}
-
-@keyframes dash {
-  to {
-    stroke-dashoffset: -10;
+  border: 2px solid transparent;
+  
+  &:hover {
+    border-color: #409EFF;
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+  }
+  
+  &:active {
+    cursor: grabbing;
+  }
+  
+  &.is-mapped {
+    background: #F0F9FF;
+    border-color: #67C23A;
+  }
+  
+  .channel-drag-handle {
+    color: #909399;
+  }
+  
+  .channel-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    
+    .channel-name {
+      font-weight: 500;
+    }
   }
 }
 
-/* 右侧面板 */
-.target-bots-panel {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border: 2px solid #E4E7ED;
-  border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-  z-index: 2;
-}
-
+/* 右侧Bot列表 */
 .bots-list {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
 }
 
 .bot-card {
-  padding: 15px;
   background: white;
-  border: 2px dashed #DCDFE6;
-  border-radius: 8px;
+  border-radius: 12px;
+  padding: 20px;
+  border: 3px dashed transparent;
   transition: all 0.3s;
-  min-height: 100px;
+  
+  &.is-drop-target {
+    border-color: #67C23A;
+    background: #F0F9FF;
+    box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+    animation: pulse 1s infinite;
+  }
+  
+  .bot-header {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    
+    .bot-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      
+      &.platform-discord {
+        background: linear-gradient(135deg, #5865F2 0%, #7289DA 100%);
+      }
+      
+      &.platform-telegram {
+        background: linear-gradient(135deg, #0088cc 0%, #00aaff 100%);
+      }
+      
+      &.platform-feishu {
+        background: linear-gradient(135deg, #00b96b 0%, #00d68f 100%);
+      }
+    }
+    
+    .bot-info {
+      flex: 1;
+      
+      h4 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+    }
+  }
+  
+  .bot-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #EBEEF5;
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      
+      .stat-label {
+        font-size: 12px;
+        color: #909399;
+      }
+      
+      .stat-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #409EFF;
+      }
+    }
+  }
+  
+  .bot-mappings {
+    .mappings-label {
+      font-size: 12px;
+      color: #909399;
+      margin-bottom: 10px;
+    }
+    
+    .mapping-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: #F5F7FA;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+  }
+  
+  .drop-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 30px;
+    color: #C0C4CC;
+    border: 2px dashed #DCDFE6;
+    border-radius: 8px;
+    
+    .el-icon {
+      font-size: 36px;
+    }
+  }
 }
 
-.bot-card:hover {
-  border-color: #409EFF;
-  background: #F5F7FA;
+/* SVG连接线 */
+.connection-svg {
+  position: absolute;
+  left: 350px;
+  top: 0;
+  pointer-events: none;
+  z-index: 10;
 }
 
-.bot-card.drop-target {
-  border-color: #67C23A;
-  background: #F0F9FF;
-  border-style: solid;
-  box-shadow: 0 0 12px rgba(64, 158, 255, 0.3);
+.connection-line {
+  pointer-events: stroke;
+  cursor: pointer;
+  transition: all 0.3s;
+  
+  &.line-hover {
+    stroke-width: 5;
+    filter: drop-shadow(0 0 8px rgba(64, 158, 255, 0.6));
+  }
 }
 
-.bot-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+.connection-label {
+  fill: #409EFF;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  
+  .remove-hint {
+    fill: #F56C6C;
+    font-size: 10px;
+  }
 }
 
-.bot-info h4 {
-  margin: 0 0 5px 0;
-  font-size: 15px;
-}
-
-.bot-mappings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: 40px;
-  align-items: center;
-}
-
-.drop-hint {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  color: #909399;
-  font-size: 13px;
-}
-
-/* 底部预览 */
-.mapping-preview {
+/* 底部预览面板 */
+.preview-panel {
   background: white;
-  border: 1px solid #DCDFE6;
-  border-radius: 8px;
-  padding: 15px;
+  border-top: 1px solid #EBEEF5;
+  padding: 20px;
 }
 
 .preview-header {
@@ -945,34 +1001,53 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
-}
-
-.preview-header h4 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.preview-content {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-/* 空状态 */
-.empty-state {
-  padding: 40px;
-  text-align: center;
-}
-
-/* 响应式 */
-@media (max-width: 1200px) {
-  .editor-main {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  
+  h3 {
+    margin: 0;
+    font-size: 16px;
   }
   
-  .connection-canvas {
-    display: none;
+  .preview-actions {
+    display: flex;
+    gap: 10px;
+  }
+}
+
+.mapping-preview-list {
+  .preview-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: #FAFAFA;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    
+    .preview-source,
+    .preview-target {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .preview-arrow {
+      color: #409EFF;
+      font-size: 18px;
+    }
+    
+    .preview-actions {
+      margin-left: auto;
+    }
+  }
+}
+
+/* 动画 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
   }
 }
 </style>

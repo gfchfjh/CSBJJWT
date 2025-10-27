@@ -114,8 +114,29 @@ settings = Settings()
 # 创建日志目录
 settings.log_dir.mkdir(parents=True, exist_ok=True)
 
-    # ✅ P0-6优化: 图片处理策略配置
-    image_strategy: str = "smart"  # smart/direct/image_bed
-    smart_mode_direct_timeout: int = 10  # 直传超时时间（秒）
-    smart_mode_fallback_to_bed: bool = True  # 失败时使用图床
-    smart_mode_save_failed: bool = True  # 失败时保存本地
+# ✅ P0-12优化: 应用智能默认配置
+try:
+    from .utils.smart_defaults import smart_defaults
+    
+    # 获取推荐配置
+    recommended = smart_defaults.get_recommended_config()
+    
+    # 应用推荐配置到settings（仅在首次启动时应用）
+    first_run_marker = DATA_DIR / ".first_run"
+    if not first_run_marker.exists():
+        # 首次启动，应用智能默认配置
+        smart_defaults.apply_to_settings(settings)
+        
+        # 打印配置摘要
+        from .utils.logger import logger
+        logger.info("✅ 这是首次启动，已应用智能默认配置")
+        logger.info(smart_defaults.get_config_summary())
+        
+        # 标记已完成首次配置
+        first_run_marker.touch()
+    else:
+        # 非首次启动，使用现有配置
+        from .utils.logger import logger
+        logger.info("使用现有配置")
+except ImportError:
+    pass  # 智能默认配置模块不可用，使用默认值

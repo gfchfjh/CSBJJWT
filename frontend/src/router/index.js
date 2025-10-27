@@ -12,6 +12,7 @@ import Selectors from '../views/Selectors.vue'
 import Help from '../views/Help.vue'
 import Wizard from '../views/Wizard.vue'
 import WizardSimplified from '../views/WizardSimplified.vue'
+import WizardQuick3Steps from '../views/WizardQuick3Steps.vue'
 import QuickSetup from '../views/QuickSetup.vue'
 import Login from '../views/Login.vue'
 
@@ -25,14 +26,20 @@ const routes = [
   {
     path: '/wizard',
     name: 'Wizard',
-    component: WizardSimplified,  // 使用简化版向导
-    meta: { title: '配置向导', requiresAuth: true }
+    component: WizardQuick3Steps,  // ✅ P0-2优化: 使用极简3步向导作为默认
+    meta: { title: '快速配置向导（3步）', requiresAuth: true }
+  },
+  {
+    path: '/wizard-simplified',
+    name: 'WizardSimplified',
+    component: WizardSimplified,  // 保留简化版向导
+    meta: { title: '简化配置向导', requiresAuth: true }
   },
   {
     path: '/wizard-full',
     name: 'WizardFull',
     component: Wizard,  // 保留完整版向导
-    meta: { title: '完整配置向导', requiresAuth: true }
+    meta: { title: '完整配置向导（6步）', requiresAuth: true }
   },
   {
     path: '/quick-setup',
