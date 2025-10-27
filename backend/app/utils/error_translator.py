@@ -212,13 +212,209 @@ ERROR_TRANSLATIONS = {
         'auto_fix': None,
         'severity': 'error',
         'category': 'permission'
+    },
+    
+    'database_locked': {
+        'title': '🔒 数据库被锁定',
+        'message': '数据库文件被其他进程占用，无法写入',
+        'solution': [
+            '1️⃣ 检查是否有其他KOOK转发程序正在运行',
+            '2️⃣ 关闭其他可能使用数据库的程序',
+            '3️⃣ 重启应用通常可以解决此问题',
+            '4️⃣ 如果问题持续，可能需要删除.lock文件'
+        ],
+        'auto_fix': 'restart_app',
+        'severity': 'error',
+        'category': 'database'
+    },
+    
+    'port_already_in_use': {
+        'title': '🔌 端口已被占用',
+        'message': '应用需要的端口（9527）已被其他程序使用',
+        'solution': [
+            '1️⃣ 检查是否有其他KOOK转发程序正在运行',
+            '2️⃣ 使用任务管理器关闭占用端口的程序',
+            '3️⃣ 可以在设置中更改应用端口',
+            '4️⃣ 重启计算机可以释放所有端口'
+        ],
+        'auto_fix': 'kill_port_process',
+        'severity': 'error',
+        'category': 'service'
+    },
+    
+    'python_missing_dependency': {
+        'title': '📦 缺少依赖包',
+        'message': '缺少必要的Python依赖包，应用无法正常运行',
+        'solution': [
+            '1️⃣ 通常是安装包损坏导致',
+            '2️⃣ 建议重新下载完整的安装包',
+            '3️⃣ 开发者可以运行：pip install -r requirements.txt',
+            '4️⃣ 查看"帮助中心 → 故障排查"获取详细指导'
+        ],
+        'auto_fix': None,
+        'severity': 'error',
+        'category': 'environment'
+    },
+    
+    'json_parse_error': {
+        'title': '📄 配置文件格式错误',
+        'message': '配置文件损坏或格式不正确',
+        'solution': [
+            '1️⃣ 配置文件可能被意外修改',
+            '2️⃣ 进入"设置 → 备份恢复"恢复之前的配置',
+            '3️⃣ 或删除配置文件，重新配置（会丢失所有设置）',
+            '4️⃣ 配置文件位置：用户文档/KookForwarder/config.json'
+        ],
+        'auto_fix': 'restore_config',
+        'severity': 'error',
+        'category': 'config'
+    },
+    
+    'ssl_certificate_error': {
+        'title': '🔐 SSL证书错误',
+        'message': '无法验证服务器的SSL证书，可能是网络问题或证书过期',
+        'solution': [
+            '1️⃣ 检查系统时间是否正确',
+            '2️⃣ 检查网络连接是否稳定',
+            '3️⃣ 如果使用代理，请检查代理配置',
+            '4️⃣ 尝试临时禁用防火墙或杀毒软件'
+        ],
+        'auto_fix': None,
+        'severity': 'warning',
+        'category': 'network'
+    },
+    
+    'memory_error': {
+        'title': '🧠 内存不足',
+        'message': '系统可用内存不足，可能导致应用崩溃',
+        'solution': [
+            '1️⃣ 关闭其他占用内存的程序',
+            '2️⃣ 减少同时监听的KOOK账号数量',
+            '3️⃣ 在"设置"中降低图片缓存大小',
+            '4️⃣ 建议电脑至少有4GB可用内存'
+        ],
+        'auto_fix': 'reduce_cache',
+        'severity': 'warning',
+        'category': 'system'
+    },
+    
+    'file_not_found': {
+        'title': '📂 文件未找到',
+        'message': '程序需要的文件不存在或被删除',
+        'solution': [
+            '1️⃣ 可能是安装不完整',
+            '2️⃣ 重新下载并安装应用',
+            '3️⃣ 确保杀毒软件没有隔离文件',
+            '4️⃣ 检查文件路径是否正确'
+        ],
+        'auto_fix': None,
+        'severity': 'error',
+        'category': 'system'
+    },
+    
+    'encoding_error': {
+        'title': '🔤 字符编码错误',
+        'message': '消息包含无法处理的特殊字符',
+        'solution': [
+            '1️⃣ 这通常是表情符号或特殊字符导致',
+            '2️⃣ 系统会自动尝试转换字符',
+            '3️⃣ 如果持续失败，可以在过滤规则中排除此类消息',
+            '4️⃣ 查看技术详情了解具体是哪个字符'
+        ],
+        'auto_fix': 'clean_text',
+        'severity': 'info',
+        'category': 'content'
+    },
+    
+    'proxy_error': {
+        'title': '🌐 代理连接失败',
+        'message': '配置的代理服务器无法连接',
+        'solution': [
+            '1️⃣ 检查代理地址和端口是否正确',
+            '2️⃣ 确认代理服务器正在运行',
+            '3️⃣ 尝试禁用代理，直接连接',
+            '4️⃣ 进入"设置 → 网络"修改代理配置'
+        ],
+        'auto_fix': 'disable_proxy',
+        'severity': 'warning',
+        'category': 'network'
+    },
+    
+    'account_banned': {
+        'title': '⚠️ KOOK账号被封禁',
+        'message': '您的KOOK账号可能因违规被封禁或限制',
+        'solution': [
+            '1️⃣ 尝试在KOOK官方网站登录验证',
+            '2️⃣ 联系KOOK客服了解封禁原因',
+            '3️⃣ 频繁使用自动化工具可能导致封号',
+            '4️⃣ 建议遵守KOOK服务条款，谨慎使用'
+        ],
+        'auto_fix': None,
+        'severity': 'error',
+        'category': 'auth'
+    },
+    
+    'channel_deleted': {
+        'title': '🗑️ 频道已被删除',
+        'message': 'KOOK频道或Discord/Telegram群组已被删除',
+        'solution': [
+            '1️⃣ 确认频道/群组是否真的被删除',
+            '2️⃣ 进入"频道映射"删除无效的映射',
+            '3️⃣ 重新配置映射关系',
+            '4️⃣ 系统会自动跳过已删除的频道'
+        ],
+        'auto_fix': 'remove_mapping',
+        'severity': 'warning',
+        'category': 'config'
+    },
+    
+    'captcha_failed': {
+        'title': '🔢 验证码识别失败',
+        'message': '自动验证码识别失败，需要人工输入',
+        'solution': [
+            '1️⃣ 手动输入验证码继续登录',
+            '2️⃣ 如果使用2Captcha，检查API Key和余额',
+            '3️⃣ 可以安装ddddocr库启用本地OCR识别',
+            '4️⃣ 查看"帮助中心 → 验证码处理"了解更多'
+        ],
+        'auto_fix': None,
+        'severity': 'info',
+        'category': 'auth'
+    },
+    
+    'update_available': {
+        'title': '🆕 有新版本可用',
+        'message': '发现新版本，建议更新以获得最新功能和修复',
+        'solution': [
+            '1️⃣ 进入"设置 → 关于"查看更新内容',
+            '2️⃣ 点击"立即更新"自动下载安装',
+            '3️⃣ 或访问GitHub下载最新版本',
+            '4️⃣ 更新前建议备份当前配置'
+        ],
+        'auto_fix': 'download_update',
+        'severity': 'info',
+        'category': 'system'
+    },
+    
+    'backup_corrupted': {
+        'title': '💾 备份文件损坏',
+        'message': '无法恢复配置，备份文件可能已损坏',
+        'solution': [
+            '1️⃣ 尝试恢复更早的备份文件',
+            '2️⃣ 检查备份文件是否完整（.zip或.json）',
+            '3️⃣ 如果所有备份都无效，需要重新配置',
+            '4️⃣ 建议定期备份配置到云端'
+        ],
+        'auto_fix': None,
+        'severity': 'error',
+        'category': 'backup'
     }
 }
 
 # 错误关键词匹配表
 ERROR_KEYWORDS = {
-    'chromium': ['chromium', 'playwright', 'browser', 'executable'],
-    'redis': ['redis', 'connection refused', 'econnrefused', '6379'],
+    'chromium_not_installed': ['chromium', 'playwright', 'browser', 'executable', "doesn't exist"],
+    'redis_connection_failed': ['redis', 'connection refused', 'econnrefused', '6379'],
     'cookie_expired': ['cookie', 'expired', 'unauthorized', '401', 'invalid token'],
     'webhook_invalid': ['webhook', 'invalid', '404', 'not found'],
     'telegram_unauthorized': ['telegram', 'unauthorized', '401', 'bot'],
@@ -231,7 +427,21 @@ ERROR_KEYWORDS = {
     'mapping_not_found': ['mapping', 'not found', 'no mapping'],
     'bot_not_configured': ['bot', 'not configured', 'no bot'],
     'message_too_long': ['message', 'too long', 'exceeds', 'maximum length'],
-    'permission_denied': ['permission', 'denied', 'forbidden', '403']
+    'permission_denied': ['permission', 'denied', 'forbidden', '403'],
+    'database_locked': ['database', 'locked', 'database is locked'],
+    'port_already_in_use': ['port', 'already in use', 'address already in use', 'eaddrinuse'],
+    'python_missing_dependency': ['modulenotfounderror', 'importerror', 'no module named'],
+    'json_parse_error': ['json', 'parse', 'decode', 'expecting value'],
+    'ssl_certificate_error': ['ssl', 'certificate', 'cert', 'https'],
+    'memory_error': ['memory', 'out of memory', 'memoryerror'],
+    'file_not_found': ['file not found', 'filenotfounderror', 'no such file'],
+    'encoding_error': ['encoding', 'unicode', 'decode', 'encode'],
+    'proxy_error': ['proxy', 'proxyerror', 'socks'],
+    'account_banned': ['banned', 'suspended', 'account disabled'],
+    'channel_deleted': ['channel', 'deleted', 'not found', 'no longer exists'],
+    'captcha_failed': ['captcha', 'verification', 'recaptcha'],
+    'update_available': ['update', 'new version', 'newer version'],
+    'backup_corrupted': ['backup', 'corrupted', 'damaged', 'invalid backup']
 }
 
 
