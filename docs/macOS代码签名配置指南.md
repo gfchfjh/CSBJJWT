@@ -1,6 +1,6 @@
 # macOS代码签名和公证配置指南
 
-**文档版本**: v1.0  
+**文档版本**: v9.0  
 **更新时间**: 2025-10-24  
 **作者**: 深度优化版  
 
@@ -165,8 +165,8 @@ npm install
 npm run build:mac
 
 # 构建成功后，产物在 frontend/dist/
-# - KOOK消息转发系统_v1.17.0_macOS_x64.dmg
-# - KOOK消息转发系统_v1.17.0_macOS_x64.zip
+# - KOOK消息转发系统_v9.07.0_macOS_x64.dmg
+# - KOOK消息转发系统_v9.07.0_macOS_x64.zip
 ```
 
 ### 4.3 验证签名
@@ -181,7 +181,7 @@ codesign -dv --verbose=4 \
 
 # 验证公证状态
 spctl -a -vvv -t install \
-  "frontend/dist/KOOK消息转发系统_v1.17.0_macOS_x64.dmg"
+  "frontend/dist/KOOK消息转发系统_v9.07.0_macOS_x64.dmg"
 ```
 
 ---
