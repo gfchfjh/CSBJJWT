@@ -24,6 +24,8 @@ from .api import image_storage_manager
 from .api import rate_limit_monitor
 # ✅ P1-1深度优化: 消息搜索API
 from .api import message_search
+# ✅ P1-5深度优化: Prometheus监控API
+from .api import metrics_api
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
@@ -240,6 +242,7 @@ app.include_router(wizard_testing_enhanced.router)  # 配置向导测试API增�
 app.include_router(image_storage_manager.router)  # 图床存储管理API 🆕 P0-3深度优化
 app.include_router(rate_limit_monitor.router)  # 限流监控API 🆕 P0-5深度优化
 app.include_router(message_search.router)  # 消息搜索API 🆕 P1-1深度优化
+app.include_router(metrics_api.router)  # Prometheus监控API 🆕 P1-5深度优化
 
 # ✅ P0-2深度优化：友好错误提示系统
 from .api import error_translator_api
@@ -284,11 +287,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host=settings.api_host,
-        port=settings.api_port,
-        reload=settings.debug,
-        log_level=settings.log_level.lower()
-    )
-.api_host,
         port=settings.api_port,
         reload=settings.debug,
         log_level=settings.log_level.lower()

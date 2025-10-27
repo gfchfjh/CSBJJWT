@@ -7,6 +7,16 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 
+# 读取统一版本号
+def _read_version() -> str:
+    """从根目录VERSION文件读取版本号"""
+    version_file = Path(__file__).parent.parent.parent / "VERSION"
+    try:
+        return version_file.read_text().strip()
+    except FileNotFoundError:
+        return "7.0.0"  # 默认版本
+
+
 # 获取用户文档目录
 USER_HOME = Path.home()
 APP_DATA_DIR = USER_HOME / "Documents" / "KookForwarder"
@@ -25,7 +35,7 @@ class Settings(BaseSettings):
     
     # 应用基础配置
     app_name: str = "KOOK消息转发系统"
-    app_version: str = "6.3.0"  # v6.3.0 傻瓜式一键安装版
+    app_version: str = _read_version()
     debug: bool = False
     data_dir: Path = DATA_DIR
     

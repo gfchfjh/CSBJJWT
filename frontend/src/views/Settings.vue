@@ -4,565 +4,620 @@
       <template #header>
         <div class="card-header">
           <span>⚙️ 系统设置</span>
-          <el-button type="primary" @click="saveSettings" :loading="saving">
-            💾 保存设置
+          <el-button type="primary" @click="saveAllSettings" :loading="saving">
+            <el-icon><Check /></el-icon>
+            保存所有设置
           </el-button>
         </div>
       </template>
 
       <el-tabs v-model="activeTab" type="border-card">
-        <!-- 服务控制 -->
+        <!-- 🚀 服务控制 -->
         <el-tab-pane label="🚀 服务控制" name="service">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="当前状态">
-              <el-tag :type="systemStatus === 'running' ? 'success' : 'danger'" size="large">
-                {{ systemStatus === 'running' ? '🟢 运行中' : '🔴 已停止' }}
-              </el-tag>
-            </el-form-item>
+          <div class="settings-section">
+            <h3>服务状态</h3>
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="当前状态">
+                <el-tag :type="serviceStatus.running ? 'success' : 'danger'">
+                  {{ serviceStatus.running ? '运行中' : '已停止' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="运行时长">
+                {{ formatUptime(serviceStatus.uptime) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="启动时间">
+                {{ serviceStatus.startTime ? new Date(serviceStatus.startTime).toLocaleString() : '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="进程PID">
+                {{ serviceStatus.pid || '-' }}
+              </el-descriptions-item>
+            </el-descriptions>
 
-            <el-form-item label="运行时长">
-              <span>{{ uptime }}</span>
-            </el-form-item>
+            <div class="control-buttons" style="margin-top: 20px;">
+              <el-button 
+                v-if="!serviceStatus.running"
+                type="success" 
+                size="large"
+                @click="startService"
+              >
+                <el-icon><VideoPlay /></el-icon>
+                启动服务
+              </el-button>
+              <el-button 
+                v-else
+                type="danger" 
+                size="large"
+                @click="stopService"
+              >
+                <el-icon><VideoPause /></el-icon>
+                停止服务
+              </el-button>
+              <el-button size="large" @click="restartService">
+                <el-icon><RefreshRight /></el-icon>
+                重启服务
+              </el-button>
+            </div>
 
             <el-divider />
 
-            <el-form-item label="开机自动启动">
-              <el-switch v-model="settings.autoStart" />
-              <span class="help-text">启用后，系统启动时自动运行本程序</span>
-            </el-form-item>
-
-            <el-form-item label="最小化到托盘">
-              <el-switch v-model="settings.minimizeToTray" />
-              <span class="help-text">关闭窗口时最小化到系统托盘而非退出</span>
-            </el-form-item>
-
-            <el-form-item label="启动后最小化">
-              <el-switch v-model="settings.startMinimized" />
-              <span class="help-text">程序启动后自动最小化到托盘</span>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 外观主题 -->
-        <el-tab-pane label="🎨 外观主题" name="theme">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="主题模式">
-              <el-radio-group v-model="settings.theme" @change="handleThemeChange">
-                <el-radio label="light">
-                  <div class="theme-option">
-                    <el-icon><Sunny /></el-icon>
-                    <span>浅色模式</span>
-                  </div>
-                </el-radio>
-                <el-radio label="dark">
-                  <div class="theme-option">
-                    <el-icon><Moon /></el-icon>
-                    <span>深色模式</span>
-                  </div>
-                </el-radio>
-                <el-radio label="auto">
-                  <div class="theme-option">
-                    <el-icon><Monitor /></el-icon>
-                    <span>跟随系统</span>
-                  </div>
-                </el-radio>
-              </el-radio-group>
-            </el-form-item>
-
-            <el-form-item label="当前主题">
-              <el-tag :type="isDark ? 'info' : 'primary'" size="large">
-                {{ isDark ? '🌙 深色' : '☀️ 浅色' }}
-              </el-tag>
-            </el-form-item>
-
-            <el-divider content-position="left">主题预览</el-divider>
-
-            <div class="theme-preview">
-              <el-card>
-                <template #header>
-                  <span>示例卡片</span>
-                </template>
-                <p>这是当前主题的预览效果</p>
-                <el-button type="primary">主要按钮</el-button>
-                <el-button>普通按钮</el-button>
-              </el-card>
-            </div>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 图片处理 -->
-        <el-tab-pane label="🖼️ 图片处理" name="image">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="图片处理策略">
-              <el-radio-group v-model="settings.imageStrategy">
-                <el-radio label="smart">
-                  <strong>智能模式</strong>
-                  <div class="radio-desc">优先直传，失败时使用图床（推荐）</div>
-                </el-radio>
-                <el-radio label="direct">
-                  <strong>直传模式</strong>
-                  <div class="radio-desc">仅直接上传到目标平台</div>
-                </el-radio>
-                <el-radio label="imgbed">
-                  <strong>图床模式</strong>
-                  <div class="radio-desc">使用本地图床</div>
-                </el-radio>
-              </el-radio-group>
-            </el-form-item>
-
-            <el-divider content-position="left">图床设置</el-divider>
-
-            <el-form-item label="存储路径">
-              <el-input v-model="settings.imageStoragePath" disabled>
-                <template #append>
-                  <el-button @click="openImageFolder">📁 打开</el-button>
-                </template>
-              </el-input>
-            </el-form-item>
-
-            <el-form-item label="最大占用空间">
-              <el-input-number
-                v-model="settings.imageMaxSizeGB"
-                :min="1"
-                :max="100"
-              />
-              <span> GB</span>
-            </el-form-item>
-
-            <el-form-item label="当前已用">
-              <el-progress
-                :percentage="imageUsagePercent"
-                :color="progressColor"
-              />
-              <div class="storage-info">
-                {{ imageUsedGB.toFixed(2) }} GB / {{ settings.imageMaxSizeGB }} GB
-              </div>
-            </el-form-item>
-
-            <el-form-item label="自动清理">
-              <el-input-number
-                v-model="settings.imageCleanupDays"
-                :min="1"
-                :max="30"
-              />
-              <span> 天前的图片</span>
-              <el-button
-                type="warning"
-                size="small"
-                @click="cleanupOldImages"
-                style="margin-left: 10px"
-              >
-                🗑️ 立即清理
-              </el-button>
-            </el-form-item>
-
-            <el-form-item label="图片压缩质量">
-              <el-slider
-                v-model="settings.imageQuality"
-                :min="50"
-                :max="100"
-                show-stops
-                :marks="{ 50: '低', 75: '中', 85: '高', 100: '原图' }"
-              />
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 日志设置 -->
-        <el-tab-pane label="📝 日志设置" name="log">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="日志级别">
-              <el-select v-model="settings.logLevel">
-                <el-option label="调试 (DEBUG)" value="DEBUG" />
-                <el-option label="普通 (INFO)" value="INFO" />
-                <el-option label="警告 (WARNING)" value="WARNING" />
-                <el-option label="错误 (ERROR)" value="ERROR" />
-              </el-select>
-              <div class="help-text">
-                调试级别会记录更详细的信息，但会占用更多磁盘空间
-              </div>
-            </el-form-item>
-
-            <el-form-item label="日志保留时长">
-              <el-input-number
-                v-model="settings.logRetentionDays"
-                :min="1"
-                :max="30"
-              />
-              <span> 天</span>
-            </el-form-item>
-
-            <el-form-item label="日志存储">
-              <div class="storage-status">
-                <span>已用 {{ logUsedMB }} MB</span>
-                <el-button
-                  type="primary"
-                  size="small"
-                  @click="openLogFolder"
-                  style="margin-left: 10px"
-                >
-                  📁 打开日志文件夹
-                </el-button>
-                <el-button
-                  type="danger"
-                  size="small"
-                  @click="clearAllLogs"
-                  style="margin-left: 10px"
-                >
-                  🗑️ 清空所有日志
-                </el-button>
-              </div>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 消息同步设置 -->
-        <el-tab-pane label="🔄 消息同步" name="sync">
-          <el-form :model="settings" label-width="180px">
-            <el-alert
-              title="历史消息同步"
-              type="info"
-              :closable="false"
-              style="margin-bottom: 20px"
-            >
-              <p>启动服务时，可以选择同步最近一段时间的历史消息。</p>
-              <p style="margin-top: 10px; color: #E6A23C;">
-                <strong>注意：</strong>同步时间过长可能导致大量消息重复转发，请谨慎设置。
-              </p>
-            </el-alert>
-
-            <el-form-item label="启用历史消息同步">
-              <el-switch v-model="settings.enableHistorySync" />
-              <span class="help-text">启动服务时同步历史消息</span>
-            </el-form-item>
-
-            <template v-if="settings.enableHistorySync">
-              <el-form-item label="同步时间范围">
-                <el-input-number
-                  v-model="settings.historySyncMinutes"
-                  :min="1"
-                  :max="1440"
-                  :step="5"
+            <h3>自动启动</h3>
+            <el-form label-width="150px">
+              <el-form-item label="开机自启">
+                <el-switch 
+                  v-model="settings.autoLaunch" 
+                  @change="handleAutoLaunchChange"
                 />
-                <span style="margin-left: 10px">分钟</span>
-                <div class="help-text">同步最近N分钟的历史消息（建议不超过60分钟）</div>
+                <span class="form-item-tip">启用后，系统启动时自动运行应用</span>
               </el-form-item>
 
-              <el-form-item label="快捷选择">
-                <el-radio-group v-model="settings.historySyncMinutes">
-                  <el-radio :label="5">最近5分钟</el-radio>
-                  <el-radio :label="10">最近10分钟</el-radio>
-                  <el-radio :label="30">最近30分钟</el-radio>
-                  <el-radio :label="60">最近1小时</el-radio>
+              <el-form-item label="最小化到托盘">
+                <el-switch v-model="settings.minimizeToTray" />
+                <span class="form-item-tip">关闭窗口时最小化到系统托盘（而非退出）</span>
+              </el-form-item>
+
+              <el-form-item label="启动时最小化">
+                <el-switch v-model="settings.startMinimized" />
+                <span class="form-item-tip">启动时直接最小化到托盘</span>
+              </el-form-item>
+            </el-form>
+          </div>
+        </el-tab-pane>
+
+        <!-- 🖼️ 图片处理 -->
+        <el-tab-pane label="🖼️ 图片处理" name="image">
+          <div class="settings-section">
+            <h3>图片处理策略</h3>
+            <el-form label-width="150px">
+              <el-form-item label="处理策略">
+                <el-radio-group v-model="settings.imageStrategy">
+                  <el-radio label="smart">
+                    <div>
+                      <strong>智能模式（推荐）</strong>
+                      <p class="radio-desc">优先直传到目标平台，失败时自动切换到图床</p>
+                    </div>
+                  </el-radio>
+                  <el-radio label="direct">
+                    <div>
+                      <strong>仅直传</strong>
+                      <p class="radio-desc">图片直接上传到目标平台，不使用图床</p>
+                    </div>
+                  </el-radio>
+                  <el-radio label="imgbed">
+                    <div>
+                      <strong>仅图床</strong>
+                      <p class="radio-desc">所有图片先上传到内置图床，再发送链接</p>
+                    </div>
+                  </el-radio>
                 </el-radio-group>
               </el-form-item>
 
-              <el-form-item label="仅同步已映射频道">
-                <el-switch v-model="settings.historySyncMappedOnly" />
-                <span class="help-text">仅同步已配置映射关系的频道</span>
-              </el-form-item>
-            </template>
+              <el-divider />
 
-            <el-divider content-position="left">消息去重</el-divider>
+              <h3>图床配置</h3>
 
-            <el-form-item label="去重缓存大小">
-              <el-input-number
-                v-model="settings.dedupCacheSize"
-                :min="1000"
-                :max="100000"
-                :step="1000"
-              />
-              <span style="margin-left: 10px">条</span>
-              <div class="help-text">内存中保存的消息ID数量（越大越能避免重复）</div>
-            </el-form-item>
-
-            <el-form-item label="Redis去重保留时间">
-              <el-input-number
-                v-model="settings.dedupRedisDays"
-                :min="1"
-                :max="30"
-              />
-              <span style="margin-left: 10px">天</span>
-              <div class="help-text">Redis中保存的消息ID过期时间</div>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-
-        <!-- 通知设置 -->
-        <el-tab-pane label="🔔 通知设置" name="notification">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="桌面通知">
-              <div class="notification-options">
-                <el-checkbox v-model="settings.notifyOnError">
-                  服务异常时通知
-                </el-checkbox>
-                <el-checkbox v-model="settings.notifyOnDisconnect">
-                  账号掉线时通知
-                </el-checkbox>
-                <el-checkbox v-model="settings.notifyOnFailure">
-                  消息转发失败时通知
-                </el-checkbox>
-              </div>
-            </el-form-item>
-
-            <el-divider content-position="left">邮件告警（可选）</el-divider>
-
-            <el-form-item label="启用邮件告警">
-              <el-switch v-model="settings.emailAlertEnabled" />
-            </el-form-item>
-
-            <template v-if="settings.emailAlertEnabled">
-              <el-alert
-                title="邮件告警配置说明"
-                type="info"
-                :closable="false"
-                style="margin-bottom: 20px"
-              >
-                <p><strong>常用SMTP配置：</strong></p>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                  <li>Gmail: smtp.gmail.com, 端口465 (需要应用专用密码)</li>
-                  <li>QQ邮箱: smtp.qq.com, 端口465 (需要授权码)</li>
-                  <li>163邮箱: smtp.163.com, 端口465 (需要授权码)</li>
-                  <li>Outlook: smtp-mail.outlook.com, 端口587</li>
-                </ul>
-              </el-alert>
-
-              <el-form-item label="SMTP服务器" required>
-                <el-input
-                  v-model="settings.smtpServer"
-                  placeholder="例如：smtp.gmail.com"
-                >
-                  <template #prepend>
-                    <el-icon><Message /></el-icon>
+              <el-form-item label="存储路径">
+                <el-input v-model="settings.imageStoragePath" readonly>
+                  <template #append>
+                    <el-button @click="openImageFolder">
+                      <el-icon><FolderOpened /></el-icon>
+                      打开
+                    </el-button>
+                    <el-button @click="changeImagePath">更改</el-button>
                   </template>
                 </el-input>
-                <span class="help-text">邮件服务器地址</span>
               </el-form-item>
 
-              <el-form-item label="SMTP端口" required>
-                <el-input-number
-                  v-model="settings.smtpPort"
-                  :min="1"
-                  :max="65535"
-                  placeholder="465"
-                  style="width: 150px"
+              <el-form-item label="最大占用空间">
+                <el-input-number 
+                  v-model="settings.imageMaxSizeGB" 
+                  :min="1" 
+                  :max="100"
+                  :step="1"
                 />
-                <el-radio-group v-model="settings.smtpPort" style="margin-left: 15px">
-                  <el-radio :label="465">465 (SSL)</el-radio>
-                  <el-radio :label="587">587 (TLS)</el-radio>
-                  <el-radio :label="25">25 (普通)</el-radio>
-                </el-radio-group>
-              </el-form-item>
-
-              <el-form-item label="发件邮箱" required>
-                <el-input
-                  v-model="settings.emailFrom"
-                  placeholder="your-email@gmail.com"
-                >
-                  <template #prepend>📧</template>
-                </el-input>
-                <span class="help-text">发送告警邮件的邮箱地址</span>
-              </el-form-item>
-
-              <el-form-item label="邮箱密码/授权码" required>
-                <el-input
-                  v-model="settings.emailPassword"
-                  type="password"
-                  show-password
-                  placeholder="邮箱密码或SMTP授权码"
-                >
-                  <template #prepend>🔑</template>
-                </el-input>
-                <span class="help-text">
-                  Gmail需要"应用专用密码"，QQ/163邮箱需要"授权码"
-                  <el-link
-                    type="primary"
-                    href="https://support.google.com/accounts/answer/185833"
-                    target="_blank"
-                    style="margin-left: 5px"
-                  >
-                    如何获取？
-                  </el-link>
-                </span>
-              </el-form-item>
-
-              <el-form-item label="收件邮箱" required>
-                <el-input
-                  v-model="settings.emailTo"
-                  placeholder="admin@example.com"
-                >
-                  <template #prepend>📬</template>
-                </el-input>
-                <span class="help-text">接收告警邮件的邮箱地址（可与发件邮箱相同）</span>
-              </el-form-item>
-
-              <el-divider content-position="left">告警触发条件</el-divider>
-
-              <el-form-item label="触发条件">
-                <el-checkbox-group v-model="settings.emailAlertTriggers">
-                  <el-checkbox label="service_error">
-                    <strong>服务异常</strong>
-                    <span class="help-text">- 后端服务崩溃或无法启动</span>
-                  </el-checkbox>
-                  <el-checkbox label="account_offline">
-                    <strong>账号掉线</strong>
-                    <span class="help-text">- KOOK账号连接断开超过5分钟</span>
-                  </el-checkbox>
-                  <el-checkbox label="forward_failed_batch">
-                    <strong>批量转发失败</strong>
-                    <span class="help-text">- 1小时内累计10次以上转发失败</span>
-                  </el-checkbox>
-                  <el-checkbox label="disk_full">
-                    <strong>磁盘空间不足</strong>
-                    <span class="help-text">- 图床或日志空间使用超过90%</span>
-                  </el-checkbox>
-                  <el-checkbox label="redis_error">
-                    <strong>Redis连接失败</strong>
-                    <span class="help-text">- 消息队列服务异常</span>
-                  </el-checkbox>
-                </el-checkbox-group>
-              </el-form-item>
-
-              <el-form-item label="告警频率限制">
-                <el-input-number
-                  v-model="settings.emailAlertInterval"
-                  :min="5"
-                  :max="1440"
-                  :step="5"
-                  style="width: 150px"
+                <span style="margin-left: 10px;">GB</span>
+                <div class="form-item-tip">
+                  当前已用：{{ imageStats.usedSize }} / {{ settings.imageMaxSizeGB }}GB
+                  ({{ imageStats.usedPercent }}%)
+                </div>
+                <el-progress 
+                  :percentage="imageStats.usedPercent" 
+                  :color="imageStats.usedPercent > 80 ? '#F56C6C' : '#67C23A'"
                 />
-                <span> 分钟内同类告警仅发送一次</span>
-                <span class="help-text" style="display: block; margin-top: 5px">
-                  防止告警邮件过多，建议设置为30-60分钟
-                </span>
               </el-form-item>
 
-              <el-form-item>
-                <el-button type="primary" @click="testEmail" :loading="testingEmail">
-                  <el-icon><Promotion /></el-icon>
-                  发送测试邮件
+              <el-form-item label="自动清理">
+                <el-input-number 
+                  v-model="settings.imageCleanupDays" 
+                  :min="1" 
+                  :max="365"
+                />
+                <span style="margin-left: 10px;">天前的图片</span>
+                <el-button 
+                  style="margin-left: 20px;" 
+                  type="warning"
+                  @click="cleanupOldImages"
+                >
+                  <el-icon><Delete /></el-icon>
+                  立即清理
                 </el-button>
-                <span class="help-text" style="margin-left: 10px">
-                  点击后将发送一封测试邮件到收件邮箱
-                </span>
               </el-form-item>
-            </template>
-          </el-form>
+
+              <el-form-item label="压缩质量">
+                <el-slider 
+                  v-model="settings.imageCompressionQuality" 
+                  :min="60" 
+                  :max="100"
+                  :marks="{ 60: '最小', 80: '平衡', 100: '原始' }"
+                />
+                <div class="form-item-tip">
+                  当前：{{ settings.imageCompressionQuality }}%
+                  （质量越高，文件越大）
+                </div>
+              </el-form-item>
+
+              <el-form-item label="最大尺寸">
+                <el-input-number 
+                  v-model="settings.imageMaxSizeMB" 
+                  :min="1" 
+                  :max="50"
+                  :step="1"
+                />
+                <span style="margin-left: 10px;">MB</span>
+                <div class="form-item-tip">超过此大小的图片将自动压缩</div>
+              </el-form-item>
+            </el-form>
+          </div>
         </el-tab-pane>
 
-        <!-- 其他设置 -->
+        <!-- 📝 日志设置 -->
+        <el-tab-pane label="📝 日志设置" name="log">
+          <div class="settings-section">
+            <h3>日志配置</h3>
+            <el-form label-width="150px">
+              <el-form-item label="日志级别">
+                <el-select v-model="settings.logLevel">
+                  <el-option label="调试（DEBUG）" value="DEBUG">
+                    <div>
+                      <strong>调试</strong>
+                      <p class="option-desc">记录所有信息，包括调试细节</p>
+                    </div>
+                  </el-option>
+                  <el-option label="普通（INFO）" value="INFO">
+                    <div>
+                      <strong>普通</strong>
+                      <p class="option-desc">记录正常运行信息（推荐）</p>
+                    </div>
+                  </el-option>
+                  <el-option label="警告（WARNING）" value="WARNING">
+                    <div>
+                      <strong>警告</strong>
+                      <p class="option-desc">仅记录警告和错误</p>
+                    </div>
+                  </el-option>
+                  <el-option label="错误（ERROR）" value="ERROR">
+                    <div>
+                      <strong>错误</strong>
+                      <p class="option-desc">仅记录错误信息</p>
+                    </div>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="保留时长">
+                <el-input-number 
+                  v-model="settings.logRetentionDays" 
+                  :min="1" 
+                  :max="365"
+                />
+                <span style="margin-left: 10px;">天</span>
+              </el-form-item>
+
+              <el-form-item label="日志存储">
+                <div>
+                  <div>当前大小：{{ logStats.totalSize }}</div>
+                  <div>文件数量：{{ logStats.fileCount }} 个</div>
+                  <div style="margin-top: 10px;">
+                    <el-button @click="openLogFolder">
+                      <el-icon><FolderOpened /></el-icon>
+                      打开日志文件夹
+                    </el-button>
+                    <el-button type="danger" @click="clearAllLogs">
+                      <el-icon><Delete /></el-icon>
+                      清空所有日志
+                    </el-button>
+                  </div>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+        </el-tab-pane>
+
+        <!-- 🔔 通知设置 -->
+        <el-tab-pane label="🔔 通知设置" name="notification">
+          <div class="settings-section">
+            <h3>桌面通知</h3>
+            <el-form label-width="180px">
+              <el-form-item label="服务异常通知">
+                <el-switch v-model="settings.notifyOnServiceError" />
+                <span class="form-item-tip">服务异常时弹出桌面通知</span>
+              </el-form-item>
+
+              <el-form-item label="账号掉线通知">
+                <el-switch v-model="settings.notifyOnAccountOffline" />
+                <span class="form-item-tip">KOOK账号掉线时通知</span>
+              </el-form-item>
+
+              <el-form-item label="消息转发失败通知">
+                <el-switch v-model="settings.notifyOnMessageFailed" />
+                <span class="form-item-tip">消息转发失败时通知（可能较频繁）</span>
+              </el-form-item>
+
+              <el-form-item label="通知声音">
+                <el-switch v-model="settings.notificationSound" />
+              </el-form-item>
+            </el-form>
+
+            <el-divider />
+
+            <h3>邮件告警（可选）</h3>
+            <el-form label-width="180px">
+              <el-form-item label="启用邮件告警">
+                <el-switch v-model="settings.emailAlertEnabled" />
+              </el-form-item>
+
+              <template v-if="settings.emailAlertEnabled">
+                <el-form-item label="SMTP服务器">
+                  <el-input v-model="settings.smtpHost" placeholder="smtp.gmail.com" />
+                </el-form-item>
+
+                <el-form-item label="SMTP端口">
+                  <el-input-number v-model="settings.smtpPort" :min="1" :max="65535" />
+                </el-form-item>
+
+                <el-form-item label="发件邮箱">
+                  <el-input v-model="settings.smtpFromEmail" placeholder="your@email.com" />
+                </el-form-item>
+
+                <el-form-item label="邮箱密码">
+                  <el-input 
+                    v-model="settings.smtpPassword" 
+                    type="password" 
+                    show-password
+                    placeholder="邮箱密码或应用专用密码"
+                  />
+                </el-form-item>
+
+                <el-form-item label="收件邮箱">
+                  <el-input v-model="settings.smtpToEmail" placeholder="notify@email.com" />
+                </el-form-item>
+
+                <el-form-item label="使用TLS">
+                  <el-switch v-model="settings.smtpUseTLS" />
+                </el-form-item>
+
+                <el-form-item>
+                  <el-button type="primary" @click="testEmailConfig">
+                    <el-icon><Promotion /></el-icon>
+                    发送测试邮件
+                  </el-button>
+                </el-form-item>
+              </template>
+            </el-form>
+          </div>
+        </el-tab-pane>
+
+        <!-- 🔒 安全设置 -->
+        <el-tab-pane label="🔒 安全设置" name="security">
+          <div class="settings-section">
+            <h3>访问控制</h3>
+            <el-form label-width="150px">
+              <el-form-item label="启动时需要密码">
+                <el-switch v-model="settings.requirePassword" />
+                <span class="form-item-tip">启用后，每次启动应用需要输入主密码</span>
+              </el-form-item>
+
+              <el-form-item v-if="settings.requirePassword" label="当前密码">
+                <div>
+                  <div>密码状态：<el-tag type="success">已设置</el-tag></div>
+                  <el-button style="margin-top: 10px;" @click="showChangePasswordDialog = true">
+                    更改密码
+                  </el-button>
+                </div>
+              </el-form-item>
+
+              <el-form-item v-else>
+                <el-button type="primary" @click="showSetPasswordDialog = true">
+                  设置主密码
+                </el-button>
+              </el-form-item>
+            </el-form>
+
+            <el-divider />
+
+            <h3>数据加密</h3>
+            <el-descriptions :column="1" border>
+              <el-descriptions-item label="敏感信息加密">
+                <el-tag type="success">✓ 已启用</el-tag>
+                <div class="desc-tip">所有Token、密码等敏感信息均采用AES-256加密存储</div>
+              </el-descriptions-item>
+              <el-descriptions-item label="加密密钥">
+                <div>
+                  <div>基于设备唯一ID生成</div>
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    style="margin-top: 10px;"
+                    @click="regenerateEncryptionKey"
+                  >
+                    重新生成密钥
+                  </el-button>
+                  <div class="desc-warning">
+                    ⚠️ 重新生成密钥后，需要重新输入所有密码和Token
+                  </div>
+                </div>
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+        </el-tab-pane>
+
+        <!-- 💾 备份与恢复 -->
+        <el-tab-pane label="💾 备份与恢复" name="backup">
+          <div class="settings-section">
+            <h3>配置备份</h3>
+            
+            <el-descriptions :column="2" border style="margin-bottom: 20px;">
+              <el-descriptions-item label="最后备份时间">
+                {{ backupInfo.lastBackupTime || '从未备份' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="备份文件大小">
+                {{ backupInfo.lastBackupSize || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="自动备份">
+                <el-tag :type="settings.autoBackup ? 'success' : 'info'">
+                  {{ settings.autoBackup ? '已启用' : '未启用' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="备份文件数">
+                {{ backupInfo.totalBackups || 0 }} 个
+              </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="backup-actions">
+              <el-button type="primary" size="large" @click="backupNow">
+                <el-icon><Download /></el-icon>
+                立即备份配置
+              </el-button>
+              <el-button type="success" size="large" @click="showRestoreDialog = true">
+                <el-icon><Upload /></el-icon>
+                恢复配置
+              </el-button>
+              <el-button size="large" @click="openBackupFolder">
+                <el-icon><FolderOpened /></el-icon>
+                打开备份文件夹
+              </el-button>
+            </div>
+
+            <el-divider />
+
+            <h3>自动备份设置</h3>
+            <el-form label-width="150px">
+              <el-form-item label="启用自动备份">
+                <el-switch v-model="settings.autoBackup" />
+                <span class="form-item-tip">每天自动备份一次配置</span>
+              </el-form-item>
+
+              <el-form-item v-if="settings.autoBackup" label="备份时间">
+                <el-time-picker 
+                  v-model="settings.autoBackupTime" 
+                  format="HH:mm"
+                  placeholder="选择备份时间"
+                />
+              </el-form-item>
+
+              <el-form-item label="保留备份数">
+                <el-input-number 
+                  v-model="settings.backupRetentionCount" 
+                  :min="1" 
+                  :max="30"
+                />
+                <span style="margin-left: 10px;">个</span>
+                <div class="form-item-tip">超过此数量的旧备份将被自动删除</div>
+              </el-form-item>
+            </el-form>
+
+            <el-divider />
+
+            <h3>备份内容</h3>
+            <el-checkbox-group v-model="settings.backupItems">
+              <el-checkbox label="accounts">账号配置</el-checkbox>
+              <el-checkbox label="bots">Bot配置</el-checkbox>
+              <el-checkbox label="mappings">频道映射</el-checkbox>
+              <el-checkbox label="filters">过滤规则</el-checkbox>
+              <el-checkbox label="settings">系统设置</el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </el-tab-pane>
+
+        <!-- 🌍 其他设置 -->
         <el-tab-pane label="🌍 其他设置" name="other">
-          <el-form :model="settings" label-width="150px">
-            <el-form-item label="界面语言">
-              <el-select v-model="settings.language">
-                <el-option label="简体中文" value="zh-CN" />
-                <el-option label="English" value="en-US" />
-              </el-select>
-            </el-form-item>
+          <div class="settings-section">
+            <h3>界面设置</h3>
+            <el-form label-width="150px">
+              <el-form-item label="语言">
+                <el-select v-model="settings.language">
+                  <el-option label="简体中文" value="zh-CN" />
+                  <el-option label="English" value="en-US" />
+                </el-select>
+              </el-form-item>
 
-            <el-form-item label="界面主题">
-              <el-select v-model="settings.theme">
-                <el-option label="浅色" value="light" />
-                <el-option label="深色" value="dark" />
-                <el-option label="跟随系统" value="auto" />
-              </el-select>
-            </el-form-item>
+              <el-form-item label="主题">
+                <el-radio-group v-model="settings.theme">
+                  <el-radio label="light">浅色</el-radio>
+                  <el-radio label="dark">深色</el-radio>
+                  <el-radio label="auto">跟随系统</el-radio>
+                </el-radio-group>
+              </el-form-item>
+            </el-form>
 
-            <el-divider content-position="left">自动更新</el-divider>
+            <el-divider />
 
-            <el-form-item label="检查更新">
-              <el-select v-model="settings.autoUpdate">
-                <el-option label="自动检查并安装" value="auto" />
-                <el-option label="仅检查不安装" value="check" />
-                <el-option label="不检查" value="never" />
-              </el-select>
-            </el-form-item>
+            <h3>更新设置</h3>
+            <el-form label-width="150px">
+              <el-form-item label="自动检查更新">
+                <el-switch v-model="settings.autoCheckUpdate" />
+              </el-form-item>
 
-            <el-form-item label="当前版本">
-              <span>v{{ appVersion }}</span>
-              <el-button
-                type="primary"
-                size="small"
-                @click="checkUpdate"
-                :loading="checkingUpdate"
-                style="margin-left: 10px"
+              <el-form-item label="当前版本">
+                <div>
+                  <el-tag type="info">v6.1.0</el-tag>
+                  <el-button style="margin-left: 10px;" @click="checkUpdate">
+                    检查更新
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+
+            <el-divider />
+
+            <h3>高级选项</h3>
+            <el-form label-width="150px">
+              <el-form-item label="开发者模式">
+                <el-switch v-model="settings.developerMode" />
+                <div class="form-item-tip">启用后可查看更详细的调试信息</div>
+              </el-form-item>
+
+              <el-form-item label="性能监控">
+                <el-switch v-model="settings.performanceMonitor" />
+                <div class="form-item-tip">显示CPU和内存使用情况</div>
+              </el-form-item>
+            </el-form>
+
+            <el-divider />
+
+            <h3>数据管理</h3>
+            <div class="danger-zone">
+              <el-alert
+                title="危险操作"
+                type="error"
+                :closable="false"
               >
-                检查更新
-              </el-button>
-            </el-form-item>
+                <div>以下操作不可恢复，请谨慎操作！</div>
+              </el-alert>
 
-            <el-divider content-position="left">数据管理</el-divider>
-
-            <el-form-item label="备份配置">
-              <el-button type="success" @click="backupConfig">
-                💾 立即备份配置
-              </el-button>
-              <el-button @click="restoreConfig" style="margin-left: 10px">
-                📥 恢复配置
-              </el-button>
-            </el-form-item>
-
-            <el-form-item label="最后备份时间">
-              <span>{{ lastBackupTime || '从未备份' }}</span>
-            </el-form-item>
-
-            <el-form-item label="自动备份">
-              <el-checkbox v-model="settings.autoBackup">
-                每天自动备份配置
-              </el-checkbox>
-            </el-form-item>
-          </el-form>
+              <div style="margin-top: 20px;">
+                <el-button type="danger" @click="clearAllData">
+                  <el-icon><Delete /></el-icon>
+                  清空所有数据
+                </el-button>
+                <el-button type="danger" plain @click="resetSettings">
+                  <el-icon><RefreshLeft /></el-icon>
+                  恢复默认设置
+                </el-button>
+              </div>
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </el-card>
+
+    <!-- 更改密码对话框 -->
+    <el-dialog v-model="showChangePasswordDialog" title="更改主密码" width="500px">
+      <el-form :model="passwordForm" label-width="100px">
+        <el-form-item label="当前密码">
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="passwordForm.newPassword" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="确认密码">
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showChangePasswordDialog = false">取消</el-button>
+        <el-button type="primary" @click="changePassword">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 恢复配置对话框 -->
+    <el-dialog v-model="showRestoreDialog" title="恢复配置" width="600px">
+      <el-upload
+        drag
+        :auto-upload="false"
+        :on-change="handleBackupFileSelect"
+        accept=".json,.zip"
+      >
+        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+        <div class="el-upload__text">
+          将备份文件拖到此处，或<em>点击上传</em>
+        </div>
+        <template #tip>
+          <div class="el-upload__tip">
+            支持 .json 和 .zip 格式的备份文件
+          </div>
+        </template>
+      </el-upload>
+      <template #footer>
+        <el-button @click="showRestoreDialog = false">取消</el-button>
+        <el-button type="primary" @click="restoreFromBackup">恢复</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  Check,
+  VideoPlay,
+  VideoPause,
+  RefreshRight,
+  FolderOpened,
+  Delete,
+  Promotion,
+  Download,
+  Upload,
+  RefreshLeft,
+  UploadFilled
+} from '@element-plus/icons-vue'
 import api from '@/api'
-import { useTheme } from '@/composables/useTheme'
 
-// 主题管理
-const { currentTheme, isDark, setTheme } = useTheme()
-
-// 处理主题变化
-const handleThemeChange = (theme) => {
-  setTheme(theme)
-  ElMessage.success(`已切换到${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '自动'}模式`)
-}
-
-// 当前激活的标签页
 const activeTab = ref('service')
-
-// 保存中
 const saving = ref(false)
 
-// 系统状态
-const systemStatus = ref('running')
-const uptime = ref('0小时0分钟')
-const appVersion = ref('1.0.0')
-
-// 图片使用情况
-const imageUsedGB = ref(0)
-
-// 日志使用情况
-const logUsedMB = ref(0)
-
-// 最后备份时间
-const lastBackupTime = ref('')
-
-// 检查更新中
-const checkingUpdate = ref(false)
-
-// 测试邮件中
-const testingEmail = ref(false)
+// 服务状态
+const serviceStatus = reactive({
+  running: false,
+  uptime: 0,
+  startTime: null,
+  pid: null
+})
 
 // 设置数据
-const settings = ref({
+const settings = reactive({
   // 服务控制
-  autoStart: false,
+  autoLaunch: false,
   minimizeToTray: true,
   startMinimized: false,
   
@@ -571,383 +626,496 @@ const settings = ref({
   imageStoragePath: '',
   imageMaxSizeGB: 10,
   imageCleanupDays: 7,
-  imageQuality: 85,
+  imageCompressionQuality: 85,
+  imageMaxSizeMB: 10,
   
   // 日志
   logLevel: 'INFO',
   logRetentionDays: 3,
   
-  // 消息同步（新增）
-  enableHistorySync: false,
-  historySyncMinutes: 10,
-  historySyncMappedOnly: true,
-  dedupCacheSize: 10000,
-  dedupRedisDays: 7,
-  
   // 通知
-  notifyOnError: true,
-  notifyOnDisconnect: true,
-  notifyOnFailure: false,
+  notifyOnServiceError: true,
+  notifyOnAccountOffline: true,
+  notifyOnMessageFailed: false,
+  notificationSound: true,
+  
+  // 邮件
   emailAlertEnabled: false,
-  smtpServer: '',
+  smtpHost: 'smtp.gmail.com',
   smtpPort: 587,
-  emailFrom: '',
-  emailPassword: '',
-  emailTo: '',
-  emailAlertTriggers: ['service_error', 'account_offline', 'disk_full'],
-  emailAlertInterval: 30,
+  smtpFromEmail: '',
+  smtpPassword: '',
+  smtpToEmail: '',
+  smtpUseTLS: true,
+  
+  // 安全
+  requirePassword: false,
+  
+  // 备份
+  autoBackup: true,
+  autoBackupTime: new Date(),
+  backupRetentionCount: 10,
+  backupItems: ['accounts', 'bots', 'mappings', 'filters', 'settings'],
   
   // 其他
   language: 'zh-CN',
-  theme: currentTheme.value || 'auto',  // 从主题管理器获取当前主题
-  autoUpdate: 'check',
-  autoBackup: true
+  theme: 'light',
+  autoCheckUpdate: true,
+  developerMode: false,
+  performanceMonitor: false,
 })
 
-// 监听主题变化并应用
-watch(() => settings.value.theme, (newTheme) => {
-  setTheme(newTheme)
+// 统计信息
+const imageStats = reactive({
+  usedSize: '0 MB',
+  usedPercent: 0
 })
 
-// 计算属性：图片使用百分比
-const imageUsagePercent = computed(() => {
-  if (settings.value.imageMaxSizeGB === 0) return 0
-  return Math.min((imageUsedGB.value / settings.value.imageMaxSizeGB) * 100, 100)
+const logStats = reactive({
+  totalSize: '0 MB',
+  fileCount: 0
 })
 
-// 计算属性：进度条颜色
-const progressColor = computed(() => {
-  const percent = imageUsagePercent.value
-  if (percent < 50) return '#67C23A'
-  if (percent < 80) return '#E6A23C'
-  return '#F56C6C'
+const backupInfo = reactive({
+  lastBackupTime: null,
+  lastBackupSize: null,
+  totalBackups: 0
 })
 
-// 加载设置
+// 对话框
+const showChangePasswordDialog = ref(false)
+const showSetPasswordDialog = ref(false)
+const showRestoreDialog = ref(false)
+
+const passwordForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+let selectedBackupFile = null
+
+/**
+ * 加载设置
+ */
 const loadSettings = async () => {
   try {
-    const response = await api.getSystemConfig()
-    if (response.success && response.data) {
-      Object.assign(settings.value, response.data)
-    }
+    const response = await api.get('/api/settings')
+    Object.assign(settings, response.data)
     
-    // 加载保存的主题设置
-    settings.value.theme = currentTheme.value
+    // 加载服务状态
+    const statusRes = await api.get('/api/system/status')
+    Object.assign(serviceStatus, statusRes.data)
     
-    // 获取图片存储路径（从配置或使用默认）
-    settings.value.imageStoragePath = settings.value.imageStoragePath || 
-      '用户文档/KookForwarder/data/images'
-    
-    // 获取存储使用情况
-    await loadStorageUsage()
-    
-    // 获取最后备份时间
-    lastBackupTime.value = localStorage.getItem('last_backup_time') || ''
-    
+    // 加载统计信息
+    loadStats()
   } catch (error) {
     console.error('加载设置失败:', error)
-    ElMessage.error('加载设置失败：' + (error.response?.data?.detail || error.message))
+    ElMessage.error('加载设置失败')
   }
 }
 
-// 加载存储使用情况
-const loadStorageUsage = async () => {
+/**
+ * 加载统计信息
+ */
+const loadStats = async () => {
   try {
-    const response = await api.getStorageUsage()
-    if (response.success && response.data) {
-      imageUsedGB.value = response.data.image.size_gb || 0
-      logUsedMB.value = response.data.log.size_mb || 0
-      // 更新路径
-      if (response.data.image.path) {
-        settings.value.imageStoragePath = response.data.image.path
-      }
-    }
+    const [imageRes, logRes, backupRes] = await Promise.all([
+      api.get('/api/settings/image-stats'),
+      api.get('/api/settings/log-stats'),
+      api.get('/api/settings/backup-info')
+    ])
+    
+    Object.assign(imageStats, imageRes.data)
+    Object.assign(logStats, logRes.data)
+    Object.assign(backupInfo, backupRes.data)
   } catch (error) {
-    console.error('获取存储使用情况失败:', error)
+    console.error('加载统计失败:', error)
   }
 }
 
-// 保存设置
-const saveSettings = async () => {
+/**
+ * 保存所有设置
+ */
+const saveAllSettings = async () => {
   try {
     saving.value = true
-    await api.saveSystemConfig(settings.value)
-    ElMessage.success('设置保存成功')
+    await api.post('/api/settings', settings)
+    ElMessage.success('设置已保存')
   } catch (error) {
-    ElMessage.error(error.response?.data?.detail || '保存失败')
+    console.error('保存设置失败:', error)
+    ElMessage.error('保存设置失败')
   } finally {
     saving.value = false
   }
 }
 
-// 打开图片文件夹
+/**
+ * 格式化运行时长
+ */
+const formatUptime = (seconds) => {
+  if (!seconds) return '0秒'
+  
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  
+  const parts = []
+  if (days > 0) parts.push(`${days}天`)
+  if (hours > 0) parts.push(`${hours}小时`)
+  if (minutes > 0) parts.push(`${minutes}分`)
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}秒`)
+  
+  return parts.join(' ')
+}
+
+/**
+ * 启动服务
+ */
+const startService = async () => {
+  try {
+    await api.post('/api/system/start')
+    ElMessage.success('服务已启动')
+    await loadSettings()
+  } catch (error) {
+    ElMessage.error('启动失败: ' + error.message)
+  }
+}
+
+/**
+ * 停止服务
+ */
+const stopService = async () => {
+  try {
+    await ElMessageBox.confirm('确定要停止服务吗？', '确认')
+    await api.post('/api/system/stop')
+    ElMessage.success('服务已停止')
+    await loadSettings()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('停止失败: ' + error.message)
+    }
+  }
+}
+
+/**
+ * 重启服务
+ */
+const restartService = async () => {
+  try {
+    await ElMessageBox.confirm('确定要重启服务吗？', '确认')
+    await api.post('/api/system/restart')
+    ElMessage.success('服务已重启')
+    await loadSettings()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('重启失败: ' + error.message)
+    }
+  }
+}
+
+/**
+ * 自动启动设置
+ */
+const handleAutoLaunchChange = async (enabled) => {
+  try {
+    if (window.electronAPI) {
+      if (enabled) {
+        await window.electronAPI.autoLaunch.enable()
+      } else {
+        await window.electronAPI.autoLaunch.disable()
+      }
+      ElMessage.success(enabled ? '已启用开机自启' : '已禁用开机自启')
+    } else {
+      ElMessage.warning('仅Electron环境支持此功能')
+    }
+  } catch (error) {
+    ElMessage.error('设置失败: ' + error.message)
+  }
+}
+
+/**
+ * 打开图片文件夹
+ */
 const openImageFolder = async () => {
-  try {
-    // 先获取路径
-    const response = await api.getSystemPaths()
-    if (response.success && response.data.image_storage) {
-      const path = response.data.image_storage
-      
-      // 调用Electron API打开文件夹
-      if (window.electronAPI && window.electronAPI.openPath) {
-        await window.electronAPI.openPath(path)
-      } else {
-        // Web环境降级处理
-        ElMessage.info(`图片文件夹路径：${path}`)
-        // 复制路径到剪贴板
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(path)
-          ElMessage.success('路径已复制到剪贴板')
-        }
-      }
-    }
-  } catch (error) {
-    ElMessage.error('打开文件夹失败：' + (error.response?.data?.detail || error.message))
+  if (window.electronAPI) {
+    await window.electronAPI.system.openPath(settings.imageStoragePath)
   }
 }
 
-// 打开日志文件夹
-const openLogFolder = async () => {
-  try {
-    // 先获取路径
-    const response = await api.getSystemPaths()
-    if (response.success && response.data.log_dir) {
-      const path = response.data.log_dir
-      
-      // 调用Electron API打开文件夹
-      if (window.electronAPI && window.electronAPI.openPath) {
-        await window.electronAPI.openPath(path)
-      } else {
-        // Web环境降级处理
-        ElMessage.info(`日志文件夹路径：${path}`)
-        // 复制路径到剪贴板
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(path)
-          ElMessage.success('路径已复制到剪贴板')
-        }
-      }
+/**
+ * 更改图片路径
+ */
+const changeImagePath = async () => {
+  if (window.electronAPI) {
+    const result = await window.electronAPI.dialog.openFile({
+      properties: ['openDirectory']
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      settings.imageStoragePath = result.filePaths[0]
+      ElMessage.success('路径已更改')
     }
-  } catch (error) {
-    ElMessage.error('打开文件夹失败：' + (error.response?.data?.detail || error.message))
   }
 }
 
-// 清理旧图片
+/**
+ * 清理旧图片
+ */
 const cleanupOldImages = async () => {
   try {
     await ElMessageBox.confirm(
-      `确定要清理 ${settings.value.imageCleanupDays} 天前的旧图片吗？此操作不可恢复！`,
-      '确认清理',
-      {
-        confirmButtonText: '确定清理',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
+      `确定要清理 ${settings.imageCleanupDays} 天前的图片吗？`,
+      '确认清理'
     )
-    
-    // 调用清理API
-    const response = await api.cleanupImages(settings.value.imageCleanupDays)
-    if (response.success) {
-      ElMessage.success(`清理完成，删除了 ${response.count} 个文件，释放 ${response.size_mb} MB 空间`)
-      // 刷新存储使用情况
-      await loadStorageUsage()
-    }
+    const response = await api.post('/api/settings/cleanup-images', {
+      days: settings.imageCleanupDays
+    })
+    ElMessage.success(`已清理 ${response.data.deletedCount} 个文件，释放 ${response.data.freedSpace}`)
+    await loadStats()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('清理失败：' + (error.response?.data?.detail || error.message))
+      ElMessage.error('清理失败: ' + error.message)
     }
   }
 }
 
-// 清空所有日志
+/**
+ * 打开日志文件夹
+ */
+const openLogFolder = async () => {
+  if (window.electronAPI) {
+    await window.electronAPI.system.openPath(await window.electronAPI.app.getPath('logs'))
+  }
+}
+
+/**
+ * 清空所有日志
+ */
 const clearAllLogs = async () => {
   try {
-    await ElMessageBox.confirm(
-      '确定要清空所有日志吗？此操作不可恢复！',
-      '危险操作',
-      {
-        confirmButtonText: '确定清空',
-        cancelButtonText: '取消',
-        type: 'error',
-        dangerouslyUseHTMLString: true,
-        message: '<p>⚠️ <strong>此操作将删除所有日志文件！</strong></p><p>日志文件用于故障排查，删除后将无法追溯历史问题。</p>'
-      }
-    )
-    
-    // 调用清理API
-    const response = await api.cleanupLogs()
-    if (response.success) {
-      ElMessage.success(`日志已清空，删除了 ${response.count} 个文件，释放 ${response.size_mb} MB 空间`)
-      logUsedMB.value = 0
-      // 刷新存储使用情况
-      await loadStorageUsage()
-    }
+    await ElMessageBox.confirm('确定要清空所有日志吗？此操作不可恢复！', '危险操作', {
+      type: 'error'
+    })
+    await api.post('/api/settings/clear-logs')
+    ElMessage.success('日志已清空')
+    await loadStats()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('清空日志失败：' + (error.response?.data?.detail || error.message))
+      ElMessage.error('清空失败: ' + error.message)
     }
   }
 }
 
-// 测试邮件
-const testEmail = async () => {
-  // 验证必填字段
-  if (!settings.value.smtpServer || !settings.value.emailFrom || 
-      !settings.value.emailPassword || !settings.value.emailTo) {
-    ElMessage.warning('请先填写完整的邮件配置信息')
+/**
+ * 测试邮件配置
+ */
+const testEmailConfig = async () => {
+  try {
+    await api.post('/api/settings/test-email', {
+      smtpHost: settings.smtpHost,
+      smtpPort: settings.smtpPort,
+      smtpFromEmail: settings.smtpFromEmail,
+      smtpPassword: settings.smtpPassword,
+      smtpToEmail: settings.smtpToEmail,
+      smtpUseTLS: settings.smtpUseTLS
+    })
+    ElMessage.success('测试邮件已发送，请检查收件箱')
+  } catch (error) {
+    ElMessage.error('发送失败: ' + error.message)
+  }
+}
+
+/**
+ * 立即备份
+ */
+const backupNow = async () => {
+  try {
+    const response = await api.post('/api/backup/create', {
+      items: settings.backupItems
+    })
+    ElMessage.success('备份成功：' + response.data.filename)
+    await loadStats()
+  } catch (error) {
+    ElMessage.error('备份失败: ' + error.message)
+  }
+}
+
+/**
+ * 打开备份文件夹
+ */
+const openBackupFolder = async () => {
+  if (window.electronAPI) {
+    const backupPath = await window.electronAPI.app.getPath('userData') + '/backups'
+    await window.electronAPI.system.openPath(backupPath)
+  }
+}
+
+/**
+ * 选择备份文件
+ */
+const handleBackupFileSelect = (file) => {
+  selectedBackupFile = file
+}
+
+/**
+ * 从备份恢复
+ */
+const restoreFromBackup = async () => {
+  if (!selectedBackupFile) {
+    ElMessage.warning('请先选择备份文件')
     return
   }
-
+  
   try {
-    testingEmail.value = true
+    await ElMessageBox.confirm(
+      '恢复配置将覆盖当前所有设置，确定继续吗？',
+      '确认恢复',
+      { type: 'warning' }
+    )
     
-    // 先保存当前的邮件配置
-    await saveSettings()
+    const formData = new FormData()
+    formData.append('file', selectedBackupFile.raw)
     
-    ElMessage.info('正在发送测试邮件，请稍候...')
+    await api.post('/api/backup/restore', formData)
+    ElMessage.success('恢复成功，即将重启应用...')
     
-    // 发送测试邮件
-    const response = await api.testEmail({
-      smtp_host: settings.value.smtpServer,
-      smtp_port: settings.value.smtpPort,
-      smtp_user: settings.value.emailFrom,
-      smtp_password: settings.value.emailPassword,
-      recipient: settings.value.emailTo
+    setTimeout(() => {
+      if (window.electronAPI) {
+        window.electronAPI.app.relaunch()
+      } else {
+        window.location.reload()
+      }
+    }, 2000)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('恢复失败: ' + error.message)
+    }
+  }
+}
+
+/**
+ * 更改密码
+ */
+const changePassword = async () => {
+  if (!passwordForm.oldPassword || !passwordForm.newPassword) {
+    ElMessage.warning('请填写所有字段')
+    return
+  }
+  
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  
+  try {
+    await api.post('/api/auth/change-password', {
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword
     })
+    ElMessage.success('密码已更改')
+    showChangePasswordDialog.value = false
+    Object.assign(passwordForm, { oldPassword: '', newPassword: '', confirmPassword: '' })
+  } catch (error) {
+    ElMessage.error('更改失败: ' + error.message)
+  }
+}
+
+/**
+ * 重新生成加密密钥
+ */
+const regenerateEncryptionKey = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '重新生成加密密钥后，所有已加密的数据将无法解密，需要重新输入所有敏感信息。确定继续吗？',
+      '危险操作',
+      { type: 'error' }
+    )
     
-    if (response.success) {
-      ElMessageBox.alert(
-        '测试邮件已成功发送！请检查您的收件箱（包括垃圾邮件箱）。<br/><br/>' +
-        `<strong>收件人：</strong>${settings.value.emailTo}<br/>` +
-        `<strong>主题：</strong>KOOK消息转发系统 - 测试邮件<br/><br/>` +
-        '如果未收到邮件，请检查：<br/>' +
-        '1. SMTP服务器地址和端口是否正确<br/>' +
-        '2. 邮箱密码/授权码是否正确<br/>' +
-        '3. 邮箱是否开启了SMTP服务',
-        '测试成功',
-        {
-          dangerouslyUseHTMLString: true,
-          confirmButtonText: '知道了',
-          type: 'success'
+    await api.post('/api/settings/regenerate-key')
+    ElMessage.success('密钥已重新生成')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败: ' + error.message)
+    }
+  }
+}
+
+/**
+ * 检查更新
+ */
+const checkUpdate = async () => {
+  try {
+    const response = await api.get('/api/updates/check')
+    if (response.data.hasUpdate) {
+      ElMessageBox.confirm(
+        `发现新版本 ${response.data.latestVersion}，是否立即下载？`,
+        '发现更新',
+        { type: 'success' }
+      ).then(() => {
+        if (window.electronAPI) {
+          window.electronAPI.app.openExternal(response.data.downloadUrl)
         }
-      )
+      })
     } else {
-      ElMessage.error('发送失败：' + (response.message || '未知错误'))
+      ElMessage.info('当前已是最新版本')
     }
   } catch (error) {
-    const errorMsg = error.response?.data?.detail || error.message || '未知错误'
-    ElMessageBox.alert(
-      `<strong>发送测试邮件失败</strong><br/><br/>` +
-      `<strong>错误信息：</strong>${errorMsg}<br/><br/>` +
-      `<strong>可能的原因：</strong><br/>` +
-      `1. SMTP服务器连接失败（请检查服务器地址和端口）<br/>` +
-      `2. 认证失败（请检查邮箱和密码/授权码）<br/>` +
-      `3. 邮箱未开启SMTP服务<br/>` +
-      `4. 网络连接问题`,
-      '发送失败',
+    ElMessage.error('检查更新失败: ' + error.message)
+  }
+}
+
+/**
+ * 清空所有数据
+ */
+const clearAllData = async () => {
+  try {
+    await ElMessageBox.prompt(
+      '此操作将删除所有数据（账号、Bot、映射、日志等），请输入"确认删除"以继续',
+      '危险操作',
       {
-        dangerouslyUseHTMLString: true,
-        confirmButtonText: '知道了',
-        type: 'error'
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'error',
+        inputPattern: /^确认删除$/,
+        inputErrorMessage: '请输入"确认删除"'
       }
     )
-  } finally {
-    testingEmail.value = false
-  }
-}
-
-// 检查更新
-const checkUpdate = async () => {
-  checkingUpdate.value = true
-  
-  try {
-    const response = await api.checkForUpdates()
-    if (response.has_update) {
-      ElMessageBox.confirm(
-        `发现新版本 v${response.latest_version}！<br/><br/>` +
-        `<strong>更新内容：</strong><br/>${response.release_notes || '查看完整更新日志'}`,
-        '发现新版本',
-        {
-          confirmButtonText: '立即更新',
-          cancelButtonText: '稍后提醒',
-          type: 'success',
-          dangerouslyUseHTMLString: true
-        }
-      ).then(() => {
-        // 打开下载页面或触发自动更新
-        if (response.download_url) {
-          window.open(response.download_url, '_blank')
-        }
-      })
-    } else {
-      ElMessage.success(`当前已是最新版本 v${appVersion.value}`)
-    }
-  } catch (error) {
-    console.error('检查更新失败:', error)
-    ElMessage.warning('检查更新失败，请稍后重试')
-  } finally {
-    checkingUpdate.value = false
-  }
-}
-
-// 备份配置
-const backupConfig = async () => {
-  try {
-    const response = await api.backupConfig()
-    if (response.success) {
-      const now = new Date().toLocaleString('zh-CN')
-      localStorage.setItem('last_backup_time', now)
-      lastBackupTime.value = now
-      
-      // 如果返回了备份文件，触发下载
-      if (response.backup_file) {
-        ElMessage.success('配置备份成功，备份文件：' + response.backup_file)
-      } else {
-        ElMessage.success('配置备份成功')
-      }
-    }
-  } catch (error) {
-    ElMessage.error('备份失败：' + (error.response?.data?.detail || error.message))
-  }
-}
-
-// 恢复配置
-const restoreConfig = () => {
-  // 创建文件选择输入框
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json,.zip'
-  
-  input.onchange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
     
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      
-      const response = await api.post('/api/backup/restore', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
-      
-      ElMessage.success('配置恢复成功，将在3秒后重启应用')
-      
-      // 3秒后重启应用
-      setTimeout(() => {
-        if (window.electronAPI && window.electronAPI.relaunch) {
-          window.electronAPI.relaunch()
-        } else {
-          window.location.reload()
-        }
-      }, 3000)
-    } catch (error) {
-      ElMessage.error('恢复配置失败：' + (error.response?.data?.detail || error.message))
+    await api.post('/api/settings/clear-all-data')
+    ElMessage.success('数据已清空，即将重启应用...')
+    
+    setTimeout(() => {
+      if (window.electronAPI) {
+        window.electronAPI.app.relaunch()
+      } else {
+        window.location.reload()
+      }
+    }, 2000)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('操作失败: ' + error.message)
     }
   }
-  
-  input.click()
+}
+
+/**
+ * 恢复默认设置
+ */
+const resetSettings = async () => {
+  try {
+    await ElMessageBox.confirm('确定要恢复所有默认设置吗？', '确认', {
+      type: 'warning'
+    })
+    
+    await api.post('/api/settings/reset')
+    ElMessage.success('设置已重置')
+    await loadSettings()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('重置失败: ' + error.message)
+    }
+  }
 }
 
 onMounted(() => {
@@ -966,37 +1134,69 @@ onMounted(() => {
   align-items: center;
 }
 
-.help-text {
-  margin-left: 10px;
-  font-size: 12px;
+.settings-section {
+  padding: 20px;
+}
+
+.settings-section h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #303133;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.form-item-tip {
+  display: block;
+  font-size: 13px;
   color: #909399;
+  margin-top: 5px;
 }
 
 .radio-desc {
+  font-size: 13px;
+  color: #909399;
+  margin: 5px 0 0 0;
+}
+
+.option-desc {
   font-size: 12px;
   color: #909399;
-  font-weight: normal;
-  margin-top: 2px;
+  margin: 3px 0 0 0;
 }
 
-.storage-info {
-  margin-top: 8px;
+.desc-tip {
   font-size: 13px;
-  color: #606266;
+  color: #909399;
+  margin-top: 5px;
 }
 
-.storage-status {
+.desc-warning {
+  font-size: 13px;
+  color: #E6A23C;
+  margin-top: 5px;
+}
+
+.backup-actions {
   display: flex;
-  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
 }
 
-.notification-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-:deep(.el-tabs__content) {
+.danger-zone {
   padding: 20px;
+  border: 2px solid #F56C6C;
+  border-radius: 8px;
+}
+
+/* 暗色主题 */
+.dark .settings-section h3 {
+  color: #E5EAF3;
 }
 </style>
