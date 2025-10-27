@@ -1,75 +1,87 @@
 <template>
   <el-dialog
     v-model="visible"
-    :title="error.title"
+    :title="errorData.title || '发生错误'"
     width="600px"
     :close-on-click-modal="false"
-    :show-close="true"
+    :close-on-press-escape="false"
+    class="error-dialog"
   >
-    <el-alert
-      :type="getSeverityType(error.severity)"
-      :closable="false"
-      show-icon
-      class="error-alert"
-    >
-      <template #title>
-        <div class="alert-title">{{ error.message }}</div>
-      </template>
-      
-      <div class="error-content">
-        <div class="solution-section">
-          <h4>💡 解决方案：</h4>
-          <pre class="solution-text">{{ error.solution }}</pre>
-        </div>
+    <!-- 严重程度标识 -->
+    <div class="severity-badge" :class="`severity-${errorData.severity}`">
+      <el-icon>
+        <WarningFilled v-if="errorData.severity === 'error'" />
+        <Warning v-else-if="errorData.severity === 'warning'" />
+        <InfoFilled v-else />
+      </el-icon>
+      <span>{{ severityText }}</span>
+    </div>
 
-        <div v-if="error.original_error" class="technical-details">
-          <el-collapse>
-            <el-collapse-item title="🔍 查看技术详情" name="technical">
-              <div class="technical-info">
-                <p><strong>错误类型：</strong>{{ error.error_type || '未知' }}</p>
-                <p><strong>原始错误：</strong></p>
-                <pre class="error-stack">{{ error.original_error }}</pre>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </div>
-    </el-alert>
+    <!-- 错误消息 -->
+    <div class="error-message">
+      {{ errorData.message }}
+    </div>
 
+    <!-- 解决方案 -->
+    <div v-if="errorData.solution && errorData.solution.length > 0" class="solution-section">
+      <h4>💡 解决方案：</h4>
+      <ul class="solution-list">
+        <li v-for="(step, index) in errorData.solution" :key="index">
+          {{ step }}
+        </li>
+      </ul>
+    </div>
+
+    <!-- 自动修复按钮 -->
+    <div v-if="errorData.auto_fix" class="auto-fix-section">
+      <el-button
+        type="primary"
+        size="large"
+        :loading="fixing"
+        @click="autoFix"
+      >
+        <el-icon><Tools /></el-icon>
+        {{ errorData.fix_description || '一键自动修复' }}
+      </el-button>
+      <p class="fix-hint">点击后系统将尝试自动解决此问题</p>
+    </div>
+
+    <!-- 技术详情（可折叠） -->
+    <el-collapse v-if="errorData.technical_error" class="technical-details">
+      <el-collapse-item>
+        <template #title>
+          <span class="collapse-title">
+            <el-icon><Document /></el-icon>
+            查看技术详情
+          </span>
+        </template>
+        <div class="technical-content">
+          <pre>{{ errorData.technical_error }}</pre>
+          <el-button
+            size="small"
+            text
+            @click="copyError"
+          >
+            <el-icon><CopyDocument /></el-icon>
+            复制错误信息
+          </el-button>
+        </div>
+      </el-collapse-item>
+    </el-collapse>
+
+    <!-- 操作按钮 -->
     <template #footer>
       <div class="dialog-footer">
-        <el-button
-          v-if="error.can_auto_fix"
-          type="primary"
-          size="large"
-          @click="handleAutoFix"
-          :loading="fixing"
-        >
-          <el-icon><Tools /></el-icon>
-          {{ error.action_label || '自动修复' }}
+        <el-button @click="close">
+          {{ errorData.auto_fix ? '稍后处理' : '关闭' }}
         </el-button>
-        
         <el-button
-          size="large"
-          @click="viewDetailedLogs"
+          v-if="showHelpButton"
+          type="info"
+          @click="goToHelp"
         >
-          <el-icon><Document /></el-icon>
-          查看完整日志
-        </el-button>
-        
-        <el-button
-          size="large"
-          @click="copyErrorInfo"
-        >
-          <el-icon><CopyDocument /></el-icon>
-          复制错误信息
-        </el-button>
-        
-        <el-button
-          size="large"
-          @click="visible = false"
-        >
-          关闭
+          <el-icon><QuestionFilled /></el-icon>
+          查看帮助文档
         </el-button>
       </div>
     </template>
@@ -77,179 +89,295 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Tools, Document, CopyDocument } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 import api from '@/api'
 
-const router = useRouter()
-
 const props = defineProps({
-  error: {
-    type: Object,
-    required: true,
-    default: () => ({
-      title: '错误',
-      message: '',
-      solution: '',
-      severity: 'error',
-      can_auto_fix: false,
-      action: null,
-      action_label: null,
-      original_error: '',
-      error_type: ''
-    })
-  },
   modelValue: {
     type: Boolean,
     default: false
+  },
+  errorData: {
+    type: Object,
+    default: () => ({
+      title: '发生错误',
+      message: '系统遇到了一个问题',
+      solution: [],
+      auto_fix: null,
+      fix_description: null,
+      severity: 'error',
+      category: 'unknown',
+      technical_error: ''
+    })
   }
 })
 
 const emit = defineEmits(['update:modelValue', 'fixed'])
 
-const visible = ref(props.modelValue)
+const router = useRouter()
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
+
 const fixing = ref(false)
 
-watch(() => props.modelValue, (newVal) => {
-  visible.value = newVal
-})
-
-watch(visible, (newVal) => {
-  emit('update:modelValue', newVal)
-})
-
-// 获取严重程度类型
-function getSeverityType(severity) {
-  const typeMap = {
-    'error': 'error',
-    'warning': 'warning',
-    'info': 'info'
+// 严重程度文本
+const severityText = computed(() => {
+  const map = {
+    'error': '🔴 严重错误',
+    'warning': '🟡 警告',
+    'info': '🔵 提示'
   }
-  return typeMap[severity] || 'error'
-}
+  return map[props.errorData.severity] || '提示'
+})
+
+// 是否显示帮助按钮
+const showHelpButton = computed(() => {
+  return props.errorData.category && props.errorData.category !== 'unknown'
+})
 
 // 自动修复
-async function handleAutoFix() {
-  if (!props.error.action) return
-  
-  fixing.value = true
+const autoFix = async () => {
+  if (!props.errorData.auto_fix) {
+    return
+  }
+
   try {
-    // 调用对应的修复API
-    const response = await api.post(`/api/environment-autofix/${props.error.action}`)
+    fixing.value = true
     
-    if (response.data.success) {
-      ElMessage.success('修复成功！')
-      emit('fixed')
-      visible.value = false
+    // 调用后端自动修复API
+    const response = await api.post('/api/environment-autofix-enhanced/auto-fix', {
+      fix_type: props.errorData.auto_fix,
+      error_context: props.errorData.technical_error
+    })
+
+    if (response.success) {
+      ElMessage.success('✅ ' + (response.message || '自动修复成功'))
+      emit('fixed', response)
+      
+      // 3秒后自动关闭对话框
+      setTimeout(() => {
+        close()
+      }, 3000)
     } else {
-      ElMessage.error('修复失败: ' + response.data.message)
+      ElMessage.error('自动修复失败：' + (response.message || '未知错误'))
     }
   } catch (error) {
-    ElMessage.error('修复失败: ' + error.message)
+    console.error('自动修复失败:', error)
+    ElMessage.error('自动修复失败：' + (error.response?.data?.detail || error.message))
   } finally {
     fixing.value = false
   }
 }
 
-// 查看详细日志
-function viewDetailedLogs() {
-  visible.value = false
-  router.push('/logs')
+// 复制错误信息
+const copyError = async () => {
+  try {
+    await navigator.clipboard.writeText(props.errorData.technical_error)
+    ElMessage.success('错误信息已复制到剪贴板')
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败，请手动选择文本复制')
+  }
 }
 
-// 复制错误信息
-function copyErrorInfo() {
-  const info = `
-错误标题：${props.error.title}
-错误信息：${props.error.message}
-解决方案：${props.error.solution}
-原始错误：${props.error.original_error || '无'}
-错误类型：${props.error.error_type || '未知'}
-`.trim()
-  
-  // 复制到剪贴板
-  navigator.clipboard.writeText(info).then(() => {
-    ElMessage.success('错误信息已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.error('复制失败')
-  })
+// 前往帮助文档
+const goToHelp = () => {
+  // 根据错误类别跳转到对应帮助页
+  const categoryRouteMap = {
+    'environment': '/help?section=environment',
+    'service': '/help?section=service',
+    'auth': '/help?section=login',
+    'config': '/help?section=config',
+    'network': '/help?section=network',
+    'permission': '/help?section=permission',
+    'storage': '/help?section=storage'
+  }
+
+  const route = categoryRouteMap[props.errorData.category] || '/help'
+  router.push(route)
+  close()
 }
+
+// 关闭对话框
+const close = () => {
+  visible.value = false
+}
+
+// 暴露方法给父组件
+defineExpose({
+  close
+})
 </script>
 
 <style scoped>
-.error-alert {
+.error-dialog {
+  --el-dialog-padding-primary: 20px;
+}
+
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
   margin-bottom: 20px;
 }
 
-.alert-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 15px;
+.severity-error {
+  background-color: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #f56c6c;
 }
 
-.error-content {
-  margin-top: 15px;
+.severity-warning {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #e6a23c;
+}
+
+.severity-info {
+  background-color: #f4f4f5;
+  color: #909399;
+  border: 1px solid #909399;
+}
+
+.error-message {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #303133;
+  margin-bottom: 20px;
+  padding: 16px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  border-left: 4px solid #409eff;
 }
 
 .solution-section {
-  margin-bottom: 20px;
+  margin: 20px 0;
 }
 
 .solution-section h4 {
-  margin: 0 0 10px 0;
-  color: #409EFF;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #409eff;
+  margin-bottom: 12px;
 }
 
-.solution-text {
-  background: #f5f7fa;
-  padding: 15px;
-  border-radius: 6px;
-  white-space: pre-wrap;
-  line-height: 1.8;
-  font-size: 14px;
-  color: #606266;
+.solution-list {
+  list-style: none;
+  padding: 0;
   margin: 0;
-  font-family: inherit;
+}
+
+.solution-list li {
+  padding: 10px 0;
+  padding-left: 24px;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #606266;
+  border-bottom: 1px dashed #e4e7ed;
+}
+
+.solution-list li:last-child {
+  border-bottom: none;
+}
+
+.solution-list li:before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #409eff;
+  font-weight: bold;
+}
+
+.auto-fix-section {
+  margin: 24px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.auto-fix-section .el-button {
+  width: 100%;
+  max-width: 300px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.fix-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .technical-details {
-  margin-top: 20px;
+  margin-top: 24px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
 }
 
-.technical-info {
-  background: #f9f9f9;
-  padding: 15px;
-  border-radius: 6px;
-}
-
-.technical-info p {
-  margin: 5px 0;
+.collapse-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
-  color: #606266;
+  color: #909399;
 }
 
-.technical-info strong {
-  color: #303133;
-}
-
-.error-stack {
-  background: #2c3e50;
-  color: #ecf0f1;
-  padding: 10px;
+.technical-content {
+  padding: 16px;
+  background-color: #f5f7fa;
   border-radius: 4px;
-  overflow-x: auto;
+}
+
+.technical-content pre {
+  margin: 0;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
   font-size: 12px;
-  font-family: 'Courier New', Courier, monospace;
-  margin: 10px 0 0 0;
+  line-height: 1.5;
+  color: #606266;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 .dialog-footer {
   display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dialog-footer .el-button {
+  flex: 1;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .error-message {
+    background-color: #1d1e1f;
+    border-left-color: #409eff;
+  }
+
+  .technical-content {
+    background-color: #1d1e1f;
+  }
+
+  .technical-content pre {
+    background-color: #141414;
+    border-color: #4c4d4f;
+    color: #e5e5e5;
+  }
 }
 </style>

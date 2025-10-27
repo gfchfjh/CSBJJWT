@@ -2,8 +2,12 @@
   <div class="app-container">
     <router-view />
     
-    <!-- ✅ P0-2新增：友好错误提示对话框 -->
-    <FriendlyErrorDialog ref="friendlyErrorDialogRef" />
+    <!-- ✅ P0-5优化：友好错误提示对话框（全局） -->
+    <ErrorDialog
+      v-model="errorDialog.visible"
+      :error-data="errorDialog.data"
+      @fixed="onErrorFixed"
+    />
     
     <!-- 免责声明对话框 -->
     <el-dialog
@@ -90,16 +94,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { useSystemStore } from './store/system'
-import FriendlyErrorDialog from './components/FriendlyErrorDialog.vue'
-import { setFriendlyErrorDialog } from './composables/useErrorHandler'
+import ErrorDialog from './components/ErrorDialog.vue'
+import { globalErrorHandler } from './composables/useErrorHandler'
 
 const systemStore = useSystemStore()
 
-// ✅ P0-2新增：友好错误对话框引用
-const friendlyErrorDialogRef = ref(null)
+// ✅ P0-5优化：全局错误对话框状态
+const errorDialog = reactive({
+  visible: false,
+  data: {}
+})
+
+// 监听全局错误处理器
+watch(() => globalErrorHandler.showErrorDialog.value, (show) => {
+  errorDialog.visible = show
+  if (show) {
+    errorDialog.data = globalErrorHandler.currentError.value || {}
+  }
+})
+
+// 错误修复完成回调
+const onErrorFixed = (result) => {
+  console.log('✅ 错误已修复:', result)
+  // 可以在这里添加额外的处理逻辑
+}
 
 // 免责声明
 const disclaimerVisible = ref(false)

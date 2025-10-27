@@ -1,9 +1,22 @@
 # KOOK消息转发系统 - API接口文档
 
-**版本**: v1.11.0  
+**版本**: v6.7.0 🚀  
 **基础URL**: `http://localhost:9527`  
-**协议**: HTTP/1.1  
-**编码**: UTF-8  
+**协议**: HTTP/1.1 + WebSocket  
+**编码**: UTF-8
+
+## 🆕 v6.7.0 API新增
+
+**新增WebSocket接口**：
+- `WS /ws/captcha/{account_id}` - 验证码实时推送和响应
+
+**新增HTTP接口**：
+- `POST /api/error-translator/translate` - 技术错误翻译为友好提示
+- `GET /api/system/stats/realtime` - 实时系统统计（供托盘使用）
+
+**API增强**：
+- 所有API错误响应现已包含友好错误翻译
+- WebSocket实时通信替代轮询机制  
 
 ---
 

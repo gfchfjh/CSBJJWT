@@ -253,6 +253,10 @@ app.include_router(captcha_api.router)  # 验证码API 🆕 P0-4深度优化
 from .api import system_stats_api
 app.include_router(system_stats_api.router)  # 系统统计API 🆕 P1-1深度优化
 
+# ✅ P0-3深度优化：验证码WebSocket
+from .api import captcha_websocket
+app.include_router(captcha_websocket.router)  # 验证码WebSocket 🆕 P0-3深度优化
+
 
 @app.get("/")
 async def root():

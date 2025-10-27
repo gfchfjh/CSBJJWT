@@ -1,376 +1,519 @@
 <template>
   <el-dialog
-    v-model="dialogVisible"
-    title="🔒 需要验证码"
+    v-model="visible"
+    title="🔢 请输入验证码"
     width="500px"
     :close-on-click-modal="false"
     :close-on-press-escape="false"
+    :show-close="false"
+    class="captcha-dialog"
   >
-    <div class="captcha-container">
-      <el-alert
-        title="检测到登录需要验证码，请输入以继续"
-        type="warning"
-        :closable="false"
-        show-icon
-        style="margin-bottom: 20px"
-      />
+    <!-- 验证码图片 -->
+    <div class="captcha-image-container">
+      <el-image
+        v-if="captchaImageUrl"
+        :src="captchaImageUrl"
+        fit="contain"
+        class="captcha-image"
+        :class="{ 'is-loading': refreshing }"
+      >
+        <template #placeholder>
+          <div class="image-placeholder">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+        </template>
+        <template #error>
+          <div class="image-error">
+            <el-icon><Picture /></el-icon>
+            <span>图片加载失败</span>
+          </div>
+        </template>
+      </el-image>
+      
+      <el-button
+        class="refresh-button"
+        circle
+        size="large"
+        :loading="refreshing"
+        @click="refreshCaptcha"
+      >
+        <el-icon><RefreshRight /></el-icon>
+      </el-button>
+    </div>
 
-      <div class="account-info">
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="账号ID">
-            {{ accountId }}
-          </el-descriptions-item>
-          <el-descriptions-item label="时间">
-            {{ formatTime(timestamp) }}
-          </el-descriptions-item>
-          <!-- ✅ P0-3优化：倒计时显示 -->
-          <el-descriptions-item label="剩余时间">
-            <el-tag :type="countdown > 10 ? 'success' : 'danger'" effect="dark">
-              <el-icon><Clock /></el-icon>
-              {{ countdown }} 秒
-            </el-tag>
-          </el-descriptions-item>
-        </el-descriptions>
-      </div>
-
-      <div class="captcha-image" v-if="imageUrl">
-        <el-image
-          :src="currentImageUrl"
-          fit="contain"
-          style="max-width: 100%; max-height: 200px"
-          :key="imageRefreshKey"
-        >
-          <template #error>
-            <div class="image-error">
-              <el-icon><Picture /></el-icon>
-              <span>验证码加载失败</span>
-            </div>
-          </template>
-        </el-image>
-        
-        <!-- ✅ P0-3优化："看不清？刷新"按钮 -->
-        <div class="refresh-btn-container">
-          <el-button
-            type="text"
-            @click="refreshCaptcha"
-            :loading="refreshing"
-            style="margin-top: 10px"
-          >
-            <el-icon><Refresh /></el-icon>
-            看不清？点击刷新
-          </el-button>
-        </div>
-      </div>
-
-      <el-form :model="form" label-width="100px" style="margin-top: 20px">
-        <el-form-item label="验证码">
-          <el-input
-            ref="captchaInput"
-            v-model="form.code"
-            placeholder="请输入验证码（4-6位）"
-            clearable
-            @keyup.enter="submitCaptcha"
-            maxlength="6"
-            autocomplete="off"
-          >
-            <template #append>
-              <el-button @click="submitCaptcha" :disabled="!form.code || submitting">
-                提交
-              </el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-      </el-form>
-
-      <div class="tips">
-        <el-alert type="info" :closable="false">
-          <template #default>
-            <div>
-              <p>💡 <strong>提示：</strong></p>
-              <ul style="margin: 5px 0; padding-left: 20px;">
-                <li>请仔细查看图片，区分相似字符（如0和O、1和l）</li>
-                <li>如果看不清，点击"刷新"按钮获取新验证码</li>
-                <li>验证码区分大小写</li>
-                <li>倒计时归零后需要刷新验证码</li>
-              </ul>
-            </div>
-          </template>
-        </el-alert>
+    <!-- 输入框 -->
+    <div class="input-container">
+      <el-input
+        ref="captchaInput"
+        v-model="captchaCode"
+        size="large"
+        placeholder="请输入验证码"
+        clearable
+        maxlength="6"
+        @keyup.enter="submitCaptcha"
+      >
+        <template #prefix>
+          <el-icon><Key /></el-icon>
+        </template>
+      </el-input>
+      
+      <div class="input-hint">
+        <el-icon><InfoFilled /></el-icon>
+        <span>请输入图片中的验证码（不区分大小写）</span>
       </div>
     </div>
 
+    <!-- 倒计时提示 -->
+    <div class="countdown-container">
+      <el-progress
+        :percentage="countdownPercentage"
+        :color="countdownColor"
+        :show-text="false"
+        :stroke-width="4"
+      />
+      <div class="countdown-text">
+        <el-icon><Timer /></el-icon>
+        <span>剩余时间：{{ remainingSeconds }} 秒</span>
+      </div>
+    </div>
+
+    <!-- 自动识别状态 -->
+    <div v-if="autoRecognizing" class="auto-recognize-status">
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+      >
+        <template #title>
+          <div class="recognize-title">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>正在自动识别验证码...</span>
+          </div>
+        </template>
+        <p>使用2Captcha或本地OCR自动识别中，识别失败会切换到手动输入</p>
+      </el-alert>
+    </div>
+
+    <!-- 操作按钮 -->
     <template #footer>
-      <span class="dialog-footer">
-        <el-button @click="handleCancel" :disabled="submitting">取消</el-button>
+      <div class="dialog-footer">
+        <el-button
+          size="large"
+          @click="cancelCaptcha"
+        >
+          取消登录
+        </el-button>
         <el-button
           type="primary"
-          @click="submitCaptcha"
+          size="large"
+          :disabled="!captchaCode || captchaCode.length < 4"
           :loading="submitting"
-          :disabled="!form.code || countdown <= 0"
+          @click="submitCaptcha"
         >
-          {{ submitting ? '提交中...' : '提交验证码' }}
+          <el-icon><Check /></el-icon>
+          确认提交
         </el-button>
-      </span>
+      </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Clock, Refresh, Picture } from '@element-plus/icons-vue'
-import api from '../api'
 
 const props = defineProps({
-  visible: {
+  modelValue: {
     type: Boolean,
     default: false
   },
   accountId: {
     type: Number,
-    default: 0
+    required: true
   },
   imageUrl: {
     type: String,
     default: ''
   },
-  timestamp: {
+  timeout: {
     type: Number,
-    default: 0
+    default: 120 // 默认120秒
   }
 })
 
-const emit = defineEmits(['update:visible', 'submit', 'cancel'])
+const emit = defineEmits(['update:modelValue', 'submit', 'cancel', 'timeout'])
 
-const dialogVisible = ref(false)
+// WebSocket连接
+let ws = null
+
+// 状态
+const captchaCode = ref('')
+const captchaImageUrl = ref('')
 const submitting = ref(false)
 const refreshing = ref(false)
-
-// ✅ P0-3优化：倒计时功能
-const countdown = ref(60)
-let countdownTimer = null
-
-// ✅ P0-3优化：刷新验证码
-const imageRefreshKey = ref(0)
-const currentImageUrl = ref('')
-
-// ✅ P0-3优化：自动聚焦输入框
+const autoRecognizing = ref(false)
+const remainingSeconds = ref(props.timeout)
 const captchaInput = ref(null)
 
-const form = ref({
-  code: ''
+// 倒计时定时器
+let countdownTimer = null
+
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
 })
 
-// 监听visible变化
-watch(() => props.visible, (val) => {
-  dialogVisible.value = val
-  if (val) {
-    // 打开对话框时重置
-    form.value.code = ''
-    submitting.value = false
-    currentImageUrl.value = props.imageUrl
-    
-    // ✅ P0-3优化：启动倒计时
-    startCountdown()
-    
-    // ✅ P0-3优化：自动聚焦
-    nextTick(() => {
-      captchaInput.value?.focus()
-    })
-  } else {
-    // 关闭时停止倒计时
-    stopCountdown()
+// 倒计时百分比
+const countdownPercentage = computed(() => {
+  return (remainingSeconds.value / props.timeout) * 100
+})
+
+// 倒计时颜色
+const countdownColor = computed(() => {
+  const percentage = countdownPercentage.value
+  if (percentage > 50) return '#67c23a'
+  if (percentage > 20) return '#e6a23c'
+  return '#f56c6c'
+})
+
+// 初始化WebSocket连接
+const initWebSocket = () => {
+  if (ws) {
+    ws.close()
   }
-})
 
-// 监听对话框关闭
-watch(dialogVisible, (val) => {
-  emit('update:visible', val)
-})
+  const wsUrl = `ws://localhost:9527/ws/captcha/${props.accountId}`
+  ws = new WebSocket(wsUrl)
 
-// ✅ P0-3优化：倒计时功能
+  ws.onopen = () => {
+    console.log('✅ 验证码WebSocket已连接')
+    // 发送心跳
+    startHeartbeat()
+  }
+
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      handleWebSocketMessage(data)
+    } catch (error) {
+      console.error('解析WebSocket消息失败:', error)
+    }
+  }
+
+  ws.onerror = (error) => {
+    console.error('验证码WebSocket错误:', error)
+    ElMessage.error('验证码连接失败，请刷新页面重试')
+  }
+
+  ws.onclose = () => {
+    console.log('验证码WebSocket已断开')
+    stopHeartbeat()
+  }
+}
+
+// 处理WebSocket消息
+const handleWebSocketMessage = (data) => {
+  console.log('收到WebSocket消息:', data)
+
+  switch (data.type) {
+    case 'captcha_required':
+      // 收到验证码请求
+      captchaImageUrl.value = data.data?.image_url || ''
+      autoRecognizing.value = data.data?.auto_recognizing || false
+      startCountdown()
+      break
+
+    case 'captcha_received':
+      // 验证码已接收确认
+      if (data.success) {
+        ElMessage.success('验证码已提交')
+      }
+      break
+
+    case 'refresh_result':
+      // 刷新验证码结果
+      refreshing.value = false
+      if (data.success) {
+        captchaImageUrl.value = data.image_url
+        captchaCode.value = ''
+      } else {
+        ElMessage.warning(data.message || '刷新失败')
+      }
+      break
+
+    case 'pong':
+      // 心跳响应
+      break
+
+    default:
+      console.log('未知消息类型:', data.type)
+  }
+}
+
+// 心跳定时器
+let heartbeatTimer = null
+
+const startHeartbeat = () => {
+  heartbeatTimer = setInterval(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'ping' }))
+    }
+  }, 30000) // 每30秒发送一次心跳
+}
+
+const stopHeartbeat = () => {
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
+  }
+}
+
+// 开始倒计时
 const startCountdown = () => {
-  countdown.value = 60
-  stopCountdown() // 先清除旧定时器
-  
+  remainingSeconds.value = props.timeout
+
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+
   countdownTimer = setInterval(() => {
-    countdown.value--
-    
-    if (countdown.value <= 0) {
-      stopCountdown()
-      ElMessage.warning({
-        message: '验证码已超时，请点击"刷新"获取新验证码',
-        duration: 5000
-      })
+    remainingSeconds.value--
+
+    if (remainingSeconds.value <= 0) {
+      clearInterval(countdownTimer)
+      handleTimeout()
     }
   }, 1000)
 }
 
-const stopCountdown = () => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
+// 超时处理
+const handleTimeout = () => {
+  ElMessage.warning('验证码输入超时')
+  emit('timeout')
+  close()
 }
 
-// ✅ P0-3优化：刷新验证码功能
-const refreshCaptcha = async () => {
-  try {
-    refreshing.value = true
-    form.value.code = ''  // 清空输入
-    
-    // 请求后端刷新验证码
-    const response = await api.refreshCaptcha(props.accountId)
-    
-    if (response && response.image_url) {
-      currentImageUrl.value = response.image_url
-      imageRefreshKey.value++  // 强制重新渲染图片
-      
-      // 重启倒计时
-      startCountdown()
-      
-      ElMessage.success('验证码已刷新')
-      
-      // 重新聚焦输入框
-      nextTick(() => {
-        captchaInput.value?.focus()
-      })
-    }
-    
-  } catch (error) {
-    console.error('刷新验证码失败:', error)
-    ElMessage.error('刷新失败：' + (error.response?.data?.detail || error.message))
-  } finally {
+// 刷新验证码
+const refreshCaptcha = () => {
+  refreshing.value = true
+  captchaCode.value = ''
+  
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'refresh_captcha'
+    }))
+  } else {
+    ElMessage.error('WebSocket未连接')
     refreshing.value = false
   }
 }
 
-// 格式化时间
-const formatTime = (timestamp) => {
-  if (!timestamp) return '--'
-  const date = new Date(timestamp * 1000)
-  return date.toLocaleString('zh-CN')
-}
-
 // 提交验证码
-const submitCaptcha = async () => {
-  if (!form.value.code) {
-    ElMessage.warning('请输入验证码')
-    return
-  }
-  
-  if (countdown.value <= 0) {
-    ElMessage.warning('验证码已超时，请刷新后重试')
+const submitCaptcha = () => {
+  if (!captchaCode.value || captchaCode.value.length < 4) {
+    ElMessage.warning('请输入完整的验证码')
     return
   }
 
   submitting.value = true
 
-  try {
-    // 通过HTTP API提交验证码
-    await api.submitCaptcha(props.accountId, form.value.code)
+  // 通过WebSocket发送验证码
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({
+      type: 'captcha_input',
+      code: captchaCode.value
+    }))
+
+    emit('submit', captchaCode.value)
     
-    ElMessage.success('验证码提交成功')
-    emit('submit', form.value.code)
-    dialogVisible.value = false
-    
-  } catch (error) {
-    console.error('提交验证码失败:', error)
-    const errorMsg = error.response?.data?.detail || error.message
-    
-    if (errorMsg.includes('incorrect') || errorMsg.includes('错误')) {
-      ElMessage.error('验证码错误，请重试')
-      // 清空输入框
-      form.value.code = ''
-      // 自动刷新验证码
-      setTimeout(() => {
-        refreshCaptcha()
-      }, 1000)
-    } else {
-      ElMessage.error('提交失败：' + errorMsg)
-    }
-    
-  } finally {
+    // 延迟关闭，等待后端处理
+    setTimeout(() => {
+      submitting.value = false
+      close()
+    }, 1000)
+  } else {
+    ElMessage.error('WebSocket未连接，无法提交验证码')
     submitting.value = false
   }
 }
 
-// 取消
-const handleCancel = () => {
-  stopCountdown()
+// 取消验证码
+const cancelCaptcha = () => {
   emit('cancel')
-  dialogVisible.value = false
+  close()
 }
 
-// ✅ P0-3优化：组件卸载时清理定时器
+// 关闭对话框
+const close = () => {
+  // 清理定时器
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+
+  // 关闭WebSocket
+  if (ws) {
+    ws.close()
+    ws = null
+  }
+
+  visible.value = false
+  captchaCode.value = ''
+  captchaImageUrl.value = ''
+  autoRecognizing.value = false
+}
+
+// 监听对话框打开
+watch(visible, async (newVal) => {
+  if (newVal) {
+    // 对话框打开
+    captchaImageUrl.value = props.imageUrl
+    initWebSocket()
+    startCountdown()
+    
+    // 自动聚焦输入框
+    await nextTick()
+    if (captchaInput.value) {
+      captchaInput.value.focus()
+    }
+  } else {
+    // 对话框关闭，清理资源
+    close()
+  }
+})
+
+onMounted(() => {
+  if (visible.value) {
+    captchaImageUrl.value = props.imageUrl
+    initWebSocket()
+    startCountdown()
+  }
+})
+
 onUnmounted(() => {
-  stopCountdown()
+  close()
 })
 </script>
 
 <style scoped>
-.captcha-container {
-  padding: 10px 0;
+.captcha-dialog {
+  --el-dialog-padding-primary: 24px;
 }
 
-.account-info {
-  margin: 20px 0;
+.captcha-image-container {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .captcha-image {
-  margin: 20px 0;
-  text-align: center;
-  padding: 20px;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
-  background-color: #f5f7fa;
+  width: 100%;
+  height: 100%;
+  background-color: white;
 }
 
+.captcha-image.is-loading {
+  opacity: 0.5;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.image-placeholder,
 .image-error {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  gap: 12px;
   color: #909399;
 }
 
+.image-placeholder .el-icon,
 .image-error .el-icon {
   font-size: 48px;
-  margin-bottom: 10px;
 }
 
-.tips {
-  margin-top: 15px;
+.refresh-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
 }
 
-/* ✅ P0-3优化：刷新按钮样式 */
-.refresh-btn-container {
-  text-align: center;
-  margin-top: 10px;
+.refresh-button:hover {
+  background-color: white;
+  transform: rotate(180deg);
+  transition: all 0.3s;
+}
+
+.input-container {
+  margin-bottom: 20px;
+}
+
+.input-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.countdown-container {
+  margin-bottom: 20px;
+}
+
+.countdown-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.auto-recognize-status {
+  margin-bottom: 20px;
+}
+
+.recognize-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-/* ✅ P0-3优化：倒计时动画 */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+.dialog-footer .el-button {
+  flex: 1;
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .captcha-image-container {
+    background: linear-gradient(135deg, #434343 0%, #000000 100%);
   }
-  50% {
-    opacity: 0.6;
-  }
-}
-
-.el-tag {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.el-tag.is-danger {
-  animation: pulse 1s ease-in-out infinite;
 }
 </style>
