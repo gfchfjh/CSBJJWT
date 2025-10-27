@@ -1,488 +1,844 @@
 <template>
-  <!-- ✅ P0-3优化: 增强的Cookie导入组件 -->
   <div class="cookie-import-enhanced">
-    <!-- 导入方式选择 -->
-    <div class="import-methods">
-      <el-segmented v-model="importMethod" :options="importOptions" block>
-        <template #default="{ item }">
-          <div class="method-option">
-            <el-icon :size="20">
-              <component :is="item.icon" />
-            </el-icon>
-            <span>{{ item.label }}</span>
-            <el-tag v-if="item.recommended" size="small" type="success" effect="dark">
-              推荐
-            </el-tag>
-          </div>
-        </template>
-      </el-segmented>
-    </div>
-
-    <!-- 方式1: 浏览器扩展（最推荐） -->
-    <div v-if="importMethod === 'extension'" class="method-extension">
-      <el-result 
-        :icon="extensionConnected ? 'success' : 'warning'" 
-        :title="extensionConnected ? '✅ 扩展已连接' : '⚠️ 扩展未安装或未启用'"
-      >
-        <template #sub-title>
-          <div v-if="!extensionConnected">
-            <p>安装浏览器扩展后，只需一键即可导入Cookie</p>
-            <p style="color: #909399; font-size: 14px;">这是最简单、最安全的方式</p>
-          </div>
-          <div v-else>
-            <p>扩展已就绪！请在KOOK网页版点击扩展图标导出Cookie</p>
-          </div>
-        </template>
-        <template #extra>
-          <div v-if="!extensionConnected" style="display: flex; gap: 12px; justify-content: center;">
-            <el-button type="primary" size="large" @click="downloadExtension">
-              <el-icon><Download /></el-icon>
-              下载Chrome扩展
-            </el-button>
-            <el-button size="large" @click="showExtensionTutorial">
-              <el-icon><Document /></el-icon>
-              查看安装教程
-            </el-button>
-          </div>
-          <div v-else>
-            <el-alert type="info" :closable="false" show-icon>
-              <template #title>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <el-icon class="is-loading"><Loading /></el-icon>
-                  <span>等待扩展发送Cookie...</span>
-                </div>
-              </template>
-              <p>请在浏览器中打开KOOK网页版，点击扩展图标导出Cookie</p>
-            </el-alert>
-          </div>
-        </template>
-      </el-result>
-    </div>
-
-    <!-- 方式2: 拖拽上传 -->
-    <div v-if="importMethod === 'file'" class="method-file">
-      <el-upload
-        drag
-        :auto-upload="false"
-        :on-change="handleFileChange"
-        :show-file-list="false"
-        accept=".json,.txt"
-        class="cookie-upload"
-      >
-        <el-icon class="el-icon--upload" :size="80">
-          <UploadFilled />
-        </el-icon>
-        <div class="el-upload__text">
-          将Cookie文件拖到此处，或<em>点击上传</em>
+    <!-- ✅ P0-3优化: Cookie拖拽导入增强组件 -->
+    
+    <!-- 300px大型拖拽区域 -->
+    <div 
+      class="cookie-drop-zone"
+      :class="{ 
+        'is-dragover': isDragover,
+        'has-cookies': parsedCookies.length > 0 
+      }"
+      @drop="handleDrop"
+      @dragover="handleDragOver"
+      @dragleave="handleDragLeave"
+      @click="triggerFileSelect"
+    >
+      <!-- 拖拽指示器 -->
+      <div class="drop-indicator">
+        <div class="pulse-circle">
+          <el-icon :size="80" color="#409EFF">
+            <Upload />
+          </el-icon>
         </div>
-        <template #tip>
-          <div class="el-upload__tip">
-            支持 .json 和 .txt 格式文件
-          </div>
-        </template>
-      </el-upload>
+        
+        <h2 class="drop-title">拖拽Cookie文件到此处</h2>
+        <p class="drop-subtitle">或点击此处选择文件</p>
+        
+        <!-- 支持的格式 -->
+        <div class="supported-formats">
+          <el-tag type="info">JSON</el-tag>
+          <el-tag type="success">Netscape</el-tag>
+          <el-tag type="warning">Header String</el-tag>
+        </div>
+      </div>
+
+      <!-- 隐藏的文件输入 -->
+      <input 
+        ref="fileInput" 
+        type="file" 
+        accept=".json,.txt,.cookies" 
+        style="display: none"
+        @change="handleFileSelect"
+        multiple
+      />
     </div>
 
-    <!-- 方式3: 粘贴文本 -->
-    <div v-if="importMethod === 'paste'" class="method-paste">
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+      <el-button 
+        type="primary" 
+        @click="triggerFileSelect"
+        size="large"
+      >
+        <el-icon><FolderOpened /></el-icon>
+        选择文件
+      </el-button>
+
+      <el-button 
+        @click="showPasteDialog"
+        size="large"
+      >
+        <el-icon><Document /></el-icon>
+        粘贴Cookie文本
+      </el-button>
+
+      <el-button 
+        @click="showFormatHelp"
+        size="large"
+      >
+        <el-icon><QuestionFilled /></el-icon>
+        格式说明
+      </el-button>
+    </div>
+
+    <!-- Cookie实时预览（表格形式） -->
+    <el-collapse v-if="parsedCookies.length > 0" v-model="activePreview" class="cookie-preview-section">
+      <el-collapse-item name="1">
+        <template #title>
+          <div class="preview-title">
+            <el-icon color="#67C23A"><SuccessFilled /></el-icon>
+            <span>✅ 成功解析 {{ parsedCookies.length }} 条Cookie</span>
+            <el-tag type="success" size="small">有效</el-tag>
+          </div>
+        </template>
+
+        <!-- Cookie验证结果 -->
+        <el-alert 
+          v-if="validationResult"
+          :type="validationResult.isValid ? 'success' : 'warning'"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 15px;"
+        >
+          <template #title>
+            {{ validationResult.isValid ? '✅ Cookie验证通过' : '⚠️ Cookie可能不完整' }}
+          </template>
+          <div v-if="!validationResult.isValid">
+            <p>缺少以下必需字段：</p>
+            <ul>
+              <li v-for="field in validationResult.missing" :key="field">
+                • {{ field }}
+              </li>
+            </ul>
+            <p class="warning-tip">💡 提示：建议重新获取完整的Cookie</p>
+          </div>
+          <div v-else>
+            <p>包含所有必需的认证信息，可以正常使用</p>
+          </div>
+        </el-alert>
+
+        <!-- Cookie表格 -->
+        <el-table 
+          :data="displayedCookies" 
+          border 
+          size="small"
+          max-height="400"
+          style="width: 100%"
+        >
+          <el-table-column type="index" label="#" width="50" />
+          
+          <el-table-column prop="name" label="名称" width="180">
+            <template #default="{ row }">
+              <el-tag 
+                :type="isImportantCookie(row.name) ? 'danger' : 'info'"
+                size="small"
+              >
+                {{ row.name }}
+              </el-tag>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="value" label="值" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="cookie-value">{{ maskValue(row.value) }}</span>
+              <el-button 
+                link 
+                type="primary" 
+                size="small"
+                @click="copyValue(row.value)"
+              >
+                <el-icon><CopyDocument /></el-icon>
+              </el-button>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="domain" label="域名" width="180" />
+
+          <el-table-column label="过期时间" width="150">
+            <template #default="{ row }">
+              <span v-if="row.expires">
+                {{ formatExpireTime(row.expires) }}
+              </span>
+              <el-tag v-else type="info" size="small">会话</el-tag>
+            </template>
+          </el-table-column>
+
+          <el-table-column prop="secure" label="安全" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.secure ? 'success' : 'info'" size="small">
+                {{ row.secure ? '是' : '否' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 显示更多 -->
+        <div v-if="parsedCookies.length > displayLimit" class="show-more">
+          <el-button 
+            link 
+            type="primary"
+            @click="displayLimit = parsedCookies.length"
+          >
+            显示全部 {{ parsedCookies.length }} 条Cookie
+          </el-button>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="preview-actions">
+          <el-button 
+            type="success" 
+            @click="importCookies"
+            :loading="isImporting"
+          >
+            <el-icon><Check /></el-icon>
+            导入这些Cookie
+          </el-button>
+
+          <el-button @click="clearCookies">
+            <el-icon><Delete /></el-icon>
+            清空
+          </el-button>
+
+          <el-button @click="exportCookies">
+            <el-icon><Download /></el-icon>
+            导出为JSON
+          </el-button>
+        </div>
+      </el-collapse-item>
+    </el-collapse>
+
+    <!-- 帮助链接 -->
+    <div class="help-links">
+      <el-link 
+        type="primary" 
+        @click="openTutorial('cookie-get')"
+      >
+        <el-icon><Reading /></el-icon>
+        如何获取Cookie？查看图文教程
+      </el-link>
+
+      <el-link 
+        type="success" 
+        @click="openVideoTutorial"
+      >
+        <el-icon><VideoPlay /></el-icon>
+        观看视频教程（3分钟）
+      </el-link>
+
+      <el-link 
+        type="warning" 
+        href="https://chrome.google.com/webstore/detail/cookie-editor/..." 
+        target="_blank"
+      >
+        <el-icon><ChromeFilled /></el-icon>
+        安装Chrome扩展（推荐）
+      </el-link>
+    </div>
+
+    <!-- 粘贴Cookie对话框 -->
+    <el-dialog 
+      v-model="showPaste" 
+      title="粘贴Cookie内容" 
+      width="700px"
+    >
       <el-input
-        v-model="cookieText"
+        v-model="pasteText"
         type="textarea"
-        :rows="10"
-        placeholder="请粘贴Cookie内容（支持多种格式，会自动识别）"
-        @input="validateCookieRealtime"
+        :rows="12"
+        placeholder="请粘贴Cookie内容，支持以下格式：&#10;&#10;1. JSON格式（从开发者工具导出）&#10;2. Netscape格式（EditThisCookie等扩展导出）&#10;3. Header String格式（直接复制Request Headers）&#10;&#10;示例：&#10;[{&quot;name&quot;: &quot;token&quot;, &quot;value&quot;: &quot;xxx&quot;, ...}]"
+        @paste="handlePaste"
       />
 
-      <!-- 实时验证反馈 -->
-      <transition name="el-fade-in">
-        <div v-if="validationResult.status" class="validation-feedback">
-          <el-alert
-            :type="validationResult.type"
-            :closable="false"
-            show-icon
-          >
-            <template #title>
-              <div v-html="validationResult.message" />
-            </template>
-          </el-alert>
-        </div>
-      </transition>
-
-      <!-- 格式帮助（默认展开） -->
-      <el-card class="format-help" shadow="never">
-        <template #header>
-          <div class="help-header">
-            <el-icon color="#409EFF"><QuestionFilled /></el-icon>
-            <span>Cookie格式说明</span>
-          </div>
-        </template>
-
-        <el-collapse v-model="activeFormatTab">
-          <el-collapse-item title="✅ 格式1: JSON数组（推荐）" name="json">
-            <el-input
-              type="textarea"
-              :rows="4"
-              readonly
-              :value="formatExamples.json"
-              class="example-code"
-            />
-            <div class="example-actions">
-              <el-button size="small" text @click="copyExample('json')">
-                <el-icon><DocumentCopy /></el-icon>
-                复制示例
-              </el-button>
-              <el-button size="small" text @click="useExample('json')">
-                <el-icon><Check /></el-icon>
-                使用此格式
-              </el-button>
-            </div>
-          </el-collapse-item>
-
-          <el-collapse-item title="✅ 格式2: Netscape格式" name="netscape">
-            <el-input
-              type="textarea"
-              :rows="4"
-              readonly
-              :value="formatExamples.netscape"
-              class="example-code"
-            />
-            <div class="example-actions">
-              <el-button size="small" text @click="copyExample('netscape')">
-                <el-icon><DocumentCopy /></el-icon>
-                复制示例
-              </el-button>
-              <el-button size="small" text @click="useExample('netscape')">
-                <el-icon><Check /></el-icon>
-                使用此格式
-              </el-button>
-            </div>
-          </el-collapse-item>
-
-          <el-collapse-item title="✅ 格式3: 键值对格式" name="keyValue">
-            <el-input
-              type="textarea"
-              :rows="2"
-              readonly
-              :value="formatExamples.keyValue"
-              class="example-code"
-            />
-            <div class="example-actions">
-              <el-button size="small" text @click="copyExample('keyValue')">
-                <el-icon><DocumentCopy /></el-icon>
-                复制示例
-              </el-button>
-              <el-button size="small" text @click="useExample('keyValue')">
-                <el-icon><Check /></el-icon>
-                使用此格式
-              </el-button>
-            </div>
-          </el-collapse-item>
-        </el-collapse>
-      </el-card>
-    </div>
-
-    <!-- 导入按钮 -->
-    <div class="import-actions">
-      <el-button
-        type="primary"
-        size="large"
-        :disabled="!canImport"
-        :loading="importing"
-        @click="handleImport"
+      <el-alert 
+        type="info" 
+        :closable="false"
+        show-icon
+        style="margin-top: 15px;"
       >
-        <el-icon><Upload /></el-icon>
-        确认导入
-      </el-button>
-      <el-button size="large" @click="handleCancel">
-        取消
-      </el-button>
-    </div>
+        <template #title>
+          💡 提示
+        </template>
+        <ul style="margin: 5px 0 0 15px; line-height: 1.6;">
+          <li>支持直接粘贴，会自动识别格式</li>
+          <li>如果是JSON，请确保是数组格式</li>
+          <li>Header格式会自动转换</li>
+        </ul>
+      </el-alert>
+
+      <template #footer>
+        <el-button @click="showPaste = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="parsePastedCookie"
+          :disabled="!pasteText.trim()"
+        >
+          <el-icon><Check /></el-icon>
+          解析并预览
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 格式说明对话框 -->
+    <el-dialog 
+      v-model="showFormatHelpDialog" 
+      title="支持的Cookie格式" 
+      width="800px"
+    >
+      <el-tabs>
+        <el-tab-pane label="JSON格式">
+          <el-alert type="success" :closable="false" show-icon>
+            <template #title>最推荐的格式</template>
+            从Chrome开发者工具 → Application → Cookies 导出
+          </el-alert>
+
+          <h4>示例：</h4>
+          <pre class="format-example">{{ jsonExample }}</pre>
+
+          <h4>如何获取：</h4>
+          <ol>
+            <li>按F12打开开发者工具</li>
+            <li>切换到 Application 标签</li>
+            <li>左侧找到 Cookies → https://www.kookapp.cn</li>
+            <li>使用扩展导出为JSON</li>
+          </ol>
+        </el-tab-pane>
+
+        <el-tab-pane label="Netscape格式">
+          <el-alert type="info" :closable="false" show-icon>
+            EditThisCookie等扩展的导出格式
+          </el-alert>
+
+          <h4>示例：</h4>
+          <pre class="format-example">{{ netscapeExample }}</pre>
+        </el-tab-pane>
+
+        <el-tab-pane label="Header String格式">
+          <el-alert type="warning" :closable="false" show-icon>
+            直接复制请求头的Cookie字段
+          </el-alert>
+
+          <h4>示例：</h4>
+          <pre class="format-example">{{ headerExample }}</pre>
+        </el-tab-pane>
+      </el-tabs>
+
+      <template #footer>
+        <el-button type="primary" @click="showFormatHelpDialog = false">
+          我知道了
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, computed, defineEmits, defineProps } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Download, Document, UploadFilled, QuestionFilled,
-  DocumentCopy, Check, Upload, Loading
+  Upload, FolderOpened, Document, QuestionFilled, SuccessFilled,
+  CopyDocument, Check, Delete, Download, Reading, VideoPlay,
+  ChromeFilled
 } from '@element-plus/icons-vue'
+import api from '@/api'
 
 const props = defineProps({
-  modelValue: {
-    type: String,
-    default: ''
+  accountId: {
+    type: Number,
+    default: null
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'import', 'cancel'])
+const emit = defineEmits(['success', 'error'])
 
-// 导入方式
-const importMethod = ref('extension')
-const importOptions = [
-  { value: 'extension', label: '浏览器扩展', icon: 'ChromeFilled', recommended: true },
-  { value: 'file', label: '上传文件', icon: 'UploadFilled' },
-  { value: 'paste', label: '粘贴文本', icon: 'DocumentCopy' }
-]
+// 拖拽状态
+const isDragover = ref(false)
+const fileInput = ref(null)
 
-// Cookie文本
-const cookieText = ref(props.modelValue)
+// Cookie数据
+const parsedCookies = ref([])
+const activePreview = ref(['1'])
+const displayLimit = ref(20)
+const validationResult = ref(null)
 
-// 扩展连接状态
-const extensionConnected = ref(false)
+// 对话框状态
+const showPaste = ref(false)
+const pasteText = ref('')
+const showFormatHelpDialog = ref(false)
 
 // 导入状态
-const importing = ref(false)
-
-// 实时验证结果
-const validationResult = reactive({
-  status: false,
-  type: 'info',
-  message: ''
-})
-
-// 格式示例展开状态
-const activeFormatTab = ref(['json'])
+const isImporting = ref(false)
 
 // 格式示例
-const formatExamples = {
-  json: `[
+const jsonExample = ref(`[
   {
     "name": "token",
-    "value": "abc123def456",
+    "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "domain": ".kookapp.cn",
     "path": "/",
-    "expires": 1735689600
+    "expires": 1735660800,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "session_id",
+    "value": "abc123def456...",
+    "domain": ".kookapp.cn",
+    "path": "/",
+    "secure": true
   }
-]`,
-  netscape: `# Netscape HTTP Cookie File
-.kookapp.cn\tTRUE\t/\tFALSE\t1735689600\ttoken\tabc123def456
-.kookapp.cn\tTRUE\t/\tFALSE\t1735689600\tsession\txyz789ghi012`,
-  keyValue: `token=abc123def456; session=xyz789ghi012; user_id=12345`
-}
+]`)
 
-// 是否可以导入
-const canImport = computed(() => {
-  if (importMethod.value === 'extension') {
-    return extensionConnected.value
-  }
-  if (importMethod.value === 'paste') {
-    return cookieText.value.trim().length > 0 && validationResult.type === 'success'
-  }
-  if (importMethod.value === 'file') {
-    return cookieText.value.trim().length > 0
-  }
-  return false
+const netscapeExample = ref(`# Netscape HTTP Cookie File
+.kookapp.cn	TRUE	/	TRUE	1735660800	token	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+.kookapp.cn	TRUE	/	FALSE	0	session_id	abc123def456...`)
+
+const headerExample = ref(`token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; session_id=abc123def456...; user_id=12345; lang=zh-CN`)
+
+// 显示的Cookie（限制数量）
+const displayedCookies = computed(() => {
+  return parsedCookies.value.slice(0, displayLimit.value)
 })
 
-// 检查扩展连接
-const checkExtensionConnection = async () => {
-  try {
-    const response = await fetch('http://localhost:9527/api/cookie-import/health')
-    extensionConnected.value = response.ok
-  } catch (error) {
-    extensionConnected.value = false
+// 重要Cookie列表（用于高亮）
+const importantCookieNames = ['token', 'access_token', 'session_id', 'auth', 'jwt']
+
+const isImportantCookie = (name) => {
+  return importantCookieNames.some(keyword => 
+    name.toLowerCase().includes(keyword.toLowerCase())
+  )
+}
+
+// 拖拽处理
+const handleDragOver = (e) => {
+  e.preventDefault()
+  isDragover.value = true
+}
+
+const handleDragLeave = () => {
+  isDragover.value = false
+}
+
+const handleDrop = (e) => {
+  e.preventDefault()
+  isDragover.value = false
+  
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    handleFiles(files)
   }
 }
 
-// 实时验证Cookie格式
-const validateCookieRealtime = (value) => {
-  if (!value || value.trim().length === 0) {
-    validationResult.status = false
-    return
-  }
+// 文件选择
+const triggerFileSelect = () => {
+  fileInput.value.click()
+}
 
-  try {
-    // 格式1: JSON数组
-    if (value.trim().startsWith('[')) {
-      const parsed = JSON.parse(value)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        if (parsed[0].name && parsed[0].value) {
-          validationResult.status = true
-          validationResult.type = 'success'
-          validationResult.message = `✅ 识别为JSON格式，包含 ${parsed.length} 个Cookie`
-          return
-        }
-      }
+const handleFileSelect = (e) => {
+  const files = e.target.files
+  if (files.length > 0) {
+    handleFiles(files)
+  }
+}
+
+// 处理文件
+const handleFiles = async (files) => {
+  const allCookies = []
+  
+  for (let file of files) {
+    try {
+      const text = await file.text()
+      const cookies = await parseCookieText(text)
+      allCookies.push(...cookies)
+    } catch (error) {
+      ElMessage.error(`文件 ${file.name} 解析失败: ${error.message}`)
     }
-
-    // 格式2: Netscape格式
-    if (value.includes('\t') || value.includes('# Netscape')) {
-      const lines = value.split('\n').filter(l => l && !l.startsWith('#'))
-      if (lines.length > 0) {
-        validationResult.status = true
-        validationResult.type = 'success'
-        validationResult.message = `✅ 识别为Netscape格式，包含 ${lines.length} 个Cookie`
-        return
-      }
-    }
-
-    // 格式3: 键值对
-    if (value.includes('=')) {
-      const pairs = value.split(';').filter(p => p.includes('='))
-      if (pairs.length > 0) {
-        validationResult.status = true
-        validationResult.type = 'success'
-        validationResult.message = `✅ 识别为键值对格式，包含 ${pairs.length} 个Cookie`
-        return
-      }
-    }
-
-    // 无法识别
-    validationResult.status = true
-    validationResult.type = 'warning'
-    validationResult.message = `
-      ⚠️ 格式可能不正确，请检查：<br/>
-      <ul style="margin: 5px 0; padding-left: 20px;">
-        <li>是否为空白或不完整</li>
-        <li>是否包含 Cookie 数据</li>
-        <li>参考下方的格式示例</li>
-      </ul>
-    `
-  } catch (error) {
-    validationResult.status = true
-    validationResult.type = 'error'
-    validationResult.message = `❌ 格式错误：${error.message}<br/>请参考格式示例重新输入`
+  }
+  
+  if (allCookies.length > 0) {
+    parsedCookies.value = allCookies
+    await validateCookies(allCookies)
+    ElMessage.success(`✅ 成功解析 ${allCookies.length} 条Cookie`)
   }
 }
 
-// 处理文件上传
-const handleFileChange = (file) => {
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    cookieText.value = e.target.result
-    validateCookieRealtime(cookieText.value)
-    ElMessage.success('文件已加载')
-  }
-  reader.onerror = () => {
-    ElMessage.error('文件读取失败')
-  }
-  reader.readAsText(file.raw)
-}
-
-// 复制示例
-const copyExample = async (type) => {
-  try {
-    await navigator.clipboard.writeText(formatExamples[type])
-    ElMessage.success('已复制示例到剪贴板')
-  } catch (error) {
-    ElMessage.error('复制失败: ' + error.message)
-  }
-}
-
-// 使用示例
-const useExample = (type) => {
-  cookieText.value = formatExamples[type]
-  validateCookieRealtime(cookieText.value)
-  ElMessage.info('已填充示例，请替换为您的实际Cookie')
-}
-
-// 下载扩展
-const downloadExtension = () => {
-  // 触发下载
-  window.open('/chrome-extension.zip', '_blank')
-  ElMessage.info('扩展文件准备中...')
-}
-
-// 显示扩展教程
-const showExtensionTutorial = () => {
-  window.open('/docs/cookie-extension-tutorial.html', '_blank')
-}
-
-// 处理导入
-const handleImport = () => {
-  if (!canImport.value) {
-    ElMessage.warning('请先输入有效的Cookie')
-    return
-  }
-
-  importing.value = true
-
-  // 触发导入事件
-  emit('import', cookieText.value)
-
+// 粘贴处理
+const handlePaste = (e) => {
+  // 粘贴时自动解析
   setTimeout(() => {
-    importing.value = false
-  }, 1000)
+    if (pasteText.value.trim()) {
+      // 自动识别格式提示
+      let format = 'JSON'
+      if (pasteText.value.includes('# Netscape')) {
+        format = 'Netscape'
+      } else if (!pasteText.value.trim().startsWith('[') && !pasteText.value.trim().startsWith('{')) {
+        format = 'Header String'
+      }
+      
+      ElMessage.info(`检测到 ${format} 格式`)
+    }
+  }, 100)
 }
 
-// 取消
-const handleCancel = () => {
-  emit('cancel')
+const showPasteDialog = () => {
+  pasteText.value = ''
+  showPaste.value = true
 }
 
-// 轮询检查扩展连接
-let checkInterval = null
-
-onMounted(() => {
-  checkExtensionConnection()
-  checkInterval = setInterval(checkExtensionConnection, 5000)
-})
-
-onUnmounted(() => {
-  if (checkInterval) {
-    clearInterval(checkInterval)
+const parsePastedCookie = async () => {
+  if (!pasteText.value.trim()) {
+    ElMessage.warning('请粘贴Cookie内容')
+    return
   }
-})
+  
+  try {
+    const cookies = await parseCookieText(pasteText.value)
+    parsedCookies.value = cookies
+    await validateCookies(cookies)
+    showPaste.value = false
+    ElMessage.success(`✅ 成功解析 ${cookies.length} 条Cookie`)
+  } catch (error) {
+    ElMessage.error('Cookie解析失败: ' + error.message)
+  }
+}
+
+// 解析Cookie文本
+const parseCookieText = async (text) => {
+  try {
+    // 调用后端API解析（支持多种格式）
+    const response = await api.post('/api/cookie-import-enhanced/parse', {
+      cookie: text
+    })
+    
+    if (response.data.success) {
+      return response.data.cookies
+    } else {
+      throw new Error(response.data.message || 'Cookie解析失败')
+    }
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message)
+  }
+}
+
+// 验证Cookie
+const validateCookies = async (cookies) => {
+  try {
+    const response = await api.post('/api/cookie-import-enhanced/validate', {
+      cookies: cookies
+    })
+    
+    validationResult.value = response.data
+  } catch (error) {
+    console.error('Cookie验证失败:', error)
+  }
+}
+
+// 值脱敏显示
+const maskValue = (value) => {
+  if (!value || value.length < 10) return value
+  return value.substring(0, 8) + '***' + value.substring(value.length - 8)
+}
+
+// 复制值
+const copyValue = (value) => {
+  navigator.clipboard.writeText(value).then(() => {
+    ElMessage.success('已复制到剪贴板')
+  })
+}
+
+// 格式化过期时间
+const formatExpireTime = (expires) => {
+  if (!expires) return '-'
+  
+  const date = typeof expires === 'number' 
+    ? new Date(expires * 1000) 
+    : new Date(expires)
+  
+  const now = new Date()
+  const diff = date - now
+  
+  if (diff < 0) {
+    return '已过期'
+  }
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  return days > 0 ? `${days}天后` : '今天'
+}
+
+// 清空Cookie
+const clearCookies = () => {
+  ElMessageBox.confirm('确定要清空已解析的Cookie吗？', '确认清空', {
+    type: 'warning'
+  }).then(() => {
+    parsedCookies.value = []
+    validationResult.value = null
+    ElMessage.success('已清空')
+  }).catch(() => {})
+}
+
+// 导入Cookie
+const importCookies = async () => {
+  if (parsedCookies.value.length === 0) {
+    ElMessage.warning('没有可导入的Cookie')
+    return
+  }
+  
+  isImporting.value = true
+  
+  try {
+    const response = await api.post('/api/accounts/add', {
+      cookie: JSON.stringify(parsedCookies.value),
+      login_method: 'cookie'
+    })
+    
+    if (response.data.success) {
+      ElMessage.success('✅ Cookie导入成功！')
+      emit('success', response.data)
+      
+      // 清空已导入的Cookie
+      parsedCookies.value = []
+      validationResult.value = null
+    } else {
+      ElMessage.error('导入失败: ' + response.data.message)
+      emit('error', response.data)
+    }
+  } catch (error) {
+    ElMessage.error('导入失败: ' + error.message)
+    emit('error', error)
+  } finally {
+    isImporting.value = false
+  }
+}
+
+// 导出Cookie为JSON
+const exportCookies = () => {
+  const json = JSON.stringify(parsedCookies.value, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `cookies_${Date.now()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+  
+  ElMessage.success('Cookie已导出')
+}
+
+// 打开教程
+const openTutorial = (topic) => {
+  window.open(`/help?topic=${topic}`, '_blank')
+}
+
+const openVideoTutorial = () => {
+  window.open('/help/videos?id=cookie-import', '_blank')
+}
+
+// 显示格式帮助
+const showFormatHelp = () => {
+  showFormatHelpDialog.value = true
+}
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .cookie-import-enhanced {
-  padding: 20px;
-}
-
-.import-methods {
-  margin-bottom: 30px;
-}
-
-.method-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.method-extension,
-.method-file,
-.method-paste {
-  min-height: 300px;
-}
-
-.cookie-upload {
   width: 100%;
 }
 
-.validation-feedback {
-  margin-top: 15px;
-}
-
-.format-help {
-  margin-top: 20px;
-}
-
-.help-header {
+/* 拖拽区域 */
+.cookie-drop-zone {
+  border: 3px dashed #DCDFE6;
+  border-radius: 16px;
+  padding: 60px 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e3e8ef 100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(64, 158, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: all 0.6s;
+  }
+  
+  &:hover {
+    border-color: #409EFF;
+    background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(64, 158, 255, 0.2);
+    
+    &::before {
+      width: 500px;
+      height: 500px;
+    }
+    
+    .pulse-circle {
+      animation: pulse 2s infinite;
+    }
+  }
+  
+  &.is-dragover {
+    border-color: #67C23A;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e1f3d8 100%);
+    transform: scale(1.02);
+    box-shadow: 0 12px 32px rgba(103, 194, 58, 0.3);
+    animation: shake 0.5s;
+    
+    .drop-indicator {
+      animation: bounce 0.6s;
+    }
+  }
+  
+  &.has-cookies {
+    border-color: #67C23A;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e1f3d8 100%);
+  }
+}
+
+.drop-indicator {
+  position: relative;
+  z-index: 1;
+}
+
+.pulse-circle {
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+.drop-title {
+  font-size: 28px;
+  margin: 30px 0 15px;
+  color: #303133;
   font-weight: 600;
 }
 
-.example-code {
-  font-family: 'Courier New', monospace;
-  font-size: 12px;
+.drop-subtitle {
+  font-size: 16px;
+  color: #909399;
+  margin-bottom: 25px;
 }
 
-.example-actions {
-  margin-top: 10px;
-  display: flex;
-  gap: 10px;
-}
-
-.import-actions {
-  margin-top: 30px;
-  text-align: center;
+.supported-formats {
   display: flex;
   gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* 操作按钮 */
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin: 30px 0;
+  flex-wrap: wrap;
+}
+
+/* Cookie预览 */
+.cookie-preview-section {
+  margin: 30px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.preview-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cookie-value {
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 12px;
+  color: #606266;
+}
+
+.warning-tip {
+  margin-top: 10px;
+  font-weight: 600;
+  color: #E6A23C;
+}
+
+.show-more {
+  text-align: center;
+  padding: 15px;
+  border-top: 1px solid #EBEEF5;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #EBEEF5;
+}
+
+/* 帮助链接 */
+.help-links {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+/* 格式示例 */
+.format-example {
+  background: #F5F7FA;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #409EFF;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 15px 0;
+}
+
+/* 动画 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 </style>

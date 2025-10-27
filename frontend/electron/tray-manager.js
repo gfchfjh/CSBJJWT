@@ -90,36 +90,56 @@ class TrayManager {
     }
   }
   
-  // ✅ P1-1新增：从后端获取统计数据
+  // ✅ P0-9优化：从后端获取增强的统计数据
   async fetchStats() {
     try {
       const fetch = require('node-fetch');
-      const response = await fetch(`${this.backendUrl}/api/system/stats/realtime`);
+      const response = await fetch(`${this.backendUrl}/api/tray-stats/realtime`);
       
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
         
-        // 更新统计数据
-        this.stats = {
-          messages_today: data.messages_today || 0,
-          success_rate: data.success_rate || 0,
-          avg_latency: data.avg_latency || 0,
-          queue_size: data.queue_size || 0,
-          active_accounts: data.active_accounts || 0,
-          configured_bots: data.configured_bots || 0,
-          uptime_seconds: data.uptime_seconds || 0
-        };
-        
-        // 更新上下文菜单
-        this.updateContextMenu();
-        
-        console.log('[TrayManager] 统计数据已更新');
+        if (result.success && result.stats) {
+          const data = result.stats;
+          
+          // 更新统计数据（7项核心统计）
+          this.stats = {
+            messages_today: data.today_messages || 0,
+            success_rate: parseFloat(data.success_rate_text) || 0,
+            avg_latency: data.avg_latency_ms || 0,
+            avg_latency_text: data.avg_latency_text || 'N/A',
+            queue_size: data.queue_size || 0,
+            queue_status: data.queue_status || '空闲',
+            active_accounts: data.active_accounts || 0,
+            total_accounts: data.total_accounts || 0,
+            active_bots: data.active_bots || 0,
+            total_bots: data.total_bots || 0,
+            uptime_seconds: data.uptime_seconds || 0,
+            uptime_text: data.uptime_text || '0分钟',
+            last_message_time: data.last_message_time || '暂无',
+            errors_today: data.errors_today || 0
+          };
+          
+          // 更新系统状态
+          if (data.status) {
+            this.status = data.status;
+          }
+          
+          // 更新上下文菜单
+          this.updateContextMenu();
+          
+          console.log('[TrayManager] 统计数据已更新:', {
+            status: data.status_text,
+            messages: this.stats.messages_today,
+            rate: this.stats.success_rate
+          });
+        }
       } else {
         console.warn('[TrayManager] 获取统计失败:', response.status);
       }
     } catch (error) {
-      // 静默失败，避免频繁报错
-      // console.error('[TrayManager] 获取统计异常:', error.message);
+      // 静默失败，避免频繁报错（但记录到控制台用于调试）
+      console.debug('[TrayManager] 获取统计异常:', error.message);
     }
   }
   
