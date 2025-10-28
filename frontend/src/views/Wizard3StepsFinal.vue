@@ -550,6 +550,9 @@
         </div>
       </div>
     </el-card>
+    
+    <!-- 教程对话框 -->
+    <TutorialDialog ref="tutorialRef" />
   </div>
 </template>
 
@@ -1066,24 +1069,32 @@ const openCookieExtension = () => {
   window.open('https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg', '_blank')
 }
 
+// 教程对话框引用
+import TutorialDialog from '@/components/TutorialDialog.vue'
+const tutorialRef = ref(null)
+
 const showCookieTutorial = () => {
-  // 打开Cookie教程对话框
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('cookie')
+  }
 }
 
 const showDiscordTutorial = () => {
-  // 打开Discord教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('discord')
+  }
 }
 
 const showTelegramTutorial = () => {
-  // 打开Telegram教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('telegram')
+  }
 }
 
 const showFeishuTutorial = () => {
-  // 打开飞书教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('feishu')
+  }
 }
 
 onMounted(() => {
