@@ -1,40 +1,43 @@
 {
   "manifest_version": 3,
-  "name": "KOOK Cookie 导出工具",
-  "version": "1.0.0",
-  "description": "一键导出KOOK Cookie到剪贴板，配合KOOK消息转发系统使用。支持自动识别、验证和格式化Cookie。",
+  "name": "KOOK Cookie导出神器",
+  "version": "3.0.0",
+  "description": "一键导出KOOK Cookie，支持3种格式，自动发送到本地系统",
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "permissions": [
     "cookies",
-    "activeTab",
-    "clipboardWrite",
-    "storage"
+    "storage",
+    "contextMenus",
+    "notifications"
   ],
   "host_permissions": [
     "*://*.kookapp.cn/*",
-    "*://*.kaiheila.cn/*"
+    "http://localhost:9527/*",
+    "http://127.0.0.1:9527/*"
   ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    },
-    "default_title": "导出KOOK Cookie"
-  },
   "background": {
     "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["*://*.kookapp.cn/*", "*://*.kaiheila.cn/*"],
-      "js": ["content-script.js"],
-      "run_at": "document_end"
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "KOOK Cookie导出"
+  },
+  "commands": {
+    "export-cookie": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "快速导出Cookie"
     }
-  ]
+  }
 }
