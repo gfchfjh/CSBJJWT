@@ -1,11 +1,11 @@
 # KOOK消息转发系统 - API接口文档
 
-**版本**: v9.0.0 🚀  
+**版本**: v10.0.0 🚀  
 **基础URL**: `http://localhost:9527`  
 **协议**: HTTP/1.1 + WebSocket  
 **编码**: UTF-8
 
-## 🆕 v9.0.0 API新增
+## 🆕 v10.0.0 API新增
 
 **新增WebSocket接口**：
 - `WS /ws/captcha/{account_id}` - 验证码实时推送和响应
@@ -498,7 +498,7 @@ POST /api/system/restart
 GET /api/cache/stats
 \`\`\`
 
-**响应示例** (v9.0.0):
+**响应示例** (v10.0.0):
 \`\`\`json
 {
   "cache_size": 1234,
@@ -757,4 +757,4 @@ ws.onclose = () => {
 
 **文档版本**: v9.0  
 **最后更新**: 2025-10-19  
-**对应代码版本**: v9.0.0
+**对应代码版本**: v10.0.0
