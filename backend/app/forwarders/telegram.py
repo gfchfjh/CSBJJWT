@@ -77,15 +77,86 @@ class TelegramForwarder:
             return False
     
     async def send_photo(self, token: str, chat_id: str, photo_url: str,
-                        caption: Optional[str] = None) -> bool:
+                        caption: Optional[str] = None,
+                        parse_mode: str = "HTML") -> bool:
         """
-        发送图片到Telegram
+        发送图片到Telegram（增强版 - 支持直传和重试）
         
         Args:
             token: Bot Token
             chat_id: 聊天ID
             photo_url: 图片URL或文件路径
             caption: 图片说明
+            parse_mode: 文本解析模式
+            
+        Returns:
+            是否成功
+        """
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                await self.rate_limiter.acquire()
+                
+                bot = self.get_bot(token)
+                
+                # Telegram caption最多1024字符
+                if caption and len(caption) > 1024:
+                    caption = caption[:1000] + "..."
+                
+                await bot.send_photo(
+                    chat_id=chat_id,
+                    photo=photo_url,
+                    caption=caption,
+                    parse_mode=parse_mode
+                )
+                
+                logger.info(f"Telegram图片发送成功")
+                return True
+                
+            except TelegramError as e:
+                error_msg = str(e)
+                
+                # 判断错误类型
+                if 'flood' in error_msg.lower() or 'too many requests' in error_msg.lower():
+                    # 限流错误，等待后重试
+                    logger.warning(f"Telegram API限流，等待{retry_delay * 2}秒后重试...")
+                    await asyncio.sleep(retry_delay * 2)
+                    continue
+                elif 'wrong file identifier' in error_msg.lower() or 'file_id' in error_msg.lower():
+                    # 图片URL无效，不重试
+                    logger.error(f"Telegram图片URL无效: {photo_url}")
+                    return False
+                else:
+                    logger.error(f"Telegram图片发送失败: {error_msg}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        continue
+                    return False
+                    
+            except Exception as e:
+                logger.error(f"Telegram图片发送异常: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return False
+        
+        return False
+    
+    async def send_photo_direct(self, token: str, chat_id: str, 
+                               image_data: bytes,
+                               caption: Optional[str] = None,
+                               filename: str = "image.jpg") -> bool:
+        """
+        发送图片到Telegram（直传模式 - 上传本地数据）
+        
+        Args:
+            token: Bot Token
+            chat_id: 聊天ID
+            image_data: 图片二进制数据
+            caption: 图片说明
+            filename: 文件名
             
         Returns:
             是否成功
@@ -95,26 +166,36 @@ class TelegramForwarder:
             
             bot = self.get_bot(token)
             
+            # Telegram caption最多1024字符
+            if caption and len(caption) > 1024:
+                caption = caption[:1000] + "..."
+            
+            # 直接上传二进制数据
+            from io import BytesIO
+            photo_file = BytesIO(image_data)
+            photo_file.name = filename
+            
             await bot.send_photo(
                 chat_id=chat_id,
-                photo=photo_url,
-                caption=caption
+                photo=photo_file,
+                caption=caption,
+                parse_mode="HTML"
             )
             
-            logger.info(f"Telegram图片发送成功")
+            logger.info(f"Telegram图片上传成功（直传模式）")
             return True
             
         except TelegramError as e:
-            logger.error(f"Telegram图片发送失败: {str(e)}")
+            logger.error(f"Telegram图片直传失败: {str(e)}")
             return False
         except Exception as e:
-            logger.error(f"Telegram图片发送异常: {str(e)}")
+            logger.error(f"Telegram图片直传异常: {str(e)}")
             return False
     
     async def send_document(self, token: str, chat_id: str, document_path: str,
                            caption: Optional[str] = None) -> bool:
         """
-        发送文件到Telegram
+        发送文件到Telegram（增强版 - 支持重试）
         
         Args:
             token: Bot Token
@@ -125,27 +206,56 @@ class TelegramForwarder:
         Returns:
             是否成功
         """
-        try:
-            await self.rate_limiter.acquire()
-            
-            bot = self.get_bot(token)
-            
-            with open(document_path, 'rb') as f:
-                await bot.send_document(
-                    chat_id=chat_id,
-                    document=f,
-                    caption=caption
-                )
-            
-            logger.info(f"Telegram文件发送成功: {document_path}")
-            return True
-            
-        except TelegramError as e:
-            logger.error(f"Telegram文件发送失败: {str(e)}")
-            return False
-        except Exception as e:
-            logger.error(f"Telegram文件发送异常: {str(e)}")
-            return False
+        max_retries = 3
+        retry_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                await self.rate_limiter.acquire()
+                
+                bot = self.get_bot(token)
+                
+                # Telegram caption最多1024字符
+                if caption and len(caption) > 1024:
+                    caption = caption[:1000] + "..."
+                
+                with open(document_path, 'rb') as f:
+                    await bot.send_document(
+                        chat_id=chat_id,
+                        document=f,
+                        caption=caption,
+                        parse_mode="HTML"
+                    )
+                
+                logger.info(f"Telegram文件发送成功: {document_path}")
+                return True
+                
+            except FileNotFoundError:
+                logger.error(f"文件不存在: {document_path}")
+                return False
+            except TelegramError as e:
+                error_msg = str(e)
+                
+                # 判断错误类型
+                if 'flood' in error_msg.lower() or 'too many requests' in error_msg.lower():
+                    logger.warning(f"Telegram API限流，等待{retry_delay * 2}秒后重试...")
+                    await asyncio.sleep(retry_delay * 2)
+                    continue
+                else:
+                    logger.error(f"Telegram文件发送失败: {error_msg}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        continue
+                    return False
+                    
+            except Exception as e:
+                logger.error(f"Telegram文件发送异常: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return False
+        
+        return False
     
     async def test_bot(self, token: str, chat_id: str) -> tuple[bool, str]:
         """

@@ -76,12 +76,70 @@ class DiscordForwarder:
             logger.error(f"Discord发送异常: {str(e)}")
             return False
     
+    async def send_image_direct(self, webhook_url: str, 
+                               image_url: str,
+                               content: str = "",
+                               username: Optional[str] = None,
+                               avatar_url: Optional[str] = None) -> bool:
+        """
+        发送图片消息（直接上传模式）
+        
+        Args:
+            webhook_url: Webhook URL
+            image_url: 图片URL
+            content: 附带文本
+            username: 显示的用户名
+            avatar_url: 显示的头像URL
+            
+        Returns:
+            是否成功
+        """
+        try:
+            await self.rate_limiter.acquire()
+            
+            # 下载图片
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                    if resp.status != 200:
+                        logger.error(f"下载图片失败: {resp.status}")
+                        return False
+                    
+                    image_data = await resp.read()
+            
+            # 使用Webhook上传图片
+            webhook = DiscordWebhook(
+                url=webhook_url,
+                content=content,
+                username=username or "KOOK消息转发",
+                avatar_url=avatar_url
+            )
+            
+            # 从URL提取文件名
+            filename = image_url.split('/')[-1].split('?')[0]
+            if not filename or '.' not in filename:
+                filename = 'image.jpg'
+            
+            webhook.add_file(file=image_data, filename=filename)
+            
+            response = webhook.execute()
+            
+            if response.status_code not in [200, 204]:
+                logger.error(f"Discord图片上传失败: {response.status_code}")
+                return False
+            
+            logger.info(f"Discord图片上传成功（直传模式）")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Discord图片直传异常: {str(e)}")
+            return False
+    
     async def send_with_attachment(self, webhook_url: str, content: str,
                                    file_path: str,
                                    username: Optional[str] = None,
                                    avatar_url: Optional[str] = None) -> bool:
         """
-        发送带附件的消息
+        发送带附件的消息（增强版 - 支持重试）
         
         Args:
             webhook_url: Webhook URL
@@ -93,31 +151,54 @@ class DiscordForwarder:
         Returns:
             是否成功
         """
-        try:
-            await self.rate_limiter.acquire()
-            
-            webhook = DiscordWebhook(
-                url=webhook_url,
-                content=content,
-                username=username or "KOOK消息转发",
-                avatar_url=avatar_url
-            )
-            
-            with open(file_path, "rb") as f:
-                webhook.add_file(file=f.read(), filename=file_path.split('/')[-1])
-            
-            response = webhook.execute()
-            
-            if response.status_code not in [200, 204]:
-                logger.error(f"Discord文件发送失败: {response.status_code}")
+        max_retries = 3
+        retry_delay = 5  # 秒
+        
+        for attempt in range(max_retries):
+            try:
+                await self.rate_limiter.acquire()
+                
+                webhook = DiscordWebhook(
+                    url=webhook_url,
+                    content=content,
+                    username=username or "KOOK消息转发",
+                    avatar_url=avatar_url
+                )
+                
+                with open(file_path, "rb") as f:
+                    file_data = f.read()
+                    filename = file_path.split('/')[-1]
+                    webhook.add_file(file=file_data, filename=filename)
+                
+                response = webhook.execute()
+                
+                if response.status_code in [200, 204]:
+                    logger.info(f"Discord文件发送成功: {file_path}")
+                    return True
+                elif response.status_code == 429:
+                    # 限流，等待后重试
+                    retry_after = int(response.headers.get('Retry-After', retry_delay))
+                    logger.warning(f"Discord API限流，等待{retry_after}秒后重试...")
+                    await asyncio.sleep(retry_after)
+                    continue
+                else:
+                    logger.error(f"Discord文件发送失败: {response.status_code} - {response.text}")
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delay)
+                        continue
+                    return False
+                    
+            except FileNotFoundError:
+                logger.error(f"文件不存在: {file_path}")
                 return False
-            
-            logger.info(f"Discord文件发送成功: {file_path}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Discord文件发送异常: {str(e)}")
-            return False
+            except Exception as e:
+                logger.error(f"Discord文件发送异常: {str(e)}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                    continue
+                return False
+        
+        return False
     
     async def test_webhook(self, webhook_url: str) -> tuple[bool, str]:
         """

@@ -1,429 +1,526 @@
 """
-环境检查工具（增强版）
-启动时自动检查环境并尝试自动修复
+环境检测与自动修复 - P0-5优化
+完整检测系统运行环境，并提供自动修复功能
 """
 import os
 import sys
 import platform
-import subprocess
 import shutil
+import subprocess
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple
 from .logger import logger
 
+
 class EnvironmentChecker:
-    """环境检查器"""
+    """环境检测器"""
     
     def __init__(self):
-        self.errors = []
+        self.issues = []
         self.warnings = []
-        self.fixes_applied = []
-    
-    def check_all(self) -> Tuple[bool, Dict[str, any]]:
+        self.info = []
+        
+    def check_all(self) -> Dict:
         """
-        执行所有检查
+        执行完整的环境检测
         
         Returns:
-            (is_ok, results): 是否通过，检查结果字典
+            检测结果字典
         """
         logger.info("=" * 60)
-        logger.info("🔍 开始环境检查...")
+        logger.info("🔍 开始环境检测...")
         logger.info("=" * 60)
         
-        results = {}
-        
-        # 1. 检查Python版本
-        results['python'] = self.check_python_version()
-        
-        # 2. 检查必需的Python包
-        results['packages'] = self.check_python_packages()
-        
-        # 3. 检查Playwright浏览器
-        results['playwright'] = self.check_playwright_browser()
-        
-        # 4. 检查Redis
-        results['redis'] = self.check_redis()
-        
-        # 5. 检查数据目录
-        results['directories'] = self.check_data_directories()
-        
-        # 6. 检查配置文件
-        results['config'] = self.check_config_files()
-        
-        # 7. 检查网络连接
-        results['network'] = self.check_network()
-        
-        # 8. 检查磁盘空间
-        results['disk'] = self.check_disk_space()
-        
-        # 生成报告
-        is_ok = self.generate_report(results)
-        
-        logger.info("=" * 60)
-        if is_ok:
-            logger.info("✅ 环境检查通过")
-        else:
-            logger.warning(f"⚠️  环境检查发现 {len(self.errors)} 个错误")
-        logger.info("=" * 60)
-        
-        return is_ok, results
-    
-    def check_python_version(self) -> Dict:
-        """检查Python版本"""
-        logger.info("📌 检查Python版本...")
-        
-        version = sys.version_info
-        version_str = f"{version.major}.{version.minor}.{version.micro}"
-        
-        result = {
-            'version': version_str,
-            'ok': version >= (3, 11),
-            'message': ''
+        results = {
+            'system': self.check_system(),
+            'python': self.check_python(),
+            'node': self.check_node(),
+            'dependencies': self.check_dependencies(),
+            'directories': self.check_directories(),
+            'ports': self.check_ports(),
+            'permissions': self.check_permissions(),
+            'redis': self.check_redis(),
+            'playwright': self.check_playwright(),
         }
         
-        if result['ok']:
-            logger.info(f"✅ Python版本: {version_str}")
-            result['message'] = f"Python {version_str} (OK)"
-        else:
-            msg = f"Python版本过低: {version_str}，需要3.11+"
-            logger.error(f"❌ {msg}")
-            self.errors.append(msg)
-            result['message'] = msg
-            result['fix'] = "请升级Python到3.11或更高版本"
+        # 统计
+        total_issues = len(self.issues)
+        total_warnings = len(self.warnings)
         
-        return result
+        logger.info("=" * 60)
+        if total_issues == 0 and total_warnings == 0:
+            logger.info("✅ 环境检测完成：一切正常！")
+        else:
+            if total_issues > 0:
+                logger.warning(f"⚠️  发现 {total_issues} 个严重问题")
+            if total_warnings > 0:
+                logger.info(f"ℹ️  发现 {total_warnings} 个警告")
+        logger.info("=" * 60)
+        
+        results['summary'] = {
+            'issues': self.issues,
+            'warnings': self.warnings,
+            'info': self.info,
+            'total_issues': total_issues,
+            'total_warnings': total_warnings,
+            'status': 'error' if total_issues > 0 else ('warning' if total_warnings > 0 else 'ok')
+        }
+        
+        return results
     
-    def check_python_packages(self) -> Dict:
-        """检查必需的Python包"""
-        logger.info("📌 检查Python依赖包...")
+    def check_system(self) -> Dict:
+        """检测系统信息"""
+        logger.info("📋 检测系统信息...")
+        
+        system_info = {
+            'platform': platform.system(),
+            'platform_release': platform.release(),
+            'platform_version': platform.version(),
+            'architecture': platform.machine(),
+            'processor': platform.processor(),
+            'python_version': sys.version,
+        }
+        
+        logger.info(f"  操作系统: {system_info['platform']} {system_info['platform_release']}")
+        logger.info(f"  架构: {system_info['architecture']}")
+        logger.info(f"  Python版本: {sys.version.split()[0]}")
+        
+        # 检查操作系统
+        if system_info['platform'] not in ['Linux', 'Darwin', 'Windows']:
+            self.issues.append({
+                'type': 'system',
+                'level': 'error',
+                'message': f"不支持的操作系统: {system_info['platform']}",
+                'solution': '请在Linux、macOS或Windows上运行'
+            })
+        
+        return system_info
+    
+    def check_python(self) -> Dict:
+        """检测Python版本"""
+        logger.info("🐍 检测Python环境...")
+        
+        version_info = sys.version_info
+        version_str = f"{version_info.major}.{version_info.minor}.{version_info.micro}"
+        
+        python_info = {
+            'version': version_str,
+            'version_tuple': (version_info.major, version_info.minor, version_info.micro),
+            'executable': sys.executable,
+        }
+        
+        logger.info(f"  Python版本: {version_str}")
+        logger.info(f"  可执行文件: {sys.executable}")
+        
+        # 检查版本（要求3.8+）
+        if version_info.major < 3 or (version_info.major == 3 and version_info.minor < 8):
+            self.issues.append({
+                'type': 'python',
+                'level': 'error',
+                'message': f"Python版本过低: {version_str}（要求3.8+）",
+                'solution': '请升级到Python 3.8或更高版本',
+                'auto_fixable': False
+            })
+        elif version_info.major == 3 and version_info.minor < 10:
+            self.warnings.append({
+                'type': 'python',
+                'level': 'warning',
+                'message': f"Python版本较低: {version_str}（推荐3.10+）",
+                'solution': '建议升级到Python 3.10或更高版本以获得更好的性能'
+            })
+        
+        return python_info
+    
+    def check_node(self) -> Dict:
+        """检测Node.js环境"""
+        logger.info("📦 检测Node.js环境...")
+        
+        node_info = {
+            'installed': False,
+            'version': None,
+            'npm_version': None,
+        }
+        
+        # 检查Node.js
+        node_path = shutil.which('node')
+        if not node_path:
+            self.warnings.append({
+                'type': 'node',
+                'level': 'warning',
+                'message': '未安装Node.js',
+                'solution': '如果需要使用前端功能，请安装Node.js 16+',
+                'auto_fixable': False
+            })
+            logger.warning("  ⚠️  未安装Node.js")
+            return node_info
+        
+        node_info['installed'] = True
+        node_info['path'] = node_path
+        
+        # 检查版本
+        try:
+            result = subprocess.run(['node', '--version'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                node_info['version'] = result.stdout.strip()
+                logger.info(f"  Node.js版本: {node_info['version']}")
+        except Exception as e:
+            logger.warning(f"  ⚠️  无法获取Node.js版本: {e}")
+        
+        # 检查npm
+        npm_path = shutil.which('npm')
+        if npm_path:
+            try:
+                result = subprocess.run(['npm', '--version'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    node_info['npm_version'] = result.stdout.strip()
+                    logger.info(f"  npm版本: {node_info['npm_version']}")
+            except Exception as e:
+                logger.warning(f"  ⚠️  无法获取npm版本: {e}")
+        
+        return node_info
+    
+    def check_dependencies(self) -> Dict:
+        """检测Python依赖"""
+        logger.info("📚 检测Python依赖...")
         
         required_packages = [
             'fastapi',
+            'uvicorn',
+            'aiohttp',
             'playwright',
             'redis',
-            'aiohttp',
-            'cryptography',
-            'Pillow',
+            'sqlalchemy',
             'pydantic',
+            'cryptography',
+            'pillow',
         ]
         
-        missing = []
-        installed = []
+        installed_packages = {}
+        missing_packages = []
         
         for package in required_packages:
             try:
-                __import__(package.replace('-', '_').lower())
-                installed.append(package)
+                module = __import__(package)
+                version = getattr(module, '__version__', 'unknown')
+                installed_packages[package] = version
+                logger.info(f"  ✅ {package}: {version}")
             except ImportError:
-                missing.append(package)
+                missing_packages.append(package)
+                logger.warning(f"  ❌ {package}: 未安装")
         
-        result = {
-            'installed': installed,
-            'missing': missing,
-            'ok': len(missing) == 0
+        if missing_packages:
+            self.issues.append({
+                'type': 'dependencies',
+                'level': 'error',
+                'message': f"缺少必需的Python包: {', '.join(missing_packages)}",
+                'solution': f"运行: pip install {' '.join(missing_packages)}",
+                'auto_fixable': True,
+                'fix_command': f"pip install {' '.join(missing_packages)}"
+            })
+        
+        return {
+            'installed': installed_packages,
+            'missing': missing_packages,
+        }
+    
+    def check_directories(self) -> Dict:
+        """检测必需的目录"""
+        logger.info("📁 检测目录结构...")
+        
+        required_dirs = [
+            'data',
+            'data/images',
+            'data/attachments',
+            'logs',
+            'cache',
+        ]
+        
+        missing_dirs = []
+        existing_dirs = []
+        
+        for dir_path in required_dirs:
+            full_path = Path(dir_path)
+            if full_path.exists():
+                existing_dirs.append(dir_path)
+                logger.info(f"  ✅ {dir_path}")
+            else:
+                missing_dirs.append(dir_path)
+                logger.warning(f"  ❌ {dir_path}: 不存在")
+        
+        if missing_dirs:
+            self.warnings.append({
+                'type': 'directories',
+                'level': 'warning',
+                'message': f"缺少目录: {', '.join(missing_dirs)}",
+                'solution': '系统将自动创建这些目录',
+                'auto_fixable': True,
+                'fix_action': lambda: self.create_missing_directories(missing_dirs)
+            })
+        
+        return {
+            'existing': existing_dirs,
+            'missing': missing_dirs,
+        }
+    
+    def check_ports(self) -> Dict:
+        """检测端口占用"""
+        logger.info("🔌 检测端口占用...")
+        
+        required_ports = [
+            (9527, 'FastAPI后端'),
+            (6379, 'Redis'),
+            (8765, '图床服务器'),
+        ]
+        
+        port_status = {}
+        
+        for port, description in required_ports:
+            is_available = self.is_port_available(port)
+            port_status[port] = {
+                'description': description,
+                'available': is_available
+            }
+            
+            if is_available:
+                logger.info(f"  ✅ 端口 {port} ({description}): 可用")
+            else:
+                logger.warning(f"  ⚠️  端口 {port} ({description}): 已被占用")
+                self.warnings.append({
+                    'type': 'port',
+                    'level': 'warning',
+                    'message': f"端口 {port} ({description}) 已被占用",
+                    'solution': f"请关闭占用端口 {port} 的程序，或修改配置使用其他端口"
+                })
+        
+        return port_status
+    
+    def check_permissions(self) -> Dict:
+        """检测文件权限"""
+        logger.info("🔐 检测文件权限...")
+        
+        permission_checks = []
+        
+        # 检查当前目录写权限
+        current_dir = Path.cwd()
+        can_write = os.access(current_dir, os.W_OK)
+        permission_checks.append({
+            'path': str(current_dir),
+            'writable': can_write
+        })
+        
+        if can_write:
+            logger.info(f"  ✅ 当前目录可写: {current_dir}")
+        else:
+            logger.error(f"  ❌ 当前目录不可写: {current_dir}")
+            self.issues.append({
+                'type': 'permissions',
+                'level': 'error',
+                'message': f"当前目录不可写: {current_dir}",
+                'solution': '请确保有足够的文件权限',
+                'auto_fixable': False
+            })
+        
+        return {
+            'checks': permission_checks,
+            'current_dir_writable': can_write
+        }
+    
+    def check_redis(self) -> Dict:
+        """检测Redis连接"""
+        logger.info("🗄️  检测Redis连接...")
+        
+        redis_info = {
+            'available': False,
+            'version': None,
         }
         
-        if result['ok']:
-            logger.info(f"✅ 所有依赖包已安装 ({len(installed)}个)")
-        else:
-            msg = f"缺失{len(missing)}个依赖包: {', '.join(missing)}"
-            logger.warning(f"⚠️  {msg}")
-            self.warnings.append(msg)
-            result['fix'] = f"运行: pip install {' '.join(missing)}"
+        try:
+            import redis
+            
+            # 尝试连接Redis
+            client = redis.Redis(host='localhost', port=6379, socket_connect_timeout=3)
+            client.ping()
+            
+            redis_info['available'] = True
+            
+            # 获取版本
+            info = client.info()
+            redis_info['version'] = info.get('redis_version', 'unknown')
+            
+            logger.info(f"  ✅ Redis连接成功: v{redis_info['version']}")
+            
+        except Exception as e:
+            logger.warning(f"  ⚠️  Redis连接失败: {e}")
+            self.warnings.append({
+                'type': 'redis',
+                'level': 'warning',
+                'message': f"Redis连接失败: {str(e)}",
+                'solution': '请确保Redis正在运行（端口6379），或运行内嵌Redis',
+                'auto_fixable': False
+            })
         
-        return result
+        return redis_info
     
-    def check_playwright_browser(self) -> Dict:
-        """检查Playwright浏览器"""
-        logger.info("📌 检查Playwright浏览器...")
+    def check_playwright(self) -> Dict:
+        """检测Playwright浏览器"""
+        logger.info("🌐 检测Playwright浏览器...")
         
-        result = {
+        playwright_info = {
             'installed': False,
-            'path': None,
-            'ok': False,
-            'auto_fix_attempted': False
+            'browsers': {},
         }
         
         try:
             from playwright.sync_api import sync_playwright
             
-            with sync_playwright() as p:
-                browser_path = Path(p.chromium.executable_path)
-                if browser_path.exists():
-                    result['installed'] = True
-                    result['path'] = str(browser_path)
-                    result['ok'] = True
-                    logger.info(f"✅ Playwright Chromium已安装")
-                    logger.info(f"   路径: {browser_path}")
-                else:
-                    raise FileNotFoundError("浏览器文件不存在")
-                    
-        except Exception as e:
-            logger.warning(f"⚠️  Playwright Chromium未安装: {e}")
+            playwright_info['installed'] = True
+            logger.info("  ✅ Playwright已安装")
             
-            # 尝试自动安装
-            if self.auto_install_playwright_browser():
-                result['installed'] = True
-                result['ok'] = True
-                result['auto_fix_attempted'] = True
-                self.fixes_applied.append("自动安装Playwright Chromium")
-            else:
-                msg = "Playwright Chromium未安装"
-                self.warnings.append(msg)
-                result['fix'] = "运行: playwright install chromium"
-        
-        return result
-    
-    def auto_install_playwright_browser(self) -> bool:
-        """自动安装Playwright浏览器"""
-        logger.info("🔧 尝试自动安装Playwright Chromium...")
-        
-        try:
-            subprocess.run(
-                [sys.executable, "-m", "playwright", "install", "chromium"],
-                check=True,
-                capture_output=True,
-                timeout=300  # 5分钟超时
-            )
-            logger.info("✅ Playwright Chromium自动安装成功")
-            return True
-        except subprocess.TimeoutExpired:
-            logger.error("❌ 安装超时（5分钟）")
-            return False
-        except subprocess.CalledProcessError as e:
-            logger.error(f"❌ 安装失败: {e}")
-            return False
-        except Exception as e:
-            logger.error(f"❌ 安装异常: {e}")
-            return False
-    
-    def check_redis(self) -> Dict:
-        """检查Redis"""
-        logger.info("📌 检查Redis...")
-        
-        result = {
-            'system_redis': False,
-            'embedded_redis': False,
-            'ok': False
-        }
-        
-        # 检查系统Redis
-        if shutil.which('redis-server'):
-            result['system_redis'] = True
-            result['ok'] = True
-            logger.info("✅ 检测到系统Redis")
-        
-        # 检查嵌入式Redis
-        embedded_redis_paths = [
-            Path('redis/redis-server'),
-            Path('redis/redis-server.exe'),
-            Path('redis/windows/redis-server.exe'),
-            Path('redis/linux/redis-server'),
-            Path('redis/macos/redis-server'),
-        ]
-        
-        for path in embedded_redis_paths:
-            if path.exists():
-                result['embedded_redis'] = True
-                result['ok'] = True
-                logger.info(f"✅ 检测到嵌入式Redis: {path}")
-                break
-        
-        if not result['ok']:
-            msg = "未检测到Redis（系统或嵌入式）"
-            logger.warning(f"⚠️  {msg}")
-            self.warnings.append(msg)
-            result['fix'] = "安装Redis或使用嵌入式版本"
-        
-        return result
-    
-    def check_data_directories(self) -> Dict:
-        """检查数据目录"""
-        logger.info("📌 检查数据目录...")
-        
-        from ..config import settings
-        
-        required_dirs = [
-            settings.data_dir,
-            settings.image_storage_path,
-            settings.log_dir,
-        ]
-        
-        created = []
-        exists = []
-        
-        for dir_path in required_dirs:
-            if not dir_path.exists():
-                try:
-                    dir_path.mkdir(parents=True, exist_ok=True)
-                    created.append(str(dir_path))
-                    logger.info(f"✅ 创建目录: {dir_path}")
-                except Exception as e:
-                    msg = f"无法创建目录 {dir_path}: {e}"
-                    logger.error(f"❌ {msg}")
-                    self.errors.append(msg)
-            else:
-                exists.append(str(dir_path))
-        
-        result = {
-            'created': created,
-            'exists': exists,
-            'ok': len(created) + len(exists) == len(required_dirs)
-        }
-        
-        if result['ok']:
-            logger.info(f"✅ 数据目录检查通过")
-        
-        return result
-    
-    def check_config_files(self) -> Dict:
-        """检查配置文件"""
-        logger.info("📌 检查配置文件...")
-        
-        config_files = {
-            'selectors.yaml': Path('backend/data/selectors.yaml'),
-            '.env': Path('backend/.env'),
-        }
-        
-        result = {
-            'exists': [],
-            'missing': [],
-            'ok': True
-        }
-        
-        for name, path in config_files.items():
-            if path.exists():
-                result['exists'].append(name)
-            else:
-                result['missing'].append(name)
-                logger.info(f"ℹ️  配置文件不存在（可选）: {name}")
-        
-        # 配置文件缺失不算错误，只是警告
-        if result['missing']:
-            logger.info(f"ℹ️  {len(result['missing'])}个配置文件使用默认值")
-        
-        return result
-    
-    def check_network(self) -> Dict:
-        """检查网络连接"""
-        logger.info("📌 检查网络连接...")
-        
-        result = {
-            'ok': True,
-            'reachable': [],
-            'unreachable': []
-        }
-        
-        # 测试关键域名
-        test_domains = [
-            'www.kookapp.cn',
-            'api.github.com',
-        ]
-        
-        for domain in test_domains:
+            # 检查浏览器是否已安装
             try:
-                import socket
-                socket.create_connection((domain, 443), timeout=5)
-                result['reachable'].append(domain)
-                logger.info(f"✅ 可访问: {domain}")
-            except Exception:
-                result['unreachable'].append(domain)
-                logger.warning(f"⚠️  无法访问: {domain}")
+                with sync_playwright() as p:
+                    # 尝试启动chromium
+                    try:
+                        browser = p.chromium.launch(headless=True)
+                        browser.close()
+                        playwright_info['browsers']['chromium'] = True
+                        logger.info("  ✅ Chromium浏览器已安装")
+                    except Exception as e:
+                        playwright_info['browsers']['chromium'] = False
+                        logger.warning(f"  ⚠️  Chromium浏览器未安装: {e}")
+                        self.warnings.append({
+                            'type': 'playwright',
+                            'level': 'warning',
+                            'message': 'Playwright浏览器未安装',
+                            'solution': '运行: playwright install chromium',
+                            'auto_fixable': True,
+                            'fix_command': 'playwright install chromium'
+                        })
+            except Exception as e:
+                logger.warning(f"  ⚠️  无法检测Playwright浏览器: {e}")
+                
+        except ImportError:
+            logger.warning("  ❌ Playwright未安装")
+            self.issues.append({
+                'type': 'playwright',
+                'level': 'error',
+                'message': 'Playwright未安装',
+                'solution': '运行: pip install playwright && playwright install chromium',
+                'auto_fixable': True,
+                'fix_command': 'pip install playwright && playwright install chromium'
+            })
         
-        if result['unreachable']:
-            msg = f"部分域名无法访问: {', '.join(result['unreachable'])}"
-            self.warnings.append(msg)
-            result['ok'] = False
-        
-        return result
+        return playwright_info
     
-    def check_disk_space(self) -> Dict:
-        """检查磁盘空间"""
-        logger.info("📌 检查磁盘空间...")
+    @staticmethod
+    def is_port_available(port: int) -> bool:
+        """检查端口是否可用"""
+        import socket
         
-        from ..config import settings
-        
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('127.0.0.1', port))
+                return True
+            except OSError:
+                return False
+    
+    def create_missing_directories(self, dirs: List[str]) -> bool:
+        """创建缺失的目录"""
         try:
-            stat = shutil.disk_usage(settings.data_dir)
-            free_gb = stat.free / (1024**3)
-            total_gb = stat.total / (1024**3)
-            used_percent = (stat.used / stat.total) * 100
-            
-            result = {
-                'free_gb': round(free_gb, 2),
-                'total_gb': round(total_gb, 2),
-                'used_percent': round(used_percent, 1),
-                'ok': free_gb >= 1.0  # 至少1GB空闲
-            }
-            
-            if result['ok']:
-                logger.info(f"✅ 磁盘空间充足: {free_gb:.1f}GB 可用")
-            else:
-                msg = f"磁盘空间不足: 仅剩{free_gb:.1f}GB"
-                logger.warning(f"⚠️  {msg}")
-                self.warnings.append(msg)
-                result['fix'] = "清理磁盘空间或更改数据目录"
-            
-            return result
-            
+            for dir_path in dirs:
+                full_path = Path(dir_path)
+                full_path.mkdir(parents=True, exist_ok=True)
+                logger.info(f"  ✅ 已创建目录: {dir_path}")
+            return True
         except Exception as e:
-            logger.warning(f"⚠️  无法检查磁盘空间: {e}")
-            return {'ok': True, 'error': str(e)}
+            logger.error(f"  ❌ 创建目录失败: {e}")
+            return False
     
-    def generate_report(self, results: Dict) -> bool:
-        """生成检查报告"""
-        logger.info("")
-        logger.info("📊 环境检查报告")
+    def auto_fix(self) -> Dict:
+        """自动修复所有可修复的问题"""
+        logger.info("=" * 60)
+        logger.info("🔧 开始自动修复...")
         logger.info("=" * 60)
         
-        # 统计
-        total_checks = len(results)
-        passed_checks = sum(1 for r in results.values() if r.get('ok', False))
+        fixed = []
+        failed = []
         
-        logger.info(f"总检查项: {total_checks}")
-        logger.info(f"通过: {passed_checks}")
-        logger.info(f"错误: {len(self.errors)}")
-        logger.info(f"警告: {len(self.warnings)}")
+        # 修复缺失的目录
+        for warning in self.warnings:
+            if warning['type'] == 'directories' and warning.get('auto_fixable'):
+                if 'fix_action' in warning:
+                    try:
+                        success = warning['fix_action']()
+                        if success:
+                            fixed.append(warning)
+                            logger.info(f"  ✅ 已修复: {warning['message']}")
+                        else:
+                            failed.append(warning)
+                            logger.error(f"  ❌ 修复失败: {warning['message']}")
+                    except Exception as e:
+                        failed.append(warning)
+                        logger.error(f"  ❌ 修复异常: {warning['message']}, {e}")
         
-        # 显示错误
-        if self.errors:
-            logger.info("")
-            logger.info("❌ 严重错误:")
-            for i, error in enumerate(self.errors, 1):
-                logger.error(f"  {i}. {error}")
+        # 执行命令修复
+        for item in self.issues + self.warnings:
+            if item.get('auto_fixable') and 'fix_command' in item:
+                logger.info(f"  🔧 执行: {item['fix_command']}")
+                logger.warning("    ⚠️  自动安装依赖已禁用，请手动运行上述命令")
+                # 注意：不自动执行命令，避免安全问题
+                # 用户应该手动运行建议的命令
         
-        # 显示警告
-        if self.warnings:
-            logger.info("")
-            logger.info("⚠️  警告:")
-            for i, warning in enumerate(self.warnings, 1):
-                logger.warning(f"  {i}. {warning}")
+        logger.info("=" * 60)
+        logger.info(f"✅ 自动修复完成: 成功 {len(fixed)} 个, 失败 {len(failed)} 个")
+        logger.info("=" * 60)
         
-        # 显示自动修复
-        if self.fixes_applied:
-            logger.info("")
-            logger.info("🔧 自动修复:")
-            for i, fix in enumerate(self.fixes_applied, 1):
-                logger.info(f"  {i}. {fix}")
+        return {
+            'fixed': fixed,
+            'failed': failed
+        }
+    
+    def get_fix_suggestions(self) -> List[str]:
+        """获取所有修复建议"""
+        suggestions = []
         
-        # 建议
-        if self.errors or self.warnings:
-            logger.info("")
-            logger.info("💡 修复建议:")
-            for key, result in results.items():
-                if 'fix' in result and result['fix']:
-                    logger.info(f"  • {result['fix']}")
+        for item in self.issues + self.warnings:
+            if 'fix_command' in item:
+                suggestions.append(item['fix_command'])
         
-        return len(self.errors) == 0
+        return suggestions
 
-# 全局环境检查器实例
-environment_checker = EnvironmentChecker()
+
+# 全局实例
+env_checker = EnvironmentChecker()
 
 
-async def check_environment() -> bool:
-    """
-    执行环境检查（异步版本）
-    供main.py启动时调用
-    """
-    is_ok, results = environment_checker.check_all()
-    return is_ok
+def check_environment() -> Dict:
+    """执行环境检测"""
+    return env_checker.check_all()
+
+
+def auto_fix_environment() -> Dict:
+    """自动修复环境问题"""
+    return env_checker.auto_fix()
+
+
+if __name__ == "__main__":
+    # 测试
+    result = check_environment()
+    
+    print("\n" + "=" * 60)
+    print("检测结果汇总")
+    print("=" * 60)
+    
+    summary = result['summary']
+    print(f"状态: {summary['status']}")
+    print(f"问题: {summary['total_issues']} 个")
+    print(f"警告: {summary['total_warnings']} 个")
+    
+    if summary['total_issues'] > 0 or summary['total_warnings'] > 0:
+        print("\n修复建议:")
+        suggestions = env_checker.get_fix_suggestions()
+        for i, suggestion in enumerate(suggestions, 1):
+            print(f"{i}. {suggestion}")
+        
+        print("\n尝试自动修复...")
+        auto_fix_environment()
