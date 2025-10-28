@@ -110,7 +110,7 @@
 
 ## 🚀 快速开始
 
-### 方式1：一键安装包（推荐）⭐
+### 方式1：一键安装包（推荐）
 
 #### 1. 下载安装包
 
@@ -195,7 +195,7 @@ start.bat
 ## 📖 完整文档
 
 ### 新手教程
-- [5分钟快速入门](docs/tutorials/01-快速入门指南.md) ⭐ 必读
+- [5分钟快速入门](docs/tutorials/01-快速入门指南.md) - 必读
 - [Cookie获取详解](docs/tutorials/02-Cookie获取详细教程.md)
 - [Discord配置教程](docs/tutorials/03-Discord配置教程.md)
 - [Telegram配置教程](docs/tutorials/04-Telegram配置教程.md)
