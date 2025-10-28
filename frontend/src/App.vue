@@ -1,5 +1,8 @@
 <template>
   <div class="app-container">
+    <!-- ✅ P0-2优化: 首次运行检测器 -->
+    <FirstRunDetector />
+    
     <router-view />
     
     <!-- ✅ P0-5优化：友好错误提示对话框（全局） -->
@@ -99,6 +102,7 @@ import { ElMessageBox } from 'element-plus'
 import { useSystemStore } from './store/system'
 import ErrorDialog from './components/ErrorDialog.vue'
 import { globalErrorHandler } from './composables/useErrorHandler'
+import FirstRunDetector from './components/FirstRunDetector.vue'  // ✅ P0-2优化
 
 const systemStore = useSystemStore()
 

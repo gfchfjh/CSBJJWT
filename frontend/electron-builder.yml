@@ -1,94 +1,64 @@
-# electron-builder完整配置
-# 用于打包KOOK消息转发系统完整安装包
-# 版本: v6.0.0
-
 appId: com.kookforwarder.app
 productName: KOOK消息转发系统
 copyright: Copyright © 2025 KOOK Forwarder Team
-
-# 目录配置
 directories:
   output: dist-electron
   buildResources: ../build
 
-# 打包文件
+# 包含的文件
 files:
   - dist/**/*
   - electron/**/*
-  - "!electron/main-ultimate.js"
-  - "!**/*.map"
-  - "!**/*.md"
+  - package.json
+  - "!node_modules/**/*"
+  - "!src/**/*"
+  - "!public/**/*"
 
-# 额外资源（会被复制到app.asar.unpacked）
+# 额外资源（运行时需要）
 extraResources:
-  # Python后端可执行文件
-  - from: ../backend/dist
-    to: backend
+  - from: ../build/icon.png
+    to: resources/icon.png
+  - from: electron/resources
+    to: resources
     filter:
-      - "KookForwarder-Backend*"
-      - "**/*.so"
-      - "**/*.dll"
-  
-  # Redis可执行文件
+      - "**/*"
+  # 嵌入式Redis
   - from: ../redis
-    to: redis
+    to: resources/redis
     filter:
-      - "redis-server*"
-      - "redis.conf"
-  
-  # 文档
-  - from: ../docs
-    to: docs
+      - redis-server*
+      - redis.conf
+  # 后端可执行文件
+  - from: ../dist
+    to: resources/backend
     filter:
-      - "**/*.md"
-      - "**/*.png"
-      - "**/*.jpg"
-  
-  # 图标
-  - from: public/icon.png
-    to: icon.png
+      - kook-forwarder-backend*
 
-# ==================================================
 # Windows配置
-# ==================================================
 win:
   target:
     - target: nsis
       arch:
         - x64
   icon: ../build/icon.ico
-  artifactName: KOOK-Forwarder-${version}-Setup.${ext}
-  requestedExecutionLevel: asInvoker
-  signDllsAndExes: false
-
+  artifactName: ${productName}-${version}-Windows-${arch}.${ext}
+  
 # NSIS安装程序配置
 nsis:
   oneClick: false
-  allowElevation: true
   allowToChangeInstallationDirectory: true
+  perMachine: false
+  allowElevation: true
   installerIcon: ../build/icon.ico
   uninstallerIcon: ../build/icon.ico
   installerHeaderIcon: ../build/icon.ico
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: KOOK消息转发系统
-  perMachine: false
-  runAfterFinish: true
-  deleteAppDataOnUninstall: false
-  menuCategory: true
-  
-  # 自定义安装页面
-  welcomePage: true
-  
-  # 安装器语言
-  language: "2052"  # 简体中文
-  
-  # 额外的安装脚本（可选）
-  # include: ../build/installer.nsh
+  license: ../LICENSE
+  include: ../build/installer.nsh
 
-# ==================================================
 # macOS配置
-# ==================================================
 mac:
   target:
     - target: dmg
@@ -97,26 +67,14 @@ mac:
         - arm64
   icon: ../build/icon.icns
   category: public.app-category.utilities
-  artifactName: KOOK-Forwarder-${version}-macOS-${arch}.${ext}
-  
-  # 代码签名（需要Apple Developer账号）
-  # identity: "Developer ID Application: Your Name (TEAM_ID)"
+  artifactName: ${productName}-${version}-macOS-${arch}.${ext}
   hardenedRuntime: true
   gatekeeperAssess: false
-  
-  # 权限配置
   entitlements: ../build/entitlements.mac.plist
   entitlementsInherit: ../build/entitlements.mac.plist
-  
-  # 公证（需要Apple ID和App-specific password）
-  # notarize:
-  #   teamId: YOUR_TEAM_ID
 
-# DMG配置
+# macOS DMG配置
 dmg:
-  title: ${productName} ${version}
-  icon: ../build/icon.icns
-  background: ../build/dmg-background.png
   contents:
     - x: 130
       y: 220
@@ -127,103 +85,25 @@ dmg:
   window:
     width: 540
     height: 380
-  iconSize: 80
-  iconTextSize: 12
 
-# ==================================================
 # Linux配置
-# ==================================================
 linux:
   target:
     - target: AppImage
       arch:
         - x64
-    - target: deb
-      arch:
-        - x64
-    - target: rpm
-      arch:
-        - x64
-  icon: ../build/icons
+  icon: ../build/icon.png
   category: Utility
-  artifactName: KOOK-Forwarder-${version}-${arch}.${ext}
-  synopsis: KOOK消息转发系统 - 一键安装，图形化操作
-  description: |
-    将KOOK消息自动转发到Discord/Telegram/飞书。
-    
-    功能特性：
-    - 多账号管理
-    - 智能频道映射
-    - 消息过滤规则
-    - 实时监控和日志
-    - 零代码基础可用
-  
+  artifactName: ${productName}-${version}-Linux-${arch}.${ext}
+  executableName: kook-forwarder
   desktop:
     Name: KOOK消息转发系统
-    Comment: KOOK消息自动转发工具
-    GenericName: Message Forwarder
-    Keywords: kook;forwarder;message;discord;telegram
+    Comment: KOOK消息转发到Discord/Telegram/飞书
     Categories: Utility;Network;
-    StartupNotify: true
-    Terminal: false
 
-# AppImage配置
-appImage:
-  license: ../LICENSE
-  systemIntegration: ask
+# 发布配置（禁用自动发布）
+publish: null
 
-# Debian包配置
-deb:
-  depends:
-    - gconf2
-    - gconf-service
-    - libnotify4
-    - libappindicator1
-    - libxtst6
-    - libnss3
-  recommends:
-    - libsecret-1-0
-
-# RPM包配置
-rpm:
-  depends:
-    - libXScrnSaver
-    - libappindicator
-    - libnotify
-
-# ==================================================
-# 自动更新配置
-# ==================================================
-publish:
-  provider: github
-  owner: gfchfjh
-  repo: CSBJJWT
-  releaseType: release
-  publishAutoUpdate: true
-
-# ==================================================
-# 压缩和优化
-# ==================================================
+# 压缩选项
 compression: maximum
-removePackageScripts: true
-
-# 文件关联（可选）
-# fileAssociations:
-#   - ext: kook
-#     name: KOOK配置文件
-#     role: Viewer
-
-# 协议关联（可选）
-# protocols:
-#   - name: kook-forwarder
-#     schemes:
-#       - kook
-
-# ==================================================
-# 构建钩子
-# ==================================================
-# 这些钩子在package.json的scripts中定义
-# beforePack
-# afterPack
-# afterSign
-# afterAllArtifactBuild
+npmRebuild: false

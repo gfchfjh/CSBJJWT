@@ -268,6 +268,22 @@ app.include_router(captcha_websocket.router)  # 验证码WebSocket 🆕 P0-3深�
 from .api import wizard_smart_setup
 app.include_router(wizard_smart_setup.router)  # 智能向导设置 🆕 v9.0.0
 
+# ✅ P0-2深度优化: 首次运行检测API
+from .api import wizard_first_run
+app.include_router(wizard_first_run.router)  # 首次运行检测 🆕 P0-2优化
+
+# ✅ P0-5深度优化: 终极环境检测API
+from .api import environment_ultimate
+app.include_router(environment_ultimate.router)  # 终极环境检测 🆕 P0-5优化
+
+# ✅ P1-2深度优化: 映射学习引擎API
+from .api import mapping_learning_ultimate
+app.include_router(mapping_learning_ultimate.router)  # 映射学习引擎 🆕 P1-2优化
+
+# ✅ P2-1深度优化: 数据库优化API
+from .api import database_optimizer_ultimate_api
+app.include_router(database_optimizer_ultimate_api.router)  # 数据库优化 🆕 P2-1优化
+
 # ✅ v9.0.0新增：数据库优化API
 from .api import database_optimizer_api
 app.include_router(database_optimizer_api.router)  # 数据库优化 🆕 v9.0.0
