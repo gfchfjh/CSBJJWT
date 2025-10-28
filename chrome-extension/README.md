@@ -1,162 +1,166 @@
-# KOOK Cookie 导出扩展
+# KOOK Cookie导出助手 - Chrome扩展
 
-**版本**: v1.2.0（兼容KOOK转发系统v6.7.0）  
-**更新**: 2025-10-27
-
-## 简介
-
-这是一个Chrome浏览器扩展，用于快速导出KOOK网站的Cookie，供KOOK消息转发系统使用。
-
-**v6.7.0系统已支持**：
-- ✅ 拖拽上传Cookie文件（大区域动画）
-- ✅ 3种格式智能解析（JSON/Netscape/Header）
-- ✅ 实时解析预览
-- ✅ 导入帮助指南
+> ✅ P0-3深度优化：一键导出KOOK Cookie到剪贴板
 
 ## 功能特性
 
-- ✅ 一键导出KOOK Cookie（JSON格式）
-- ✅ 自动检测是否在KOOK网站
-- ✅ 自动复制到剪贴板
-- ✅ 支持 Chrome、Edge、Brave 等 Chromium 内核浏览器
-- ✅ 5秒完成，操作简单
+### v2.0 增强版
+- ✅ **自动检测登录状态** - 实时显示KOOK登录状态和Cookie数量
+- ✅ **一键导出** - 点击按钮即可将Cookie复制到剪贴板
+- ✅ **智能验证** - 自动检查关键Cookie是否存在
+- ✅ **详细信息** - 可查看Cookie详情和统计信息
+- ✅ **应用状态检测** - 自动检测转发系统是否运行
+- ✅ **美化界面** - 现代化设计，操作更直观
+- ✅ **快捷键支持** - `Ctrl+Shift+K` (Windows/Linux) / `Cmd+Shift+K` (macOS)
 
 ## 安装方法
 
-### 方法1：开发者模式安装（推荐）
+### 方式1: 开发者模式安装（推荐）
 
-1. 打开Chrome浏览器，访问 `chrome://extensions/`
-2. 开启右上角的「开发者模式」
-3. 点击「加载已解压的扩展程序」
-4. 选择 `chrome-extension` 文件夹
-5. 安装完成！
+1. 打开Chrome浏览器
+2. 访问 `chrome://extensions/`
+3. 开启右上角的"开发者模式"
+4. 点击"加载已解压的扩展程序"
+5. 选择本项目的 `chrome-extension` 目录
+6. 完成！扩展已安装
 
-### 方法2：打包安装
+### 方式2: 打包安装
 
-1. 在扩展管理页面点击「打包扩展程序」
-2. 选择 `chrome-extension` 文件夹
-3. 生成 `.crx` 文件
-4. 拖拽到扩展管理页面安装
+```bash
+# 将扩展打包为.crx文件
+chrome://extensions/ → 打包扩展程序 → 选择chrome-extension目录
+```
 
-## 使用方法
+## 使用步骤
 
-### 第一步：打开KOOK网站并登录
-
+### 第1步：登录KOOK
 1. 访问 https://www.kookapp.cn
-2. 登录您的KOOK账号
+2. 使用邮箱或手机号登录
+3. 确保登录成功
 
-### 第二步：导出Cookie
+### 第2步：导出Cookie
+1. 点击Chrome工具栏的扩展图标
+2. 扩展会自动检测登录状态
+3. 看到"✅ 已检测到KOOK登录"后，点击"📋 一键导出Cookie"
+4. Cookie已自动复制到剪贴板
 
-1. 点击浏览器工具栏的扩展图标
-2. 点击「导出Cookie」按钮
-3. 等待提示「Cookie已复制到剪贴板」
+### 第3步：导入到转发系统
+1. 打开KOOK消息转发系统（可点击扩展中的"立即打开转发系统"按钮）
+2. 点击"添加账号"
+3. 选择"粘贴Cookie"
+4. 按 `Ctrl+V` 粘贴
+5. 点击"验证并添加"
 
-### 第三步：粘贴到KOOK转发系统
+## 快捷键
 
-1. 打开KOOK消息转发系统
-2. 在登录页面选择「Cookie导入」
-3. 粘贴刚才复制的内容
-4. 点击「验证并登录」
+- **Ctrl+Shift+K** (Windows/Linux)
+- **Cmd+Shift+K** (macOS)
 
-## 常见问题
+随时打开Cookie导出助手
 
-### Q: 提示「请先打开KOOK网站」？
-**A**: 确保当前浏览器标签页是 KOOK 网站（www.kookapp.cn），而不是其他网站。
+## 故障排查
 
-### Q: 提示「未找到Cookie」？
-**A**: 您可能未登录KOOK，请先登录后再导出。
+### ❌ 显示"未检测到KOOK登录"
 
-### Q: 导出的Cookie无效？
-**A**: Cookie有时效性，请在导出后立即使用。如果失败，请重新登录KOOK并导出。
+**原因：**
+- 未登录KOOK
+- Cookie已过期
+- 浏览器清除了Cookie
 
-### Q: 支持其他浏览器吗？
-**A**: 支持所有基于Chromium的浏览器，包括：
-- Google Chrome
-- Microsoft Edge
-- Brave
-- Opera
-- 360极速浏览器
-- QQ浏览器
+**解决：**
+1. 访问 https://www.kookapp.cn 重新登录
+2. 点击扩展中的"🔄 刷新登录状态"按钮
+3. 确保允许浏览器保存Cookie
 
-### Q: 安全吗？
-**A**: 
-- 扩展仅在本地运行，不上传任何数据
-- 仅读取KOOK网站的Cookie
-- 源代码完全开源，可审查
+### ⚠️ 显示"包含关键Cookie: ⚠️ 否"
 
-## 技术说明
+**原因：**
+- Cookie不完整，可能无法正常使用
 
-### Cookie格式
+**解决：**
+1. 退出KOOK账号
+2. 清除浏览器缓存和Cookie
+3. 重新登录KOOK
+4. 再次导出Cookie
 
-导出的Cookie为JSON数组格式：
+### 📋 复制失败
 
-\`\`\`json
-[
-  {
-    "name": "token",
-    "value": "xxxx",
-    "domain": ".kookapp.cn",
-    "path": "/",
-    "secure": true,
-    "httpOnly": true,
-    "sameSite": "None",
-    "expirationDate": 1735000000
-  },
-  ...
-]
-\`\`\`
+**原因：**
+- 浏览器未授予剪贴板权限
+
+**解决：**
+1. 在 `chrome://extensions/` 中找到本扩展
+2. 点击"详情"
+3. 确认已授予"剪贴板"权限
+4. 刷新页面后重试
+
+## 技术细节
 
 ### 权限说明
 
-扩展需要以下权限：
+| 权限 | 用途 |
+|------|------|
+| `cookies` | 读取KOOK Cookie |
+| `clipboardWrite` | 将Cookie复制到剪贴板 |
+| `activeTab` | 访问当前标签页 |
+| `storage` | 保存用户偏好设置 |
+| `host_permissions` | 访问KOOK和本地转发系统 |
 
-- `cookies`: 读取Cookie数据
-- `activeTab`: 获取当前标签页信息
-- `clipboardWrite`: 复制到剪贴板
-- `host_permissions`: 仅限KOOK域名
+### Cookie格式
+
+导出的Cookie为标准JSON数组格式：
+
+```json
+[
+  {
+    "name": "cookie_name",
+    "value": "cookie_value",
+    "domain": ".kookapp.cn",
+    "path": "/",
+    "expires": 1735660800,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "lax"
+  },
+  ...
+]
+```
+
+### 安全性
+
+- ✅ **本地处理** - 所有Cookie处理均在本地完成
+- ✅ **不上传** - 不会将Cookie上传到任何服务器
+- ✅ **加密传输** - 仅通过剪贴板传输
+- ✅ **即时清除** - 粘贴使用后建议立即清除剪贴板
 
 ## 更新日志
 
-### v1.1.0 (2025-10-26)
-- ✨ 增强错误提示
-- ✨ 添加导出统计
-- ✨ 优化用户体验
-- 🐛 修复Edge浏览器兼容性问题
+### v2.0.0 (2025-10-28) - P0-3深度优化
+- ✅ 全新UI设计，更加美观和直观
+- ✅ 自动检测转发系统运行状态
+- ✅ 智能验证关键Cookie
+- ✅ 添加Cookie详情查看功能
+- ✅ 优化错误提示和引导流程
+- ✅ 添加加载动画和过渡效果
+- ✅ 支持快捷键 `Ctrl+Shift+K`
+- ✅ 改进错误处理和重试机制
 
-### v1.0.0 (2025-10-12)
-- 🎉 首次发布
-- ✨ 基础Cookie导出功能
-- ✨ 自动检测KOOK网站
-- ✨ 剪贴板复制
+### v1.0.0 (2025-10-01)
+- ✨ 初始版本发布
+- ✅ 基础Cookie导出功能
+- ✅ 登录状态检测
 
-## 开发
+## 反馈与支持
 
-### 文件结构
-
-\`\`\`
-chrome-extension/
-├── manifest.json       # 扩展清单
-├── popup.html          # 弹窗页面
-├── popup.js            # 弹窗脚本
-├── popup.css           # 弹窗样式
-├── icon-16.png         # 图标 16x16
-├── icon-48.png         # 图标 48x48
-├── icon-128.png        # 图标 128x128
-└── README.md           # 说明文档
-\`\`\`
-
-### 本地开发
-
-1. 修改代码
-2. 打开 `chrome://extensions/`
-3. 点击扩展卡片的「重新加载」按钮
-4. 测试修改效果
+- 🐛 [报告问题](https://github.com/gfchfjh/CSBJJWT/issues)
+- 📖 [查看文档](https://github.com/gfchfjh/CSBJJWT/blob/main/docs/tutorials/02-Cookie获取详细教程.md)
+- ⭐ [GitHub主页](https://github.com/gfchfjh/CSBJJWT)
 
 ## 许可证
 
-MIT License
+MIT License - 详见 [LICENSE](../LICENSE)
 
-## 联系方式
+---
 
-- GitHub: https://github.com/gfchfjh/CSBJJWT
-- Issues: https://github.com/gfchfjh/CSBJJWT/issues
+**开发团队**: KOOK Forwarder Team  
+**项目主页**: https://github.com/gfchfjh/CSBJJWT
