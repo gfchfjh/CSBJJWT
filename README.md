@@ -219,7 +219,7 @@
 ```javascript
 🌐 Chrome Extension v3.0
   ├── 3种导出格式
-  │   ├── JSON（推荐，兼容性最好）
+  │   ├── JSON（推荐，兼容性强）
   │   ├── Netscape（Firefox等浏览器）
   │   └── HTTP Header（直接粘贴）
   │
@@ -697,7 +697,7 @@ start.bat     # Windows
 
 ## 🙏 致谢
 
-- [KOOK](https://www.kookapp.cn/) - 优秀的语音聊天平台
+- [KOOK](https://www.kookapp.cn/) - 语音聊天平台
 - [Playwright](https://playwright.dev/) - 强大的浏览器自动化工具
 - [FastAPI](https://fastapi.tiangolo.com/) - 现代化的Python Web框架
 - [Vue.js](https://vuejs.org/) - 渐进式JavaScript框架
