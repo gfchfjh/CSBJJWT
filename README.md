@@ -36,10 +36,10 @@
 - 📊 **性能飞跃** - 数据库查询10-50倍提升
 - 🔄 **永不掉线** - 指数退避+心跳检测，智能重连
 
-> 📖 **v12.1.0优化**: [DEEP_OPTIMIZATION_COMPLETED.md](./DEEP_OPTIMIZATION_COMPLETED.md)  
-> 📖 **使用指南**: [OPTIMIZATION_GUIDE.md](./OPTIMIZATION_GUIDE.md)  
-> 📖 **快速开始**: [QUICK_START.md](./QUICK_START.md)  
-> 📖 **优化总结**: [OPTIMIZATION_SUMMARY.md](./OPTIMIZATION_SUMMARY.md)
+> 📖 **用户手册**: [docs/用户手册.md](docs/用户手册.md)  
+> 📖 **快速入门**: [docs/tutorials/01-快速入门指南.md](docs/tutorials/01-快速入门指南.md)  
+> 📖 **架构设计**: [docs/架构设计.md](docs/架构设计.md)  
+> 📖 **API文档**: [docs/API接口文档.md](docs/API接口文档.md)
 
 ---
 
@@ -904,9 +904,9 @@ start.bat     # Windows
 - 安全性: 银行级三重防护机制
 
 详见: 
-- [DEEP_OPTIMIZATION_COMPLETED.md](./DEEP_OPTIMIZATION_COMPLETED.md) - 完整优化报告
-- [OPTIMIZATION_GUIDE.md](./OPTIMIZATION_GUIDE.md) - 使用指南
-- [QUICK_START.md](./QUICK_START.md) - 快速开始
+- [CHANGELOG.md](./CHANGELOG.md) - 完整更新日志
+- [docs/用户手册.md](docs/用户手册.md) - 使用手册
+- [docs/tutorials/01-快速入门指南.md](docs/tutorials/01-快速入门指南.md) - 快速入门
 
 ---
 
