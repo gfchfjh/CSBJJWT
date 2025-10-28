@@ -467,18 +467,23 @@ class ImageProcessor:
             logger.error(f"保存并处理图片失败: {str(e)}")
             return None
     
-    async def cleanup_expired_tokens(self):
+    def start_cleanup_task(self):
+        """启动Token自动清理任务"""
+        if not hasattr(self, '_cleanup_task') or self._cleanup_task is None:
+            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            logger.info("🧹 Token自动清理任务已启动")
+    
+    async def _cleanup_loop(self):
         """
-        定期清理过期Token（✅ 优化11：自动清理任务）
+        Token清理循环（每15分钟执行一次）
         
-        此方法应在应用启动时作为后台任务运行
+        P0-4优化：自动清理过期Token
         """
-        self._cleanup_task_running = True
-        logger.info("🧹 Token自动清理任务已启动（每小时执行一次）")
+        logger.info("🧹 Token自动清理任务已启动（每15分钟执行一次）")
         
-        while self._cleanup_task_running:
+        while True:
             try:
-                await asyncio.sleep(3600)  # 每小时执行一次
+                await asyncio.sleep(900)  # 15分钟 = 900秒
                 
                 current_time = time.time()
                 expired_keys = []
@@ -506,7 +511,6 @@ class ImageProcessor:
                 # 继续运行，不退出
                 await asyncio.sleep(60)  # 发生异常时，等待1分钟后重试
         
-        self._cleanup_task_running = False
         logger.info("🛑 Token清理任务已停止")
     
     def stop_cleanup_task(self):
