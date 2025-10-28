@@ -1,25 +1,27 @@
 # KOOK消息转发系统 - API接口文档
 
-**版本**: v11.0.0 Ultimate Deep Optimized  
+**版本**: v12.1.0 深度优化版  
 **最后更新**: 2025-10-28  
-**基础URL**: `http://localhost:9527`
+**基础URL**: `http://localhost:15678`
 
 ---
 
 ## 📋 目录
 
 1. [认证](#认证)
-2. [v11.0.0新增API](#v110新增api)
+2. [v12.1.0新增API](#v121新增api)
 3. [账号管理](#账号管理)
 4. [Bot配置](#bot配置)
 5. [频道映射](#频道映射)
 6. [AI映射学习](#ai映射学习)
-7. [消息日志](#消息日志)
-8. [系统控制](#系统控制)
-9. [环境检测](#环境检测)
-10. [数据库优化](#数据库优化)
-11. [通知系统](#通知系统)
-12. [图床服务](#图床服务)
+7. [消息去重](#消息去重)
+8. [WebSocket管理](#websocket管理)
+9. [消息日志](#消息日志)
+10. [系统控制](#系统控制)
+11. [环境检测](#环境检测)
+12. [数据库优化](#数据库优化)
+13. [图床服务](#图床服务)
+14. [系统托盘](#系统托盘)
 
 ---
 
@@ -53,7 +55,198 @@ Content-Type: application/json
 
 ---
 
-## v11.0.0新增API
+## v12.1.0新增API
+
+### 消息去重API
+
+#### 检查消息是否重复
+
+```http
+POST /api/v1/deduplicator/check
+Content-Type: application/json
+
+{
+  "message_id": "msg_123456",
+  "channel_id": "ch_789"
+}
+```
+
+**响应**:
+```json
+{
+  "is_duplicate": false,
+  "message_id": "msg_123456"
+}
+```
+
+#### 获取去重统计
+
+```http
+GET /api/v1/deduplicator/stats
+```
+
+**响应**:
+```json
+{
+  "cache_size": 12450,
+  "db_total": 45678,
+  "cache_hit_rate": 0.99,
+  "oldest_timestamp": "2025-10-21T10:30:00Z",
+  "newest_timestamp": "2025-10-28T15:45:00Z"
+}
+```
+
+### WebSocket管理API
+
+#### 获取连接状态
+
+```http
+GET /api/v1/websocket/status
+```
+
+**响应**:
+```json
+{
+  "status": "connected",
+  "reconnect_count": 2,
+  "last_heartbeat": "2025-10-28T15:45:30Z",
+  "connected_at": "2025-10-28T10:00:00Z",
+  "uptime_seconds": 20730
+}
+```
+
+#### 手动触发重连
+
+```http
+POST /api/v1/websocket/reconnect
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "重连成功",
+  "new_status": "connected"
+}
+```
+
+### AI映射学习API
+
+#### 记录用户选择（学习）
+
+```http
+POST /api/v1/smart-mapping/learn
+Content-Type: application/json
+
+{
+  "kook_channel": "游戏讨论",
+  "target_channel": "gaming",
+  "accepted": true
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "学习记录已保存"
+}
+```
+
+#### 获取智能推荐（4维评分）
+
+```http
+POST /api/v1/smart-mapping/recommend
+Content-Type: application/json
+
+{
+  "kook_channel": "游戏讨论",
+  "target_channels": ["gaming", "game-chat", "general"]
+}
+```
+
+**响应**:
+```json
+{
+  "recommendations": [
+    {
+      "target_channel": "gaming",
+      "score": 0.92,
+      "breakdown": {
+        "exact_match": 0.0,
+        "similarity": 0.85,
+        "keyword_match": 1.0,
+        "historical": 0.75
+      }
+    },
+    {
+      "target_channel": "game-chat",
+      "score": 0.78,
+      "breakdown": {
+        "exact_match": 0.0,
+        "similarity": 0.72,
+        "keyword_match": 0.8,
+        "historical": 0.6
+      }
+    }
+  ]
+}
+```
+
+### 安全图床API
+
+#### 生成访问Token
+
+```http
+POST /api/v1/images/token
+Content-Type: application/json
+
+{
+  "image_path": "images/msg_123456.png"
+}
+```
+
+**响应**:
+```json
+{
+  "token": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
+  "url": "http://localhost:15679/image?token=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6&path=images/msg_123456.png",
+  "expires_at": "2025-10-28T17:45:00Z"
+}
+```
+
+#### 访问图片（需Token）
+
+```http
+GET /image?token=<TOKEN>&path=<PATH>
+```
+
+**安全验证**:
+- ✅ Token验证（256位）
+- ✅ IP白名单（127.0.0.1/::1/localhost）
+- ✅ 路径遍历防护（检测../、~、/etc/）
+
+### 系统托盘API
+
+#### 获取托盘统计数据
+
+```http
+GET /api/v1/tray/stats
+```
+
+**响应**:
+```json
+{
+  "total_forwarded": 1234,
+  "success_rate": 0.985,
+  "queue_size": 5,
+  "service_status": "running"
+}
+```
+
+---
+
+## v11.0.0及之前API
 
 ### 环境检测API
 
