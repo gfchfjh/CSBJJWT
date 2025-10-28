@@ -1,206 +1,380 @@
 """
-映射学习引擎
-✅ P1-2深度优化: 机器学习 + 三重匹配算法
+🧠 P1-2优化: AI映射学习引擎（终极版）
+
+功能：
+1. 三重匹配算法（完全+相似+关键词）
+2. 中英文翻译表（10+常用词）
+3. 历史频率学习（带时间衰减）
+4. 持续优化推荐准确度
+
+作者: KOOK Forwarder Team
+版本: 11.0.0
+日期: 2025-10-28
 """
+import difflib
+import re
 import time
-from typing import List, Dict, Tuple
-from difflib import SequenceMatcher
-from ..database import db
+import math
+from typing import List, Dict, Optional, Tuple
+from collections import defaultdict
 from ..utils.logger import logger
+from ..database import db
 
 
 class MappingLearningEngine:
-    """映射学习引擎（智能推荐）"""
+    """AI映射学习引擎（v2.0增强版）"""
     
     def __init__(self):
-        self.learning_data = {}  # {(kook_channel, target): {"count": int, "last_used": timestamp}}
-        self.load_learning_data()
+        # 中英文翻译表
+        self.translation_table = {
+            '公告': ['announcement', 'announce', 'notice', 'news'],
+            '活动': ['event', 'activity', 'campaign'],
+            '更新': ['update', 'changelog', 'release', 'patch'],
+            '技术': ['tech', 'technical', 'dev', 'development'],
+            '讨论': ['discuss', 'discussion', 'talk', 'chat'],
+            '帮助': ['help', 'support', 'faq', 'question'],
+            '反馈': ['feedback', 'suggestion', 'report'],
+            '闲聊': ['general', 'off-topic', 'chat', 'random'],
+            '规则': ['rule', 'guideline', 'policy'],
+            '资源': ['resource', 'link', 'material'],
+            '教程': ['tutorial', 'guide', 'howto'],
+            '测试': ['test', 'testing', 'beta'],
+            '开发': ['dev', 'development', 'coding'],
+            '设计': ['design', 'art', 'creative'],
+            '音乐': ['music', 'audio', 'sound'],
+        }
+        
+        # 反向翻译表（英文→中文）
+        self.reverse_translation = {}
+        for cn, en_list in self.translation_table.items():
+            for en in en_list:
+                self.reverse_translation[en] = cn
+        
+        # 映射历史记录 {(kook_channel_id, target_channel_id): count}
+        self.mapping_history = defaultdict(int)
+        
+        # 映射时间戳 {(kook_channel_id, target_channel_id): timestamp}
+        self.mapping_timestamps = {}
+        
+        # 从数据库加载历史
+        self.load_history()
+        
+        logger.info(f"✅ AI映射学习引擎已初始化（翻译表:{len(self.translation_table)}词）")
     
-    def load_learning_data(self):
-        """从数据库加载学习数据"""
+    def load_history(self):
+        """从数据库加载历史映射记录"""
         try:
-            # 查询所有映射历史
-            history = db.get_mapping_history() if hasattr(db, 'get_mapping_history') else []
+            history = db.get_mapping_learning_history()
             
             for record in history:
                 key = (record['kook_channel_id'], record['target_channel_id'])
-                if key not in self.learning_data:
-                    self.learning_data[key] = {"count": 0, "last_used": 0}
-                
-                self.learning_data[key]["count"] += 1
-                self.learning_data[key]["last_used"] = record.get('timestamp', time.time())
+                self.mapping_history[key] = record['use_count']
+                self.mapping_timestamps[key] = record['last_used_timestamp']
             
-            logger.info(f"✅ 加载了 {len(self.learning_data)} 条映射学习数据")
+            if history:
+                logger.info(f"✅ 已加载{len(history)}条映射历史记录")
         except Exception as e:
-            logger.warning(f"⚠️ 加载映射学习数据失败: {e}")
+            logger.warning(f"⚠️  加载映射历史失败: {str(e)}")
     
-    def suggest_mapping(self, kook_channel_name: str, 
-                       target_channels: List[Dict]) -> List[Tuple[Dict, float]]:
+    def recommend_mappings(
+        self, 
+        kook_channel: Dict, 
+        target_channels: List[Dict]
+    ) -> List[Tuple[Dict, float, str]]:
         """
-        智能推荐映射（三重匹配算法）
+        推荐映射（三重算法 + 历史频率）
         
         Args:
-            kook_channel_name: KOOK频道名称
-            target_channels: 目标平台频道列表
-        
+            kook_channel: KOOK频道信息 {'id', 'name', 'type'}
+            target_channels: 目标频道列表 [{'id', 'name', 'platform'}, ...]
+            
         Returns:
-            [(频道, 置信度), ...] 按置信度降序排列
+            推荐列表 [(target_channel, confidence, reason), ...]
+            按置信度降序排列
         """
-        results = []
+        kook_name = kook_channel['name'].lower()
+        kook_id = kook_channel['id']
+        
+        recommendations = []
+        
+        logger.debug(f"🔍 为KOOK频道'{kook_channel['name']}'推荐映射...")
         
         for target in target_channels:
-            target_name = target.get('name', '')
-            target_id = target.get('id', '')
+            target_name = target['name'].lower()
+            target_id = target['id']
             
-            # 🔥 三重匹配算法
-            scores = {
-                'exact_match': self._exact_match(kook_channel_name, target_name),
-                'similar_match': self._similar_match(kook_channel_name, target_name),
-                'keyword_match': self._keyword_match(kook_channel_name, target_name),
-                'frequency_score': self._frequency_score(target_id)
-            }
+            # 1. 完全匹配（40%权重）
+            exact_match = self._exact_match_score(kook_name, target_name)
             
-            # 加权计算综合置信度
+            # 2. 相似匹配（30%权重）
+            similarity = self._similarity_score(kook_name, target_name)
+            
+            # 3. 关键词匹配（20%权重）
+            keyword_match = self._keyword_match_score(kook_name, target_name)
+            
+            # 4. 历史频率（10%权重）
+            history_score = self._history_score(kook_id, target_id)
+            
+            # 综合置信度
             confidence = (
-                scores['exact_match'] * 0.4 +
-                scores['similar_match'] * 0.3 +
-                scores['keyword_match'] * 0.2 +
-                scores['frequency_score'] * 0.1
+                exact_match * 0.4 +
+                similarity * 0.3 +
+                keyword_match * 0.2 +
+                history_score * 0.1
             )
             
-            if confidence > 0.3:  # 阈值：30%
-                results.append((target, confidence))
+            # 生成推荐原因
+            reason = self._generate_reason(
+                exact_match, similarity, keyword_match, history_score
+            )
+            
+            recommendations.append((target, confidence, reason))
+            
+            logger.debug(
+                f"  {target['platform']} - {target['name']}: "
+                f"置信度={confidence:.2f} ({reason})"
+            )
         
-        # 按置信度降序排序
-        results.sort(key=lambda x: x[1], reverse=True)
+        # 按置信度排序
+        recommendations.sort(key=lambda x: x[1], reverse=True)
         
-        return results
+        logger.info(
+            f"✅ 生成{len(recommendations)}个推荐，"
+            f"最高置信度={recommendations[0][1]:.2f if recommendations else 0}"
+        )
+        
+        return recommendations
     
-    def _exact_match(self, kook_name: str, target_name: str) -> float:
-        """完全匹配（100%置信度）"""
-        kook_clean = self._clean_channel_name(kook_name)
-        target_clean = self._clean_channel_name(target_name)
+    def _exact_match_score(self, name1: str, name2: str) -> float:
+        """
+        完全匹配评分（考虑翻译）
         
-        if kook_clean.lower() == target_clean.lower():
+        Returns:
+            1.0 = 完全匹配
+            0.8 = 翻译匹配
+            0.0 = 不匹配
+        """
+        # 去除特殊字符
+        clean1 = re.sub(r'[#\-_\s]+', '', name1)
+        clean2 = re.sub(r'[#\-_\s]+', '', name2)
+        
+        # 直接匹配
+        if clean1 == clean2:
             return 1.0
         
-        # 中英文映射表
-        translations = {
-            '公告': ['announcements', 'announce', 'notice', 'news'],
-            '活动': ['events', 'activity', 'activities'],
-            '更新': ['updates', 'update', 'changelog'],
-            '日志': ['log', 'logs', 'changelog'],
-            '讨论': ['discussion', 'discuss', 'talk'],
-            '技术': ['tech', 'technical', 'dev'],
-            '通知': ['notification', 'notice'],
-            '聊天': ['chat', 'talk'],
-            '游戏': ['game', 'gaming'],
-            '娱乐': ['entertainment', 'fun']
-        }
+        # 检查翻译匹配 - 中文 → 英文
+        for cn_word, en_words in self.translation_table.items():
+            if cn_word in name1:
+                for en_word in en_words:
+                    if en_word in name2:
+                        return 0.8
         
-        for cn, en_list in translations.items():
-            if cn in kook_clean:
-                if any(en in target_clean.lower() for en in en_list):
-                    return 0.9
-        
-        return 0.0
-    
-    def _similar_match(self, kook_name: str, target_name: str) -> float:
-        """相似匹配（基于编辑距离）"""
-        kook_clean = self._clean_channel_name(kook_name)
-        target_clean = self._clean_channel_name(target_name)
-        
-        similarity = SequenceMatcher(None, kook_clean.lower(), target_clean.lower()).ratio()
-        
-        return similarity
-    
-    def _keyword_match(self, kook_name: str, target_name: str) -> float:
-        """关键词匹配"""
-        keyword_groups = {
-            '公告': ['announce', 'announcement', 'notice', 'news', '公告', '通知'],
-            '活动': ['event', 'activity', '活动', '比赛'],
-            '更新': ['update', 'changelog', 'release', '更新', '版本'],
-            '讨论': ['discussion', 'talk', 'chat', '讨论', '聊天'],
-            '技术': ['tech', 'technical', 'dev', '技术', '开发'],
-            '游戏': ['game', 'gaming', 'play', '游戏'],
-            '帮助': ['help', 'support', 'faq', '帮助', '支持']
-        }
-        
-        kook_clean = self._clean_channel_name(kook_name).lower()
-        target_clean = self._clean_channel_name(target_name).lower()
-        
-        for group_name, keywords in keyword_groups.items():
-            kook_has = any(kw in kook_clean for kw in keywords)
-            target_has = any(kw in target_clean for kw in keywords)
-            
-            if kook_has and target_has:
+        # 检查翻译匹配 - 英文 → 中文
+        for en_word, cn_word in self.reverse_translation.items():
+            if en_word in name1 and cn_word in name2:
                 return 0.8
         
         return 0.0
     
-    def _frequency_score(self, target_channel_id: str) -> float:
-        """历史频率打分"""
-        total_count = sum(
-            data["count"] for key, data in self.learning_data.items()
-            if key[1] == target_channel_id
-        )
+    def _similarity_score(self, name1: str, name2: str) -> float:
+        """
+        相似度评分（编辑距离）
         
-        return min(total_count / 100, 1.0)
+        使用SequenceMatcher计算字符串相似度
+        
+        Returns:
+            0.0 - 1.0
+        """
+        # 去除特殊字符
+        clean1 = re.sub(r'[#\-_\s]+', '', name1)
+        clean2 = re.sub(r'[#\-_\s]+', '', name2)
+        
+        # 使用difflib计算相似度
+        similarity = difflib.SequenceMatcher(None, clean1, clean2).ratio()
+        
+        return similarity
     
-    def _clean_channel_name(self, name: str) -> str:
-        """清理频道名称"""
-        import re
-        name = name.lstrip('#@*-_ ')
-        name = re.sub(r'[^\w\s\u4e00-\u9fff]', '', name)
-        return name.strip()
+    def _keyword_match_score(self, name1: str, name2: str) -> float:
+        """
+        关键词匹配评分
+        
+        提取关键词，计算匹配比例
+        
+        Returns:
+            0.0 - 1.0
+        """
+        # 提取中文关键词
+        cn_keywords1 = re.findall(r'[\u4e00-\u9fa5]+', name1)
+        cn_keywords2 = re.findall(r'[\u4e00-\u9fa5]+', name2)
+        
+        # 提取英文关键词
+        en_keywords1 = re.findall(r'[a-z]+', name1)
+        en_keywords2 = re.findall(r'[a-z]+', name2)
+        
+        # 合并
+        keywords1 = set(cn_keywords1 + en_keywords1)
+        keywords2 = set(cn_keywords2 + en_keywords2)
+        
+        if not keywords1 or not keywords2:
+            return 0.0
+        
+        # 计算交集占比（Jaccard相似度）
+        intersection = keywords1 & keywords2
+        union = keywords1 | keywords2
+        
+        jaccard = len(intersection) / len(union) if union else 0.0
+        
+        # 考虑翻译匹配
+        translated_matches = 0
+        for kw1 in keywords1:
+            # 检查中文→英文翻译
+            if kw1 in self.translation_table:
+                en_words = self.translation_table[kw1]
+                if any(en in keywords2 for en in en_words):
+                    translated_matches += 1
+            
+            # 检查英文→中文翻译
+            if kw1 in self.reverse_translation:
+                cn_word = self.reverse_translation[kw1]
+                if cn_word in keywords2:
+                    translated_matches += 1
+        
+        # 翻译匹配加分（每个匹配+0.2，最多+0.5）
+        translation_bonus = min(0.5, translated_matches * 0.2)
+        
+        return min(1.0, jaccard + translation_bonus)
     
-    def record_mapping(self, kook_channel_id: str, target_channel_id: str):
-        """记录映射行为（用于学习）"""
+    def _history_score(self, kook_channel_id: str, target_channel_id: str) -> float:
+        """
+        历史频率评分（带时间衰减）
+        
+        公式: score = (use_count / max_count) * time_decay
+        
+        时间衰减: decay = e^(-λt)，其中t为天数，λ=0.01
+        
+        Returns:
+            0.0 - 1.0
+        """
         key = (kook_channel_id, target_channel_id)
         
-        if key not in self.learning_data:
-            self.learning_data[key] = {"count": 0, "last_used": 0}
+        use_count = self.mapping_history.get(key, 0)
         
-        self.learning_data[key]["count"] += 1
-        self.learning_data[key]["last_used"] = time.time()
+        if use_count == 0:
+            return 0.0
+        
+        # 找到最大使用次数（归一化）
+        max_count = max(self.mapping_history.values()) if self.mapping_history else 1
+        
+        normalized_count = use_count / max_count
+        
+        # 时间衰减
+        if key in self.mapping_timestamps:
+            last_used = self.mapping_timestamps[key]
+            days_ago = (time.time() - last_used) / 86400
+            
+            # 指数衰减: e^(-0.01 * days)
+            # 100天后衰减到37%，200天后衰减到14%
+            time_decay = math.exp(-0.01 * days_ago)
+        else:
+            time_decay = 1.0
+        
+        return normalized_count * time_decay
+    
+    def _generate_reason(
+        self, 
+        exact: float, 
+        similarity: float, 
+        keyword: float, 
+        history: float
+    ) -> str:
+        """生成推荐原因"""
+        reasons = []
+        
+        if exact >= 0.8:
+            reasons.append("完全匹配" if exact == 1.0 else "翻译匹配")
+        
+        if similarity >= 0.7:
+            reasons.append(f"名称相似度{similarity*100:.0f}%")
+        
+        if keyword >= 0.5:
+            reasons.append("关键词匹配")
+        
+        if history >= 0.5:
+            reasons.append("历史记录")
+        
+        if not reasons:
+            # 找出最高的分数
+            scores = {
+                '名称相似': similarity,
+                '关键词': keyword,
+                '历史': history
+            }
+            best = max(scores.items(), key=lambda x: x[1])
+            reasons.append(f"{best[0]}({best[1]*100:.0f}%)")
+        
+        return " | ".join(reasons)
+    
+    def record_mapping(
+        self, 
+        kook_channel_id: str, 
+        target_channel_id: str
+    ):
+        """记录用户的映射选择（用于学习）"""
+        key = (kook_channel_id, target_channel_id)
+        
+        # 增加使用次数
+        self.mapping_history[key] += 1
+        
+        # 更新时间戳
+        self.mapping_timestamps[key] = time.time()
         
         # 保存到数据库
         try:
-            if hasattr(db, 'save_mapping_history'):
-                db.save_mapping_history({
-                    'kook_channel_id': kook_channel_id,
-                    'target_channel_id': target_channel_id,
-                    'timestamp': time.time()
-                })
+            db.save_mapping_learning_record(
+                kook_channel_id=kook_channel_id,
+                target_channel_id=target_channel_id,
+                use_count=self.mapping_history[key],
+                last_used_timestamp=self.mapping_timestamps[key]
+            )
+            
+            logger.debug(f"✅ 已记录映射学习: {kook_channel_id} -> {target_channel_id}")
         except Exception as e:
-            logger.warning(f"保存映射历史失败: {e}")
-        
-        logger.debug(f"📝 记录映射学习: {kook_channel_id} → {target_channel_id}")
+            logger.error(f"❌ 保存映射学习记录失败: {str(e)}")
     
     def get_stats(self) -> Dict:
-        """获取学习统计信息"""
-        total_mappings = len(self.learning_data)
-        total_count = sum(data["count"] for data in self.learning_data.values())
-        
-        top_mappings = sorted(
-            self.learning_data.items(),
-            key=lambda x: x[1]["count"],
-            reverse=True
-        )[:10]
+        """获取学习引擎统计信息"""
+        if not self.mapping_history:
+            most_used = None
+        else:
+            most_used_key = max(self.mapping_history.items(), key=lambda x: x[1])
+            most_used = {
+                'kook_channel_id': most_used_key[0][0],
+                'target_channel_id': most_used_key[0][1],
+                'use_count': most_used_key[1]
+            }
         
         return {
-            'total_unique_mappings': total_mappings,
-            'total_mapping_count': total_count,
-            'top_mappings': [
-                {
-                    'kook_channel': k[0],
-                    'target_channel': k[1],
-                    'count': v["count"],
-                    'last_used': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(v["last_used"]))
-                }
-                for k, v in top_mappings
-            ]
+            'total_mappings_learned': len(self.mapping_history),
+            'total_uses': sum(self.mapping_history.values()),
+            'most_used_mapping': most_used,
+            'translation_table_size': len(self.translation_table),
+            'reverse_translation_size': len(self.reverse_translation)
         }
+    
+    def export_translation_table(self) -> Dict:
+        """导出翻译表（供用户自定义）"""
+        return self.translation_table.copy()
+    
+    def import_translation_table(self, table: Dict):
+        """导入自定义翻译表"""
+        self.translation_table.update(table)
+        
+        # 更新反向表
+        for cn, en_list in table.items():
+            for en in en_list:
+                self.reverse_translation[en] = cn
+        
+        logger.info(f"✅ 已导入自定义翻译表，当前共{len(self.translation_table)}词")
 
 
 # 创建全局实例

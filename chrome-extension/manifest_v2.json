@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "KOOK Cookie导出器 v2.0",
+  "description": "一键导出KOOK Cookie，支持多域名、智能验证、自动发送到转发系统",
+  "version": "2.0.0",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.kookapp.cn/*",
+    "*://*.kaiheila.cn/*",
+    "http://localhost:9527/*"
+  ],
+  "action": {
+    "default_popup": "popup_v2.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "commands": {
+    "export-cookies": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "一键导出Cookie"
+    }
+  },
+  "background": {
+    "service_worker": "background_v2.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.kookapp.cn/*",
+        "*://*.kaiheila.cn/*"
+      ],
+      "js": ["content_v2.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

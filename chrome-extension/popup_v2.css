@@ -1,0 +1,412 @@
+/**
+ * Chrome扩展v2.0 - 样式
+ * 美化界面，渐变背景，现代设计
+ */
+
+:root {
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --text-color: #1f2937;
+  --text-light: #6b7280;
+  --bg-white: #ffffff;
+  --bg-gray: #f9fafb;
+  --border-color: #e5e7eb;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 450px;
+  min-height: 500px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-color);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.container {
+  padding: 20px;
+}
+
+/* 标题 */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.version {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* 系统状态 */
+.system-status {
+  margin-bottom: 15px;
+}
+
+.status-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.status-box.success {
+  border-left: 4px solid var(--success-color);
+}
+
+.status-box.warning {
+  border-left: 4px solid var(--warning-color);
+}
+
+.status-box .icon {
+  font-size: 20px;
+}
+
+/* 自动检测信息 */
+.info-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+}
+
+/* 状态提示 */
+.status {
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  background: white;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+}
+
+.status.info {
+  border-left: 4px solid var(--primary-color);
+}
+
+.status.success {
+  border-left: 4px solid var(--success-color);
+}
+
+.status.error {
+  border-left: 4px solid var(--error-color);
+}
+
+/* 加载动画 */
+.loading {
+  text-align: center;
+  padding: 20px;
+}
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 导出按钮 */
+.export-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.export-btn:active {
+  transform: translateY(0);
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 详情区域 */
+.details {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+}
+
+.details h3 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: var(--text-color);
+}
+
+.details h4 {
+  font-size: 14px;
+  margin: 15px 0 10px;
+  color: var(--text-light);
+}
+
+/* 统计 */
+.stats {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  background: var(--bg-gray);
+  border-radius: 8px;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+/* Cookie列表 */
+.cookie-section {
+  margin-bottom: 15px;
+}
+
+.cookie-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg-gray);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.cookie-name {
+  font-weight: 600;
+  color: var(--primary-color);
+  min-width: 80px;
+}
+
+.cookie-value {
+  flex: 1;
+  color: var(--text-light);
+  font-family: monospace;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cookie-expires {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+/* 操作按钮 */
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid var(--border-color);
+  background: white;
+  color: var(--text-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.action-btn.primary {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.action-btn.primary:hover {
+  background: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+/* 重试按钮 */
+.retry-btn {
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 12px;
+  background: var(--warning-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* 使用说明 */
+.instructions {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: var(--shadow);
+}
+
+.instructions h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--text-color);
+}
+
+.instructions ol {
+  padding-left: 20px;
+  margin-bottom: 15px;
+}
+
+.instructions li {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.tips {
+  padding: 12px;
+  background: var(--bg-gray);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.tips strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--primary-color);
+}
+
+.tips ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tips li {
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.tips li::before {
+  content: "•";
+  color: var(--primary-color);
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: 0;
+}
+
+kbd {
+  padding: 2px 6px;
+  background: var(--text-color);
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+/* 页脚 */
+.footer {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+}
+
+.footer p {
+  margin: 5px 0;
+}
+
+.footer a {
+  color: white;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  transition: border-color 0.3s;
+}
+
+.footer a:hover {
+  border-color: white;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
