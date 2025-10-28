@@ -305,6 +305,10 @@ app.include_router(mapping_learning_api.router)  # 映射学习 🆕 v9.0.0
 from .api import server_discovery
 app.include_router(server_discovery.router)  # 服务器/频道自动获取 🆕 P0-2优化
 
+# ✅ P1-6优化: 映射学习反馈API
+from .api import mapping_learning_feedback
+app.include_router(mapping_learning_feedback.router)  # 映射学习反馈 🆕 P1-6优化
+
 
 @app.get("/")
 async def root():
