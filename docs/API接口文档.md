@@ -1,760 +1,886 @@
 # KOOK消息转发系统 - API接口文档
 
-**版本**: v10.0.0 🚀  
-**基础URL**: `http://localhost:9527`  
-**协议**: HTTP/1.1 + WebSocket  
-**编码**: UTF-8
-
-## 🆕 v10.0.0 API新增
-
-**新增WebSocket接口**：
-- `WS /ws/captcha/{account_id}` - 验证码实时推送和响应
-
-**新增HTTP接口**：
-- `POST /api/error-translator/translate` - 技术错误翻译为友好提示
-- `GET /api/system/stats/realtime` - 实时系统统计（供托盘使用）
-
-**API增强**：
-- 所有API错误响应现已包含友好错误翻译
-- WebSocket实时通信替代轮询机制  
+**版本**: v11.0.0 Ultimate Deep Optimized  
+**最后更新**: 2025-10-28  
+**基础URL**: `http://localhost:9527`
 
 ---
 
-## 🔐 认证
+## 📋 目录
 
-所有API请求需要在Header中携带API Token（如果启用）:
+1. [认证](#认证)
+2. [v11.0.0新增API](#v110新增api)
+3. [账号管理](#账号管理)
+4. [Bot配置](#bot配置)
+5. [频道映射](#频道映射)
+6. [AI映射学习](#ai映射学习)
+7. [消息日志](#消息日志)
+8. [系统控制](#系统控制)
+9. [环境检测](#环境检测)
+10. [数据库优化](#数据库优化)
+11. [通知系统](#通知系统)
+12. [图床服务](#图床服务)
 
-\`\`\`http
+---
+
+## 认证
+
+所有API请求需要在Header中携带Token：
+
+```http
 X-API-Token: your_api_token_here
-\`\`\`
+```
 
-**获取Token**:
-1. 在\`.env\`文件中设置\`API_TOKEN\`
-2. 或通过登录接口获取
+### 获取Token
+
+```http
+POST /api/auth/token
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "your_password"
+}
+```
+
+**响应**:
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "expires_in": 3600
+}
+```
 
 ---
 
-## 📋 API索引
+## v11.0.0新增API
 
-- [账号管理API](#账号管理api)
-- [Bot配置API](#bot配置api)
-- [频道映射API](#频道映射api)
-- [日志查询API](#日志查询api)
-- [系统控制API](#系统控制api)
-- [认证API](#认证api)
-- [备份API](#备份api)
-- [智能映射API](#智能映射api)
-- [健康检查API](#健康检查api)
-- [更新检查API](#更新检查api)
-- [WebSocket API](#websocket-api)
+### 环境检测API
 
----
+#### 并发检测所有环境
 
-## 账号管理API
+```http
+GET /api/environment/check
+```
 
-### 1. 获取所有账号
+**响应**:
+```json
+{
+  "elapsed": 8.5,
+  "all_passed": true,
+  "python": {
+    "name": "Python版本",
+    "passed": true,
+    "current": "3.11.5",
+    "required": "3.11+",
+    "message": "✅ Python 3.11.5 符合要求"
+  },
+  "chromium": {
+    "name": "Chromium浏览器",
+    "passed": true,
+    "message": "✅ Chromium 120.0.6099.109 已安装且可用"
+  },
+  "redis": {
+    "name": "Redis服务",
+    "passed": true,
+    "message": "✅ Redis 6.2.14 运行正常"
+  },
+  "network": {
+    "name": "网络连接",
+    "passed": true,
+    "success_count": 3,
+    "total_count": 3,
+    "message": "✅ 网络正常 (3/3可达)"
+  },
+  "ports": {
+    "name": "端口可用性",
+    "passed": true,
+    "ports": [9527, 6379, 9528],
+    "message": "✅ 所有端口可用"
+  },
+  "disk": {
+    "name": "磁盘空间",
+    "passed": true,
+    "free_gb": 50.5,
+    "required_gb": 5,
+    "message": "✅ 磁盘空间充足 (50.50GB可用)"
+  }
+}
+```
 
-\`\`\`http
-GET /api/accounts
-\`\`\`
+#### 自动修复环境问题
 
-**响应示例**:
-\`\`\`json
+```http
+POST /api/environment/fix/{check_name}
+```
+
+**路径参数**:
+- `check_name`: `chromium` | `redis` | `ports`
+
+**响应**:
+```json
 {
   "success": true,
-  "data": [
-    {
-      "id": 1,
-      "email": "user@example.com",
-      "status": "online",
-      "last_active": "2025-10-19T15:30:00",
-      "created_at": "2025-10-01T10:00:00"
-    }
+  "message": "✅ Chromium安装成功"
+}
+```
+
+#### 获取系统信息
+
+```http
+GET /api/environment/system-info
+```
+
+**响应**:
+```json
+{
+  "os": "Windows",
+  "os_version": "10.0.19045",
+  "architecture": "AMD64",
+  "python_version": "3.11.5",
+  "hostname": "DESKTOP-XXX",
+  "processor": "Intel64 Family 6 Model 158 Stepping 10, GenuineIntel"
+}
+```
+
+---
+
+### AI映射学习API
+
+#### 获取AI推荐
+
+```http
+POST /api/mapping-learning/recommend
+Content-Type: application/json
+
+{
+  "kook_channel": {
+    "id": "123456",
+    "name": "公告频道"
+  },
+  "target_channels": [
+    {"id": "111", "name": "announcements", "platform": "discord"},
+    {"id": "222", "name": "公告群", "platform": "telegram"},
+    {"id": "333", "name": "通知群", "platform": "feishu"}
   ]
 }
-\`\`\`
+```
 
-### 2. 添加账号
+**响应**:
+```json
+[
+  {
+    "target_channel": {
+      "id": "111",
+      "name": "announcements",
+      "platform": "discord"
+    },
+    "confidence": 0.95,
+    "reason": "完全匹配 | 翻译匹配"
+  },
+  {
+    "target_channel": {
+      "id": "222",
+      "name": "公告群",
+      "platform": "telegram"
+    },
+    "confidence": 0.90,
+    "reason": "完全匹配"
+  }
+]
+```
 
-\`\`\`http
+#### 记录映射选择
+
+```http
+POST /api/mapping-learning/record
+Content-Type: application/json
+
+{
+  "kook_channel_id": "123456",
+  "target_channel_id": "111"
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "已记录"
+}
+```
+
+#### 获取学习统计
+
+```http
+GET /api/mapping-learning/stats
+```
+
+**响应**:
+```json
+{
+  "total_mappings_learned": 50,
+  "total_uses": 235,
+  "most_used_mapping": {
+    "kook_channel_id": "123456",
+    "target_channel_id": "111",
+    "use_count": 45
+  },
+  "translation_table_size": 15
+}
+```
+
+#### 获取/更新翻译表
+
+```http
+GET /api/mapping-learning/translation-table
+```
+
+```http
+POST /api/mapping-learning/translation-table
+Content-Type: application/json
+
+{
+  "新词": ["new", "word"],
+  "自定义": ["custom", "my-word"]
+}
+```
+
+---
+
+### 数据库优化API
+
+#### 执行所有优化
+
+```http
+POST /api/database/optimize
+```
+
+**响应**:
+```json
+{
+  "archive": {
+    "success": true,
+    "archived_count": 1234,
+    "message": "已归档1234条日志"
+  },
+  "vacuum": {
+    "success": true,
+    "size_before_bytes": 104857600,
+    "size_after_bytes": 73400320,
+    "saved_bytes": 31457280,
+    "saved_percent": 30.0,
+    "message": "节省30.00 MB (30.0%)"
+  },
+  "analyze": {
+    "success": true,
+    "message": "分析完成"
+  },
+  "integrity": {
+    "success": true,
+    "result": "ok",
+    "message": "数据库完整性正常"
+  },
+  "elapsed": 15.5
+}
+```
+
+#### 归档旧日志
+
+```http
+POST /api/database/archive
+```
+
+#### VACUUM压缩
+
+```http
+POST /api/database/vacuum
+```
+
+#### 获取数据库信息
+
+```http
+GET /api/database/info
+```
+
+**响应**:
+```json
+{
+  "path": "/path/to/config.db",
+  "size_bytes": 104857600,
+  "size_formatted": "100.00 MB",
+  "modified_at": "2025-10-28T10:00:00",
+  "total_records": 10000,
+  "tables": {
+    "message_logs": 8500,
+    "accounts": 5,
+    "bot_configs": 3,
+    "channel_mappings": 15
+  }
+}
+```
+
+---
+
+### 通知系统API
+
+#### 发送通知
+
+```http
+POST /api/notifications/send
+Content-Type: application/json
+
+{
+  "notification_type": "success",
+  "title": "操作成功",
+  "body": "配置已保存",
+  "action": "/settings"
+}
+```
+
+**通知类型**:
+- `success`: 成功通知
+- `warning`: 警告通知
+- `error`: 错误通知
+- `info`: 信息通知
+
+#### 获取通知历史
+
+```http
+GET /api/notifications/history?limit=100&notification_type=warning
+```
+
+#### 清空通知历史
+
+```http
+DELETE /api/notifications/history
+```
+
+#### 获取通知统计
+
+```http
+GET /api/notifications/stats
+```
+
+**响应**:
+```json
+{
+  "total": 1000,
+  "success": 800,
+  "warning": 150,
+  "error": 50,
+  "info": 0,
+  "suppressed": 25,
+  "history_count": 100,
+  "quiet_time_enabled": true,
+  "quiet_start": "22:00",
+  "quiet_end": "08:00"
+}
+```
+
+#### 获取/更新通知设置
+
+```http
+GET /api/notifications/settings
+```
+
+```http
+POST /api/notifications/settings
+Content-Type: application/json
+
+{
+  "enable_warning": true,
+  "enable_error": true,
+  "quiet_start": "22:00",
+  "quiet_end": "08:00",
+  "enable_quiet_time": true
+}
+```
+
+---
+
+### 图床服务API
+
+#### 获取图片（需要Token）
+
+```http
+GET http://localhost:9528/images/{filename}?token={token}
+```
+
+**安全特性**:
+- 32字节URL安全Token
+- 2小时有效期
+- Token与文件名绑定
+- 仅允许本地访问
+- 防止路径遍历攻击
+
+#### 上传图片
+
+```http
+POST http://localhost:9528/api/images/upload
+Content-Type: multipart/form-data
+
+file: <binary>
+```
+
+**响应**:
+```json
+{
+  "url": "http://localhost:9528/images/abc123.jpg?token=xyz...",
+  "filename": "abc123.jpg",
+  "token": "xyz...",
+  "expires_in": 7200,
+  "size": 1048576
+}
+```
+
+#### 获取图床统计
+
+```http
+GET http://localhost:9528/api/images/stats
+```
+
+**响应**:
+```json
+{
+  "total_tokens": 150,
+  "expired_tokens": 20,
+  "active_tokens": 130,
+  "total_images": 500,
+  "total_size_mb": 250.5,
+  "max_size_gb": 10,
+  "cleanup_days": 7
+}
+```
+
+#### 撤销Token
+
+```http
+POST http://localhost:9528/api/images/token/revoke
+Content-Type: application/json
+
+{
+  "token": "xyz..."
+}
+```
+
+---
+
+## 账号管理
+
+### 获取所有账号
+
+```http
+GET /api/accounts
+```
+
+**响应**:
+```json
+[
+  {
+    "id": 1,
+    "username": "user123",
+    "status": "online",
+    "cookie_expires_at": "2025-11-28T00:00:00",
+    "last_active": "2025-10-28T10:00:00",
+    "message_count": 1234
+  }
+]
+```
+
+### 添加账号
+
+```http
 POST /api/accounts
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "cookie": "[{\"name\":\"token\",\"value\":\"xxx\",\"domain\":\".kookapp.cn\"}]"
+  "username": "user123",
+  "cookies": [...],
+  "password": "encrypted_password"
 }
-\`\`\`
+```
 
-**请求参数**:
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| email | string | 是 | KOOK账号邮箱 |
-| cookie | string | 否 | Cookie JSON字符串 |
-| password | string | 否 | 账号密码 |
+### 更新账号
 
-**响应示例**:
-\`\`\`json
+```http
+PUT /api/accounts/{account_id}
+Content-Type: application/json
+
 {
-  "success": true,
-  "message": "账号添加成功",
-  "account_id": 2
+  "cookies": [...]
 }
-\`\`\`
+```
 
-### 3. 删除账号
+### 删除账号
 
-\`\`\`http
+```http
 DELETE /api/accounts/{account_id}
-\`\`\`
+```
 
-**响应**: 204 No Content
+### 测试账号连接
 
-### 4. 启动抓取器
+```http
+POST /api/accounts/{account_id}/test
+```
 
-\`\`\`http
-POST /api/accounts/{account_id}/start
-\`\`\`
-
-**响应示例**:
-\`\`\`json
+**响应**:
+```json
 {
   "success": true,
-  "message": "抓取器启动成功"
+  "message": "连接成功",
+  "latency_ms": 150
 }
-\`\`\`
-
-### 5. 停止抓取器
-
-\`\`\`http
-POST /api/accounts/{account_id}/stop
-\`\`\`
-
-### 6. 获取服务器列表
-
-\`\`\`http
-GET /api/accounts/{account_id}/servers
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "servers": [
-    {
-      "id": "1234567890",
-      "name": "游戏公会",
-      "icon": "https://..."
-    }
-  ]
-}
-\`\`\`
-
-### 7. 获取频道列表
-
-\`\`\`http
-GET /api/accounts/{account_id}/channels?server_id=1234567890
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "channels": [
-    {
-      "id": "9876543210",
-      "name": "公告频道",
-      "type": "text",
-      "server_id": "1234567890"
-    }
-  ]
-}
-\`\`\`
+```
 
 ---
 
-## Bot配置API
+## Bot配置
 
-### 1. 获取Bot列表
+### 获取所有Bot
 
-\`\`\`http
-GET /api/bots?platform=discord
-\`\`\`
+```http
+GET /api/bots
+```
 
-**查询参数**:
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| platform | string | 否 | 平台过滤 (discord/telegram/feishu) |
+### 添加Bot
 
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "platform": "discord",
-      "name": "游戏公告Bot",
-      "config": {
-        "webhook_url": "https://discord.com/api/webhooks/..."
-      },
-      "status": "active",
-      "created_at": "2025-10-01T10:00:00"
-    }
-  ]
-}
-\`\`\`
-
-### 2. 添加Discord Bot
-
-\`\`\`http
+```http
 POST /api/bots
 Content-Type: application/json
 
 {
+  "name": "Discord Bot 1",
   "platform": "discord",
-  "name": "测试Discord Bot",
   "config": {
-    "webhook_url": "https://discord.com/api/webhooks/123456/abc..."
+    "webhook_url": "https://discord.com/api/webhooks/..."
   }
 }
-\`\`\`
+```
 
-### 3. 添加Telegram Bot
+### 更新Bot
 
-\`\`\`http
-POST /api/bots
-Content-Type: application/json
+```http
+PUT /api/bots/{bot_id}
+```
 
-{
-  "platform": "telegram",
-  "name": "测试Telegram Bot",
-  "config": {
-    "bot_token": "123456:ABC-DEF...",
-    "chat_id": "-1001234567890"
-  }
-}
-\`\`\`
+### 删除Bot
 
-### 4. 添加飞书Bot
-
-\`\`\`http
-POST /api/bots
-Content-Type: application/json
-
-{
-  "platform": "feishu",
-  "name": "测试飞书Bot",
-  "config": {
-    "app_id": "cli_abc123",
-    "app_secret": "secret_xyz789"
-  }
-}
-\`\`\`
-
-### 5. 测试Bot连接
-
-\`\`\`http
-POST /api/bots/{bot_id}/test
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "message": "测试消息发送成功",
-  "latency_ms": 234
-}
-\`\`\`
-
-### 6. 删除Bot
-
-\`\`\`http
+```http
 DELETE /api/bots/{bot_id}
-\`\`\`
+```
+
+### 测试Bot连接
+
+```http
+POST /api/bots/{bot_id}/test
+```
 
 ---
 
-## 频道映射API
+## 频道映射
 
-### 1. 获取映射列表
+### 获取所有映射
 
-\`\`\`http
+```http
 GET /api/mappings
-\`\`\`
+```
 
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "kook_server_id": "1234567890",
-      "kook_channel_id": "9876543210",
-      "kook_channel_name": "公告频道",
-      "target_platform": "discord",
-      "target_bot_id": 1,
-      "target_channel_id": "discord_channel_123",
-      "enabled": 1
-    }
-  ]
-}
-\`\`\`
+### 创建映射
 
-### 2. 添加映射
-
-\`\`\`http
+```http
 POST /api/mappings
 Content-Type: application/json
 
 {
-  "kook_server_id": "1234567890",
-  "kook_channel_id": "9876543210",
+  "kook_channel_id": "123456",
   "kook_channel_name": "公告频道",
   "target_platform": "discord",
-  "target_bot_id": 1,
-  "target_channel_id": "discord_channel_123"
+  "target_channel_id": "789012",
+  "target_channel_name": "announcements",
+  "bot_id": 1
 }
-\`\`\`
+```
 
-### 3. 批量添加映射
+### 批量创建映射
 
-\`\`\`http
+```http
 POST /api/mappings/batch
 Content-Type: application/json
 
 {
   "mappings": [
-    {...},
-    {...}
+    {
+      "kook_channel_id": "123456",
+      "target_channel_id": "789012",
+      "bot_id": 1
+    },
+    ...
   ]
 }
-\`\`\`
+```
 
-### 4. 更新映射
+### 更新映射
 
-\`\`\`http
+```http
 PUT /api/mappings/{mapping_id}
-Content-Type: application/json
+```
 
-{
-  "enabled": 0
-}
-\`\`\`
+### 删除映射
 
-### 5. 删除映射
-
-\`\`\`http
+```http
 DELETE /api/mappings/{mapping_id}
-\`\`\`
-
-### 6. 导出映射配置
-
-\`\`\`http
-GET /api/mappings/export
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "version": "1.0",
-  "export_time": "2025-10-19T15:30:00",
-  "mappings": [...]
-}
-\`\`\`
-
-### 7. 导入映射配置
-
-\`\`\`http
-POST /api/mappings/import
-Content-Type: application/json
-
-{
-  "mappings": [...]
-}
-\`\`\`
+```
 
 ---
 
-## 日志查询API
+## 消息日志
 
-### 1. 获取消息日志
+### 获取日志
 
-\`\`\`http
-GET /api/logs?limit=100&status=success&platform=discord
-\`\`\`
+```http
+GET /api/logs?page=1&page_size=50&status=success&start_date=2025-10-01&end_date=2025-10-28
+```
 
 **查询参数**:
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| limit | integer | 否 | 返回数量，默认100 |
-| status | string | 否 | 状态过滤 (success/failed/pending) |
-| platform | string | 否 | 平台过滤 (discord/telegram/feishu) |
-| channel_id | string | 否 | 频道ID过滤 |
+- `page`: 页码（默认1）
+- `page_size`: 每页数量（默认50）
+- `status`: 状态过滤（success/failed/pending）
+- `start_date`: 开始日期
+- `end_date`: 结束日期
+- `kook_channel_id`: KOOK频道ID
+- `target_platform`: 目标平台
 
-**响应示例**:
-\`\`\`json
+**响应**:
+```json
 {
-  "success": true,
-  "data": [
+  "total": 1000,
+  "page": 1,
+  "page_size": 50,
+  "logs": [
     {
       "id": 1,
-      "kook_message_id": "msg_123",
-      "kook_channel_id": "channel_456",
+      "kook_message_id": "msg123",
       "content": "测试消息",
-      "message_type": "text",
       "sender_name": "用户A",
-      "target_platform": "discord",
-      "target_channel": "discord_ch_789",
       "status": "success",
-      "error_message": null,
-      "latency_ms": 1234,
-      "created_at": "2025-10-19T15:30:00"
+      "latency_ms": 150,
+      "created_at": "2025-10-28T10:00:00"
     }
-  ],
-  "total": 1234,
-  "page": 1
+  ]
 }
-\`\`\`
+```
 
-### 2. 获取统计信息
+### 获取统计信息
 
-\`\`\`http
+```http
 GET /api/logs/stats?period=today
-\`\`\`
+```
 
-**查询参数**:
-- \`period\`: today/week/month
-
-**响应示例**:
-\`\`\`json
+**响应**:
+```json
 {
-  "total": 1234,
-  "success": 1200,
-  "failed": 34,
-  "success_rate": 97.2,
-  "avg_latency_ms": 1234,
-  "by_platform": {
-    "discord": 600,
-    "telegram": 400,
-    "feishu": 234
+  "total_messages": 1000,
+  "success_count": 950,
+  "failed_count": 50,
+  "success_rate": 0.95,
+  "avg_latency_ms": 150,
+  "platforms": {
+    "discord": 400,
+    "telegram": 350,
+    "feishu": 200
   }
 }
-\`\`\`
-
-### 3. 清除旧日志
-
-\`\`\`http
-POST /api/logs/clear?days=30
-\`\`\`
+```
 
 ---
 
-## 系统控制API
+## 系统控制
 
-### 1. 获取系统状态
+### 启动服务
 
-\`\`\`http
-GET /api/system/status
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "service_running": true,
-  "redis_connected": true,
-  "queue_size": 5,
-  "account_count": 2,
-  "active_accounts": 2,
-  "bot_count": 3,
-  "mapping_count": 6,
-  "uptime_seconds": 3600,
-  "version": "1.8.1"
-}
-\`\`\`
-
-### 2. 启动服务
-
-\`\`\`http
+```http
 POST /api/system/start
-\`\`\`
+```
 
-### 3. 停止服务
+### 停止服务
 
-\`\`\`http
+```http
 POST /api/system/stop
-\`\`\`
+```
 
-### 4. 重启服务
+### 重启服务
 
-\`\`\`http
+```http
 POST /api/system/restart
-\`\`\`
+```
 
-### 5. 获取缓存统计
+### 获取系统状态
 
-\`\`\`http
-GET /api/cache/stats
-\`\`\`
+```http
+GET /api/system/status
+```
 
-**响应示例** (v10.0.0):
-\`\`\`json
+**响应**:
+```json
 {
-  "cache_size": 1234,
-  "hit_rate": 0.85,
-  "miss_rate": 0.15,
-  "total_hits": 5000,
-  "total_misses": 882
+  "running": true,
+  "uptime_seconds": 3600,
+  "version": "11.0.0",
+  "accounts_online": 5,
+  "total_accounts": 5,
+  "queue_size": 10,
+  "today_messages": 1000,
+  "success_rate": 0.95
 }
-\`\`\`
+```
 
----
+### 测试转发
 
-## 认证API
-
-### 1. 登录
-
-\`\`\`http
-POST /api/auth/login
+```http
+POST /api/system/test-forward
 Content-Type: application/json
 
 {
-  "password": "your_password"
+  "message": "测试消息",
+  "mapping_id": 1
 }
-\`\`\`
+```
 
-**响应示例**:
-\`\`\`json
-{
-  "success": true,
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
-  "expires_in": 2592000
-}
-\`\`\`
+### 清空队列
 
-### 2. 验证Token
-
-\`\`\`http
-POST /api/auth/verify
-Content-Type: application/json
-
-{
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
-}
-\`\`\`
-
-### 3. 修改密码
-
-\`\`\`http
-POST /api/auth/change-password
-Content-Type: application/json
-
-{
-  "old_password": "old_pass",
-  "new_password": "new_pass"
-}
-\`\`\`
+```http
+POST /api/system/clear-queue
+```
 
 ---
 
-## 备份API
+## WebSocket
 
-### 1. 创建备份
+### 连接
 
-\`\`\`http
-POST /api/backup/create
-\`\`\`
+```
+ws://localhost:9527/ws
+```
 
-**响应示例**:
-\`\`\`json
+### 实时消息
+
+**服务器推送事件**:
+
+```json
 {
-  "success": true,
-  "backup_id": "backup_20251019_153000",
-  "backup_path": "/path/to/backup.zip",
-  "size_mb": 2.5
-}
-\`\`\`
-
-### 2. 获取备份列表
-
-\`\`\`http
-GET /api/backup/list
-\`\`\`
-
-### 3. 恢复备份
-
-\`\`\`http
-POST /api/backup/restore
-Content-Type: application/json
-
-{
-  "backup_id": "backup_20251019_153000"
-}
-\`\`\`
-
----
-
-## 智能映射API
-
-### 1. 获取KOOK服务器列表
-
-\`\`\`http
-GET /api/smart-mapping/kook-servers?account_id=1
-\`\`\`
-
-### 2. 获取KOOK频道列表
-
-\`\`\`http
-GET /api/smart-mapping/kook-channels?account_id=1&server_id=1234567890
-\`\`\`
-
-### 3. 自动匹配频道
-
-\`\`\`http
-POST /api/smart-mapping/auto-match
-Content-Type: application/json
-
-{
-  "account_id": 1,
-  "platform": "discord"
-}
-\`\`\`
-
----
-
-## 健康检查API
-
-### 1. 基础健康检查
-
-\`\`\`http
-GET /health
-\`\`\`
-
-**响应**: \`{"status": "healthy"}\`
-
-### 2. 详细健康检查
-
-\`\`\`http
-GET /api/health/check
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "status": "healthy",
-  "components": {
-    "redis": {"status": "up", "latency_ms": 5},
-    "database": {"status": "up"},
-    "worker": {"status": "running"},
-    "scrapers": {"total": 2, "active": 2}
-  },
-  "timestamp": "2025-10-19T15:30:00"
-}
-\`\`\`
-
----
-
-## 更新检查API
-
-### 1. 检查更新
-
-\`\`\`http
-GET /api/updates/check
-\`\`\`
-
-**响应示例**:
-\`\`\`json
-{
-  "current_version": "1.8.1",
-  "latest_version": "1.8.2",
-  "update_available": true,
-  "release_notes": "...",
-  "download_url": "https://..."
-}
-\`\`\`
-
----
-
-## WebSocket API
-
-### 连接WebSocket
-
-\`\`\`javascript
-const ws = new WebSocket('ws://localhost:9527/ws');
-
-ws.onopen = () => {
-  console.log('WebSocket连接成功');
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('收到消息:', data);
-  
-  // 消息类型
-  if (data.type === 'log') {
-    // 实时日志
-    console.log('日志:', data.data);
-  } else if (data.type === 'status') {
-    // 状态更新
-    console.log('状态:', data.data);
-  }
-};
-
-ws.onerror = (error) => {
-  console.error('WebSocket错误:', error);
-};
-
-ws.onclose = () => {
-  console.log('WebSocket连接关闭');
-};
-\`\`\`
-
-**推送消息格式**:
-\`\`\`json
-{
-  "type": "log",
+  "type": "message_forwarded",
   "data": {
-    "message_id": "msg_123",
+    "message_id": "msg123",
     "status": "success",
-    "content": "测试消息",
-    "latency_ms": 1200,
-    "platform": "discord",
-    "timestamp": "2025-10-19T15:30:00"
+    "latency_ms": 150
   }
 }
-\`\`\`
+```
 
----
-
-## 错误码
-
-| 错误码 | 说明 |
-|--------|------|
-| 200 | 成功 |
-| 201 | 创建成功 |
-| 400 | 请求参数错误 |
-| 401 | 未授权 |
-| 403 | 禁止访问 |
-| 404 | 资源不存在 |
-| 422 | 验证失败 |
-| 429 | 请求过于频繁 |
-| 500 | 服务器内部错误 |
-| 503 | 服务不可用 |
-
-**错误响应格式**:
-\`\`\`json
+```json
 {
-  "success": false,
-  "error_code": "INVALID_COOKIE",
-  "error_message": "Cookie格式无效",
-  "solution": "请检查Cookie格式是否为有效的JSON数组",
-  "timestamp": "2025-10-19T15:30:00"
+  "type": "account_status",
+  "data": {
+    "account_id": 1,
+    "status": "online"
+  }
 }
-\`\`\`
+```
+
+```json
+{
+  "type": "system_notification",
+  "data": {
+    "title": "账号掉线",
+    "body": "账号user123已掉线",
+    "level": "warning"
+  }
+}
+```
 
 ---
 
-**文档版本**: v9.0  
-**最后更新**: 2025-10-19  
-**对应代码版本**: v10.0.0
+## 错误响应
+
+所有API错误响应格式：
+
+```json
+{
+  "detail": "错误描述",
+  "error_code": "ERROR_CODE",
+  "timestamp": "2025-10-28T10:00:00"
+}
+```
+
+**常见错误码**:
+- `AUTH_FAILED`: 认证失败
+- `NOT_FOUND`: 资源不存在
+- `VALIDATION_ERROR`: 参数验证失败
+- `INTERNAL_ERROR`: 内部错误
+- `RATE_LIMIT_EXCEEDED`: 请求频率超限
+
+**HTTP状态码**:
+- `200`: 成功
+- `400`: 参数错误
+- `401`: 未认证
+- `403`: 无权限
+- `404`: 不存在
+- `500`: 服务器错误
+
+---
+
+## 速率限制
+
+- 默认限制：100请求/分钟
+- WebSocket连接：5个/客户端
+- 文件上传：10MB/文件
+
+---
+
+## 示例代码
+
+### Python
+
+```python
+import requests
+
+# 获取Token
+response = requests.post(
+    'http://localhost:9527/api/auth/token',
+    json={'username': 'admin', 'password': 'password'}
+)
+token = response.json()['token']
+
+# 使用Token
+headers = {'X-API-Token': token}
+response = requests.get(
+    'http://localhost:9527/api/accounts',
+    headers=headers
+)
+accounts = response.json()
+```
+
+### JavaScript
+
+```javascript
+// 获取Token
+const response = await fetch('http://localhost:9527/api/auth/token', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({username: 'admin', password: 'password'})
+});
+const {token} = await response.json();
+
+// 使用Token
+const accounts = await fetch('http://localhost:9527/api/accounts', {
+  headers: {'X-API-Token': token}
+}).then(r => r.json());
+```
+
+---
+
+<div align="center">
+  <p><strong>v11.0.0 API Documentation</strong></p>
+  <p>Made with ❤️ by KOOK Forwarder Team</p>
+</div>
