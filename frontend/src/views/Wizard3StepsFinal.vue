@@ -550,6 +550,9 @@
         </div>
       </div>
     </el-card>
+    
+    <!-- 教程对话框 -->
+    <TutorialDialog ref="tutorialRef" />
   </div>
 </template>
 
@@ -584,13 +587,133 @@ const loginForm = ref({
 const step1Loading = ref(false)
 const accountId = ref(null)
 
-// Cookie文件上传处理
+// Cookie文件上传处理（完整实现）
 const handleCookieFile = (file) => {
   const reader = new FileReader()
-  reader.onload = (e) => {
-    cookieText.value = e.target.result
-    handleCookiePaste()
+  
+  reader.onload = async (e) => {
+    try {
+      let cookieContent = e.target.result
+      
+      // 尝试解析为JSON
+      try {
+        const cookieJson = JSON.parse(cookieContent)
+        
+        // Netscape格式（数组）- EditThisCookie导出格式
+        if (Array.isArray(cookieJson)) {
+          // 验证是否包含必要字段
+          const hasRequiredFields = cookieJson.every(c => 
+            c.hasOwnProperty('name') && 
+            c.hasOwnProperty('value') &&
+            c.hasOwnProperty('domain')
+          )
+          
+          if (hasRequiredFields) {
+            cookieText.value = JSON.stringify(cookieJson, null, 2)
+            ElMessage.success('✅ Cookie文件加载成功（JSON格式）')
+          } else {
+            ElMessage.warning('⚠️ Cookie文件格式不完整，请检查')
+            return
+          }
+        } 
+        // 对象格式
+        else if (typeof cookieJson === 'object') {
+          // 转换为数组格式
+          const cookieArray = Object.entries(cookieJson).map(([name, value]) => ({
+            name,
+            value: String(value),
+            domain: '.kookapp.cn',
+            path: '/',
+            secure: true,
+            httpOnly: false
+          }))
+          
+          cookieText.value = JSON.stringify(cookieArray, null, 2)
+          ElMessage.success('✅ Cookie文件加载成功（对象格式已转换）')
+        }
+      } catch (jsonError) {
+        // 不是JSON格式，尝试解析为Netscape格式
+        // Netscape格式示例：
+        // # Netscape HTTP Cookie File
+        // .kookapp.cn	TRUE	/	TRUE	0	token	xxx
+        
+        if (cookieContent.includes('Netscape HTTP Cookie File')) {
+          const lines = cookieContent.split('\n')
+          const cookies = []
+          
+          for (const line of lines) {
+            // 跳过注释行和空行
+            if (line.startsWith('#') || !line.trim()) continue
+            
+            const parts = line.split('\t')
+            if (parts.length >= 7) {
+              cookies.push({
+                name: parts[5],
+                value: parts[6],
+                domain: parts[0],
+                path: parts[2],
+                secure: parts[3] === 'TRUE',
+                httpOnly: false,
+                expirationDate: parseInt(parts[4]) || undefined
+              })
+            }
+          }
+          
+          if (cookies.length > 0) {
+            cookieText.value = JSON.stringify(cookies, null, 2)
+            ElMessage.success(`✅ Cookie文件加载成功（Netscape格式，共${cookies.length}个）`)
+          } else {
+            ElMessage.error('❌ 无法解析Netscape格式Cookie')
+            return
+          }
+        } else {
+          // 纯文本格式，可能是Header String格式
+          // 格式: name1=value1; name2=value2; ...
+          if (cookieContent.includes('=')) {
+            const pairs = cookieContent.split(';').map(p => p.trim())
+            const cookies = []
+            
+            for (const pair of pairs) {
+              const [name, value] = pair.split('=')
+              if (name && value) {
+                cookies.push({
+                  name: name.trim(),
+                  value: value.trim(),
+                  domain: '.kookapp.cn',
+                  path: '/',
+                  secure: true,
+                  httpOnly: false
+                })
+              }
+            }
+            
+            if (cookies.length > 0) {
+              cookieText.value = JSON.stringify(cookies, null, 2)
+              ElMessage.success(`✅ Cookie加载成功（Header格式，共${cookies.length}个）`)
+            } else {
+              ElMessage.error('❌ 无法解析Cookie格式')
+              return
+            }
+          } else {
+            ElMessage.error('❌ Cookie文件格式不支持')
+            return
+          }
+        }
+      }
+      
+      // 触发验证
+      await handleCookiePaste()
+      
+    } catch (error) {
+      ElMessage.error('❌ Cookie文件解析失败: ' + error.message)
+      console.error('Cookie解析错误:', error)
+    }
   }
+  
+  reader.onerror = () => {
+    ElMessage.error('❌ 文件读取失败')
+  }
+  
   reader.readAsText(file.raw)
 }
 
@@ -946,24 +1069,32 @@ const openCookieExtension = () => {
   window.open('https://chrome.google.com/webstore/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg', '_blank')
 }
 
+// 教程对话框引用
+import TutorialDialog from '@/components/TutorialDialog.vue'
+const tutorialRef = ref(null)
+
 const showCookieTutorial = () => {
-  // 打开Cookie教程对话框
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('cookie')
+  }
 }
 
 const showDiscordTutorial = () => {
-  // 打开Discord教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('discord')
+  }
 }
 
 const showTelegramTutorial = () => {
-  // 打开Telegram教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('telegram')
+  }
 }
 
 const showFeishuTutorial = () => {
-  // 打开飞书教程
-  ElMessage.info('教程功能开发中')
+  if (tutorialRef.value) {
+    tutorialRef.value.show('feishu')
+  }
 }
 
 onMounted(() => {

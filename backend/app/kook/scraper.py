@@ -407,11 +407,12 @@ class KookScraper:
             
             # 尝试获取频道和服务器名称
             try:
-                channel_info = self.get_channel_info(d.get('target_id'))
+                channel_info = await self.get_channel_info(d.get('target_id'))
                 if channel_info:
                     message['channel_name'] = channel_info.get('name')
                     message['server_name'] = channel_info.get('server_name')
-            except Exception:
+            except Exception as e:
+                logger.debug(f"获取频道信息失败: {e}")
                 pass
             
             return message
@@ -420,10 +421,112 @@ class KookScraper:
             logger.error(f"[Scraper-{self.account_id}] 消息解析失败: {str(e)}")
             return None
     
-    def get_channel_info(self, channel_id: str) -> Optional[Dict]:
-        """获取频道信息（从缓存或数据库）"""
-        # TODO: 实现频道信息缓存
-        return None
+    async def get_channel_info(self, channel_id: str) -> Optional[Dict]:
+        """
+        获取频道信息（从页面JS执行）
+        
+        通过执行页面JS获取KOOK的频道和服务器信息
+        """
+        if not self.page or self.page.is_closed():
+            return None
+        
+        try:
+            # 尝试从页面的全局对象获取频道信息
+            channel_data = await self.page.evaluate('''(channelId) => {
+                // 尝试从window对象获取KOOK的数据
+                // KOOK可能在window.__INITIAL_STATE__或其他全局变量存储数据
+                
+                // 方法1: 尝试从DOM元素获取
+                const channelElement = document.querySelector(`[data-channel-id="${channelId}"]`);
+                if (channelElement) {
+                    return {
+                        name: channelElement.getAttribute('data-channel-name') || 
+                              channelElement.textContent?.trim(),
+                        server_name: channelElement.getAttribute('data-server-name'),
+                        server_id: channelElement.getAttribute('data-server-id')
+                    };
+                }
+                
+                // 方法2: 尝试从全局状态获取（如果KOOK使用Redux或Vuex）
+                if (window.__KOOK_STORE__) {
+                    const channel = window.__KOOK_STORE__.channels?.find(c => c.id === channelId);
+                    if (channel) {
+                        return {
+                            name: channel.name,
+                            server_name: channel.guild?.name,
+                            server_id: channel.guild_id
+                        };
+                    }
+                }
+                
+                // 方法3: 尝试从localStorage获取缓存的频道数据
+                try {
+                    const cachedData = localStorage.getItem('kook_channels');
+                    if (cachedData) {
+                        const channels = JSON.parse(cachedData);
+                        const channel = channels.find(c => c.id === channelId);
+                        if (channel) {
+                            return {
+                                name: channel.name,
+                                server_name: channel.server_name,
+                                server_id: channel.server_id
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to parse cached channel data:', e);
+                }
+                
+                return null;
+            }''', channel_id)
+            
+            if channel_data:
+                logger.debug(f"从页面获取频道信息成功: {channel_data}")
+                
+                # 缓存到内存（可选：也可以存到数据库）
+                if not hasattr(self, '_channel_cache'):
+                    self._channel_cache = {}
+                self._channel_cache[channel_id] = channel_data
+                
+                return channel_data
+            else:
+                logger.warning(f"无法从页面获取频道 {channel_id} 的信息")
+                
+                # 尝试从数据库的映射表获取
+                mapping = db.execute(
+                    "SELECT * FROM channel_mappings WHERE kook_channel_id = ? LIMIT 1",
+                    (channel_id,)
+                ).fetchone()
+                
+                if mapping:
+                    return {
+                        'name': mapping['kook_channel_name'],
+                        'server_id': mapping['kook_server_id'],
+                        'server_name': mapping.get('kook_server_name', '未知服务器')
+                    }
+                
+                return None
+            
+        except Exception as e:
+            logger.error(f"获取频道信息异常: {e}")
+            
+            # 降级方案：尝试从数据库获取
+            try:
+                mapping = db.execute(
+                    "SELECT * FROM channel_mappings WHERE kook_channel_id = ? LIMIT 1",
+                    (channel_id,)
+                ).fetchone()
+                
+                if mapping:
+                    return {
+                        'name': mapping['kook_channel_name'],
+                        'server_id': mapping['kook_server_id'],
+                        'server_name': mapping.get('kook_server_name', '未知服务器')
+                    }
+            except Exception:
+                pass
+            
+            return None
     
     async def check_connection(self) -> bool:
         """检查连接状态"""

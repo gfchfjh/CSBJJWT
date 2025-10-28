@@ -117,11 +117,32 @@ class InstallerBuilder:
         
         if self.platform == "windows":
             # Windows: 下载预编译的Redis
+            import urllib.request
+            import zipfile
+            import tempfile
+            
             redis_url = "https://github.com/tporadowski/redis/releases/download/v5.0.14.1/Redis-x64-5.0.14.1.zip"
             print(f"    下载URL: {redis_url}")
-            print(f"    目标目录: {redis_dir}")
-            print("    ⚠️  实际环境中应该自动下载并解压")
-            print("    ✅ Redis准备完成（模拟）")
+            
+            try:
+                # 下载到临时文件
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+                    print(f"    正在下载...")
+                    urllib.request.urlretrieve(redis_url, tmp_file.name)
+                    zip_path = tmp_file.name
+                
+                # 解压
+                print(f"    正在解压到: {redis_dir}")
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(redis_dir)
+                
+                # 删除临时文件
+                Path(zip_path).unlink()
+                
+                print("    ✅ Redis下载并解压完成")
+            except Exception as e:
+                print(f"    ⚠️  Redis下载失败: {e}")
+                print("    将使用系统Redis或在首次运行时下载")
             
         elif self.platform == "darwin":
             # macOS: 使用Homebrew安装或下载源码编译
@@ -149,6 +170,32 @@ class InstallerBuilder:
             
             if result.returncode == 0:
                 print("    ✅ Chromium下载成功")
+                
+                # 尝试复制到打包目录
+                try:
+                    import playwright
+                    pw_path = Path(playwright.__file__).parent
+                    
+                    # 查找Chromium目录
+                    local_browsers = pw_path / ".local-browsers"
+                    if local_browsers.exists():
+                        chromium_dirs = list(local_browsers.glob("chromium-*"))
+                        if chromium_dirs:
+                            chromium_src = chromium_dirs[0]
+                            chromium_dst = self.build_dir / "chromium"
+                            
+                            if chromium_dst.exists():
+                                shutil.rmtree(chromium_dst)
+                            
+                            shutil.copytree(chromium_src, chromium_dst)
+                            print(f"    ✅ Chromium已复制到: {chromium_dst}")
+                        else:
+                            print("    ℹ️  Chromium将在首次运行时自动下载")
+                    else:
+                        print("    ℹ️  Chromium将在首次运行时自动下载")
+                except Exception as e:
+                    print(f"    ⚠️  复制Chromium失败: {e}")
+                    print("    ℹ️  Chromium将在首次运行时自动下载")
             else:
                 print(f"    ⚠️  Chromium下载失败: {result.stderr}")
                 print("    请手动运行: playwright install chromium")

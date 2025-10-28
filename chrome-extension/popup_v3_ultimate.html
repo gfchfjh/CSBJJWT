@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KOOK Cookie导出器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 380px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .container {
+      background: white;
+      border-radius: 8px;
+      margin: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    
+    .content {
+      padding: 20px;
+    }
+    
+    .status {
+      background: #f5f7fa;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .status-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    
+    .status-icon.success {
+      background: #67c23a;
+    }
+    
+    .status-icon.error {
+      background: #f56c6c;
+    }
+    
+    .status-text {
+      flex: 1;
+      font-size: 13px;
+      color: #606266;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #e4e7ed;
+      color: #606266;
+    }
+    
+    .btn-secondary:hover {
+      background: #d3d6db;
+    }
+    
+    .divider {
+      height: 1px;
+      background: #e4e7ed;
+      margin: 20px 0;
+    }
+    
+    .history {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .history-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #606266;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .history-clear {
+      font-size: 12px;
+      color: #f56c6c;
+      cursor: pointer;
+      font-weight: normal;
+    }
+    
+    .history-clear:hover {
+      text-decoration: underline;
+    }
+    
+    .history-item {
+      background: #f5f7fa;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .history-item-time {
+      color: #909399;
+      margin-bottom: 4px;
+    }
+    
+    .history-item-info {
+      color: #606266;
+    }
+    
+    .history-empty {
+      text-align: center;
+      color: #909399;
+      font-size: 12px;
+      padding: 20px;
+    }
+    
+    .footer {
+      background: #f5f7fa;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #909399;
+    }
+    
+    .footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍪 KOOK Cookie导出器</h1>
+      <p>v3.0.0 Ultimate Edition</p>
+    </div>
+    
+    <div class="content">
+      <div class="status" id="status">
+        <div class="status-icon" id="statusIcon"></div>
+        <div class="status-text" id="statusText">检测中...</div>
+      </div>
+      
+      <div class="button-group">
+        <button class="btn-primary" id="btnExportJson">
+          <span>📦</span>
+          <span>导出为JSON格式</span>
+        </button>
+        
+        <button class="btn-secondary" id="btnExportNetscape">
+          <span>📄</span>
+          <span>导出为Netscape格式</span>
+        </button>
+        
+        <button class="btn-secondary" id="btnExportHeader">
+          <span>📋</span>
+          <span>导出为HTTP Header</span>
+        </button>
+        
+        <button class="btn-secondary" id="btnVerify">
+          <span>✅</span>
+          <span>验证Cookie有效性</span>
+        </button>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <div class="history">
+        <div class="history-title">
+          <span>📜 导出历史</span>
+          <span class="history-clear" id="clearHistory">清空</span>
+        </div>
+        <div id="historyList"></div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>
+        <a href="https://github.com/gfchfjh/CSBJJWT" target="_blank">GitHub</a> |
+        快捷键: Ctrl+Shift+K
+      </p>
+    </div>
+  </div>
+  
+  <script src="popup_v3_ultimate.js"></script>
+</body>
+</html>
