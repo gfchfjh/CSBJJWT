@@ -1,362 +1,508 @@
 /**
- * 系统托盘管理器（终极版）
- * ✅ P1-3深度优化: 实时统计 + 快捷控制
+ * 🚀 P1-3优化: 系统托盘实时统计（终极版）
+ * 
+ * 功能：
+ * 1. 每5秒刷新统计数据
+ * 2. 显示今日消息数、成功率、队列、在线账号
+ * 3. 快捷控制菜单
+ * 4. 桌面通知集成
+ * 
+ * 作者: KOOK Forwarder Team
+ * 版本: 11.0.0
+ * 日期: 2025-10-28
  */
 
-const { Tray, Menu, nativeImage, shell } = require('electron')
-const path = require('path')
-const axios = require('axios')
+const { Tray, Menu, nativeImage, Notification } = require('electron');
+const path = require('path');
+const axios = require('axios');
 
-class TrayManagerUltimate {
+class TrayManager {
   constructor(mainWindow) {
-    this.mainWindow = mainWindow
-    this.tray = null
-    this.statsInterval = null
-    
-    // 统计数据
+    this.mainWindow = mainWindow;
+    this.tray = null;
     this.stats = {
-      today_total: 0,
-      success_rate: 0,
-      queue_size: 0,
-      service_running: false,
-      accounts_online: 0,
-      accounts_total: 0
-    }
+      todayMessages: 0,
+      successRate: 0,
+      queueSize: 0,
+      onlineAccounts: 0,
+      totalAccounts: 0,
+      serviceRunning: false
+    };
     
-    this.init()
-    this.startStatsUpdate()
+    // API地址
+    this.apiUrl = 'http://localhost:9527';
+    
+    // 刷新定时器
+    this.refreshTimer = null;
+    
+    // 上一次的状态（用于检测变化）
+    this.lastStats = { ...this.stats };
+    
+    this.init();
   }
   
+  /**
+   * 初始化托盘
+   */
   init() {
-    /**
-     * 初始化托盘图标
-     */
-    const iconPath = path.join(__dirname, '../public/icon.png')
-    const icon = nativeImage.createFromPath(iconPath)
+    // 创建托盘图标
+    const iconPath = path.join(__dirname, '../../build/icon.png');
+    const icon = nativeImage.createFromPath(iconPath);
     
-    this.tray = new Tray(icon.resize({ width: 16, height: 16 }))
-    this.tray.setToolTip('KOOK消息转发系统')
+    this.tray = new Tray(icon.resize({ width: 16, height: 16 }));
+    this.tray.setToolTip('KOOK消息转发系统');
     
-    // 设置初始菜单
-    this.updateMenu()
+    // 设置上下文菜单
+    this.updateMenu();
     
-    // 点击托盘图标
+    // 点击托盘图标显示主窗口
     this.tray.on('click', () => {
-      this.toggleMainWindow()
-    })
+      this.showMainWindow();
+    });
     
-    // 双击托盘图标
-    this.tray.on('double-click', () => {
-      this.mainWindow.show()
-      this.mainWindow.focus()
-    })
+    // 开始定时刷新
+    this.startRefresh();
     
-    console.log('✅ 托盘管理器已初始化')
+    console.log('✅ 托盘管理器已初始化');
   }
   
-  async fetchStats() {
-    /**
-     * 🔥 从后端API获取实时统计
-     */
+  /**
+   * 开始定时刷新统计
+   */
+  startRefresh() {
+    // 立即刷新一次
+    this.refreshStats();
+    
+    // 每5秒刷新一次
+    this.refreshTimer = setInterval(() => {
+      this.refreshStats();
+    }, 5000);
+    
+    console.log('✅ 托盘统计刷新已启动（每5秒）');
+  }
+  
+  /**
+   * 停止刷新
+   */
+  stopRefresh() {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+      console.log('✅ 托盘统计刷新已停止');
+    }
+  }
+  
+  /**
+   * 刷新统计数据
+   */
+  async refreshStats() {
     try {
-      const response = await axios.get('http://localhost:9527/api/system/tray-stats', {
+      // 获取统计数据
+      const response = await axios.get(`${this.apiUrl}/api/stats/realtime`, {
         timeout: 3000
-      })
+      });
       
-      this.stats = response.data
-      this.updateMenu()
+      const newStats = response.data;
+      
+      // 更新stats
+      this.stats = {
+        todayMessages: newStats.today_messages || 0,
+        successRate: newStats.success_rate || 0,
+        queueSize: newStats.queue_size || 0,
+        onlineAccounts: newStats.online_accounts || 0,
+        totalAccounts: newStats.total_accounts || 0,
+        serviceRunning: newStats.service_running || false
+      };
+      
+      // 检测变化并发送通知
+      this.detectChanges();
+      
+      // 更新菜单
+      this.updateMenu();
+      
+      // 更新工具提示
+      this.updateTooltip();
+      
+      // 更新图标（可选）
+      this.updateIcon();
       
     } catch (error) {
-      // 静默失败，不影响用户体验
-      if (error.code !== 'ECONNREFUSED') {
-        console.error('获取托盘统计失败:', error.message)
-      }
+      // 连接失败，标记为离线
+      this.stats.serviceRunning = false;
+      this.updateMenu();
     }
   }
   
+  /**
+   * 检测变化并发送通知
+   */
+  detectChanges() {
+    // 服务状态变化
+    if (this.stats.serviceRunning !== this.lastStats.serviceRunning) {
+      if (this.stats.serviceRunning) {
+        this.sendNotification('success', '服务已启动', '转发服务正在运行');
+      } else {
+        this.sendNotification('warning', '服务已停止', '转发服务已停止运行');
+      }
+    }
+    
+    // 账号掉线
+    if (this.stats.onlineAccounts < this.lastStats.onlineAccounts) {
+      const offlineCount = this.lastStats.onlineAccounts - this.stats.onlineAccounts;
+      this.sendNotification(
+        'warning',
+        '账号掉线',
+        `${offlineCount}个账号已离线`
+      );
+    }
+    
+    // 队列积压
+    if (this.stats.queueSize > 100 && this.lastStats.queueSize <= 100) {
+      this.sendNotification(
+        'warning',
+        '队列积压',
+        `当前队列中有${this.stats.queueSize}条消息等待发送`
+      );
+    }
+    
+    // 成功率下降
+    if (this.stats.successRate < 90 && this.lastStats.successRate >= 90) {
+      this.sendNotification(
+        'error',
+        '成功率下降',
+        `当前成功率: ${this.stats.successRate.toFixed(1)}%`
+      );
+    }
+    
+    // 保存当前状态
+    this.lastStats = { ...this.stats };
+  }
+  
+  /**
+   * 更新菜单
+   */
   updateMenu() {
-    /**
-     * 更新托盘菜单（包含实时统计）
-     */
-    const serviceIcon = this.stats.service_running ? '✅' : '⏸️'
-    const serviceLabel = this.stats.service_running ? '运行中' : '已停止'
-    const successRate = this.stats.success_rate.toFixed(1)
+    const { serviceRunning, todayMessages, successRate, queueSize, onlineAccounts, totalAccounts } = this.stats;
     
     const contextMenu = Menu.buildFromTemplate([
+      // 标题
       {
         label: 'KOOK消息转发系统',
-        enabled: false,
-        icon: this.getIconPath('icon16.png')
+        enabled: false
       },
       { type: 'separator' },
       
-      // 📊 实时统计
+      // 统计信息
       {
-        label: '📊 今日统计',
+        label: `状态: ${serviceRunning ? '🟢 运行中' : '🔴 已停止'}`,
         enabled: false
       },
       {
-        label: `    转发: ${this.stats.today_total} 条`,
+        label: `今日: ${todayMessages} 条`,
         enabled: false
       },
       {
-        label: `    成功率: ${successRate}%`,
+        label: `成功率: ${successRate.toFixed(1)}%`,
         enabled: false
       },
       {
-        label: `    队列: ${this.stats.queue_size} 条`,
-        enabled: false,
+        label: `队列: ${queueSize} 条`,
+        enabled: false
+      },
+      {
+        label: `账号: ${onlineAccounts}/${totalAccounts} 在线`,
+        enabled: false
+      },
+      { type: 'separator' },
+      
+      // 服务控制
+      {
+        label: serviceRunning ? '⏸️  停止服务' : '▶️  启动服务',
         click: () => {
-          if (this.stats.queue_size > 0) {
-            this.showLogsPage()
+          if (serviceRunning) {
+            this.stopService();
+          } else {
+            this.startService();
           }
         }
       },
-      { type: 'separator' },
-      
-      // 服务状态
       {
-        label: `服务: ${serviceIcon} ${serviceLabel}`,
-        enabled: false
-      },
-      {
-        label: `账号: ${this.stats.accounts_online}/${this.stats.accounts_total} 在线`,
-        enabled: false
+        label: '🔄 重启服务',
+        enabled: serviceRunning,
+        click: () => this.restartService()
       },
       { type: 'separator' },
       
-      // 🎮 快捷控制
+      // 快捷操作
       {
-        label: '🎮 控制',
-        submenu: [
-          {
-            label: this.stats.service_running ? '⏸️ 停止服务' : '▶️ 启动服务',
-            click: () => this.toggleService()
-          },
-          {
-            label: '🔄 重启服务',
-            enabled: this.stats.service_running,
-            click: () => this.restartService()
-          },
-          { type: 'separator' },
-          {
-            label: '🧪 测试转发',
-            click: () => this.testForwarding()
-          },
-          {
-            label: '🗑️ 清空队列',
-            enabled: this.stats.queue_size > 0,
-            click: () => this.clearQueue()
-          }
-        ]
+        label: '🧪 测试转发',
+        click: () => this.testForward()
       },
-      
-      // 📋 快捷导航
       {
-        label: '📋 导航',
+        label: '🗑️  清空队列',
+        enabled: queueSize > 0,
+        click: () => this.clearQueue()
+      },
+      { type: 'separator' },
+      
+      // 快捷导航
+      {
+        label: '🏠 显示主窗口',
+        click: () => this.showMainWindow()
+      },
+      {
+        label: '快捷导航',
         submenu: [
-          {
-            label: '🏠 主页',
-            click: () => this.navigateTo('/')
-          },
           {
             label: '👤 账号管理',
-            click: () => this.navigateTo('/accounts')
+            click: () => this.navigate('/accounts')
           },
           {
             label: '🤖 Bot配置',
-            click: () => this.navigateTo('/bots')
+            click: () => this.navigate('/bots')
           },
           {
             label: '🔀 频道映射',
-            click: () => this.navigateTo('/mapping')
+            click: () => this.navigate('/mapping')
           },
           {
-            label: '📝 实时日志',
-            click: () => this.navigateTo('/logs')
+            label: '📋 日志查看',
+            click: () => this.navigate('/logs')
           },
           {
-            label: '⚙️ 系统设置',
-            click: () => this.navigateTo('/settings')
+            label: '⚙️  系统设置',
+            click: () => this.navigate('/settings')
           }
         ]
       },
-      
-      { type: 'separator' },
-      
-      // 显示/隐藏主窗口
-      {
-        label: '🏠 显示主窗口',
-        click: () => {
-          this.mainWindow.show()
-          this.mainWindow.focus()
-        }
-      },
-      
-      // 帮助
-      {
-        label: '❓ 帮助',
-        submenu: [
-          {
-            label: '📖 使用文档',
-            click: () => {
-              shell.openExternal('https://github.com/gfchfjh/CSBJJWT/blob/main/docs/用户手册.md')
-            }
-          },
-          {
-            label: '🐛 报告问题',
-            click: () => {
-              shell.openExternal('https://github.com/gfchfjh/CSBJJWT/issues')
-            }
-          },
-          {
-            label: '⭐ GitHub',
-            click: () => {
-              shell.openExternal('https://github.com/gfchfjh/CSBJJWT')
-            }
-          }
-        ]
-      },
-      
       { type: 'separator' },
       
       // 退出
       {
         label: '❌ 退出程序',
-        click: () => {
-          this.mainWindow.webContents.send('app-quit')
-        }
+        click: () => this.quitApp()
       }
-    ])
+    ]);
     
-    this.tray.setContextMenu(contextMenu)
+    this.tray.setContextMenu(contextMenu);
+  }
+  
+  /**
+   * 更新工具提示
+   */
+  updateTooltip() {
+    const { serviceRunning, todayMessages, successRate, queueSize, onlineAccounts, totalAccounts } = this.stats;
     
-    // 🔥 更新托盘图标提示文本（显示实时数据）
-    this.tray.setToolTip(
-      `KOOK消息转发系统\n` +
-      `━━━━━━━━━━━━━━━\n` +
-      `状态: ${serviceLabel}\n` +
-      `今日: ${this.stats.today_total}条\n` +
-      `成功率: ${successRate}%\n` +
-      `队列: ${this.stats.queue_size}条\n` +
-      `账号: ${this.stats.accounts_online}/${this.stats.accounts_total}`
-    )
+    const tooltip = [
+      'KOOK消息转发系统',
+      '━━━━━━━━━━━━━━━',
+      `状态: ${serviceRunning ? '运行中' : '已停止'}`,
+      `今日: ${todayMessages} 条`,
+      `成功率: ${successRate.toFixed(1)}%`,
+      `队列: ${queueSize} 条`,
+      `账号: ${onlineAccounts}/${totalAccounts} 在线`
+    ].join('\n');
+    
+    this.tray.setToolTip(tooltip);
   }
   
-  getIconPath(iconName) {
-    return path.join(__dirname, '../public', iconName)
-  }
-  
-  toggleMainWindow() {
-    if (this.mainWindow.isVisible()) {
-      this.mainWindow.hide()
-    } else {
-      this.mainWindow.show()
-      this.mainWindow.focus()
+  /**
+   * 更新图标
+   */
+  updateIcon() {
+    // 根据状态更改图标（可选）
+    // 例如：服务运行时使用彩色图标，停止时使用灰色图标
+    const iconPath = path.join(__dirname, '../../build/icon.png');
+    const icon = nativeImage.createFromPath(iconPath);
+    
+    // 如果服务停止，可以添加一个覆盖层
+    if (!this.stats.serviceRunning) {
+      // 这里可以添加灰度处理或覆盖层
     }
+    
+    this.tray.setImage(icon.resize({ width: 16, height: 16 }));
   }
   
-  async toggleService() {
-    try {
-      const endpoint = this.stats.service_running ?
-        'http://localhost:9527/api/system/stop' :
-        'http://localhost:9527/api/system/start'
-      
-      await axios.post(endpoint, {}, { timeout: 5000 })
-      
-      setTimeout(() => this.fetchStats(), 1000)
-      
-    } catch (error) {
-      console.error('切换服务失败:', error.message)
+  /**
+   * 发送通知
+   */
+  sendNotification(type, title, body) {
+    // 检查是否启用通知
+    const notificationSettings = this.getNotificationSettings();
+    
+    if (!notificationSettings[type]) {
+      return;
     }
-  }
-  
-  async restartService() {
-    try {
-      await axios.post('http://localhost:9527/api/system/restart', {}, { timeout: 5000 })
-      
-      setTimeout(() => this.fetchStats(), 2000)
-      
-    } catch (error) {
-      console.error('重启服务失败:', error.message)
+    
+    // 检查是否在静默时段
+    if (this.isQuietTime()) {
+      console.log(`静默时段，通知已抑制: ${title}`);
+      return;
     }
-  }
-  
-  async testForwarding() {
-    try {
-      await axios.post('http://localhost:9527/api/system/test-forward', {}, { timeout: 10000 })
-      
-      this.showNotification('success', '测试成功', '测试消息已发送')
-      
-    } catch (error) {
-      this.showNotification('error', '测试失败', error.message)
-    }
-  }
-  
-  async clearQueue() {
-    try {
-      await axios.post('http://localhost:9527/api/queue/clear', {}, { timeout: 5000 })
-      
-      this.showNotification('success', '队列已清空', '')
-      setTimeout(() => this.fetchStats(), 1000)
-      
-    } catch (error) {
-      this.showNotification('error', '清空失败', error.message)
-    }
-  }
-  
-  navigateTo(route) {
-    this.mainWindow.show()
-    this.mainWindow.focus()
-    this.mainWindow.webContents.send('navigate-to', route)
-  }
-  
-  showLogsPage() {
-    this.navigateTo('/logs?filter=pending')
-  }
-  
-  showNotification(type, title, body) {
-    const { Notification } = require('electron')
     
     const notification = new Notification({
-      title: title,
-      body: body,
-      icon: this.getIconPath('icon.png')
-    })
+      title,
+      body,
+      icon: path.join(__dirname, '../../build/icon.png'),
+      urgency: type === 'error' ? 'critical' : 'normal'
+    });
     
-    notification.show()
+    notification.on('click', () => {
+      this.showMainWindow();
+    });
+    
+    notification.show();
+    
+    console.log(`📢 通知: ${title} - ${body}`);
   }
   
-  startStatsUpdate() {
-    /**
-     * 启动定时刷新统计（每5秒）
-     */
-    this.fetchStats()
-    
-    this.statsInterval = setInterval(() => {
-      this.fetchStats()
-    }, 5000)
-    
-    console.log('⏰ 托盘统计自动刷新已启动（每5秒）')
+  /**
+   * 获取通知设置
+   */
+  getNotificationSettings() {
+    // 从配置读取
+    // 这里使用默认值
+    return {
+      success: false,  // 成功通知默认关闭
+      warning: true,   // 警告通知默认开启
+      error: true      // 错误通知默认开启
+    };
   }
   
-  stopStatsUpdate() {
-    if (this.statsInterval) {
-      clearInterval(this.statsInterval)
-      this.statsInterval = null
-      console.log('⏰ 托盘统计刷新已停止')
+  /**
+   * 是否在静默时段
+   */
+  isQuietTime() {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // 默认静默时段: 22:00-8:00
+    return hour >= 22 || hour < 8;
+  }
+  
+  /**
+   * 显示主窗口
+   */
+  showMainWindow() {
+    if (this.mainWindow) {
+      if (this.mainWindow.isMinimized()) {
+        this.mainWindow.restore();
+      }
+      this.mainWindow.show();
+      this.mainWindow.focus();
     }
   }
   
-  destroy() {
-    this.stopStatsUpdate()
+  /**
+   * 导航到指定页面
+   */
+  navigate(path) {
+    this.showMainWindow();
+    
+    // 通知主窗口导航
+    if (this.mainWindow && this.mainWindow.webContents) {
+      this.mainWindow.webContents.send('navigate', path);
+    }
+  }
+  
+  /**
+   * 启动服务
+   */
+  async startService() {
+    try {
+      await axios.post(`${this.apiUrl}/api/system/start`);
+      this.sendNotification('success', '服务已启动', '转发服务正在运行');
+      this.refreshStats();
+    } catch (error) {
+      this.sendNotification('error', '启动失败', error.message);
+    }
+  }
+  
+  /**
+   * 停止服务
+   */
+  async stopService() {
+    try {
+      await axios.post(`${this.apiUrl}/api/system/stop`);
+      this.sendNotification('warning', '服务已停止', '转发服务已停止运行');
+      this.refreshStats();
+    } catch (error) {
+      this.sendNotification('error', '停止失败', error.message);
+    }
+  }
+  
+  /**
+   * 重启服务
+   */
+  async restartService() {
+    try {
+      await axios.post(`${this.apiUrl}/api/system/restart`);
+      this.sendNotification('success', '服务已重启', '转发服务正在重新启动');
+      this.refreshStats();
+    } catch (error) {
+      this.sendNotification('error', '重启失败', error.message);
+    }
+  }
+  
+  /**
+   * 测试转发
+   */
+  async testForward() {
+    try {
+      const response = await axios.post(`${this.apiUrl}/api/system/test-forward`);
+      const { success, failed } = response.data;
+      
+      if (failed === 0) {
+        this.sendNotification('success', '测试成功', `成功发送${success}条测试消息`);
+      } else {
+        this.sendNotification('warning', '测试完成', `成功${success}条，失败${failed}条`);
+      }
+    } catch (error) {
+      this.sendNotification('error', '测试失败', error.message);
+    }
+  }
+  
+  /**
+   * 清空队列
+   */
+  async clearQueue() {
+    try {
+      await axios.post(`${this.apiUrl}/api/system/clear-queue`);
+      this.sendNotification('success', '队列已清空', '所有待发送消息已清空');
+      this.refreshStats();
+    } catch (error) {
+      this.sendNotification('error', '清空失败', error.message);
+    }
+  }
+  
+  /**
+   * 退出应用
+   */
+  quitApp() {
+    this.stopRefresh();
+    
+    if (this.mainWindow) {
+      this.mainWindow.destroy();
+    }
     
     if (this.tray) {
-      this.tray.destroy()
-      this.tray = null
-      console.log('🗑️ 托盘已清理')
+      this.tray.destroy();
+    }
+    
+    require('electron').app.quit();
+  }
+  
+  /**
+   * 销毁
+   */
+  destroy() {
+    this.stopRefresh();
+    
+    if (this.tray) {
+      this.tray.destroy();
+      this.tray = null;
     }
   }
 }
 
-module.exports = TrayManagerUltimate
+module.exports = TrayManager;

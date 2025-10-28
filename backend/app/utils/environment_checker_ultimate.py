@@ -1,293 +1,600 @@
 """
-终极环境检查器
-✅ P0-5深度优化: 6项并发检测 + 自动修复
+🔍 P0-5优化: 环境检测与自动修复系统（终极版）
+
+功能：
+1. 并发检测6项环境（5-10秒完成）
+2. Python版本检测（3.11+）
+3. Chromium浏览器检测
+4. Redis服务检测
+5. 网络连接检测（3个测试点）
+6. 端口可用性检测（9527/6379/9528）
+7. 磁盘空间检测（至少5GB）
+8. 自动修复功能
+
+作者: KOOK Forwarder Team
+版本: 11.0.0
+日期: 2025-10-28
 """
 import asyncio
-import aiohttp
-import shutil
-import socket
 import sys
+import shutil
+import psutil
+import platform
+from typing import Dict, List, Optional
 from pathlib import Path
-from typing import Dict, List, Tuple
 from ..utils.logger import logger
-from ..config import settings
 
 
-class UltimateEnvironmentChecker:
-    """终极环境检查器"""
+class EnvironmentChecker:
+    """环境检测器（并发优化版）"""
     
-    async def check_all_concurrent(self) -> Dict:
+    def __init__(self):
+        self.python_required = (3, 11)
+        self.disk_required_gb = 5
+        self.required_ports = [9527, 6379, 9528]
+        
+        # 网络测试点
+        self.network_test_urls = [
+            'https://www.kookapp.cn',
+            'https://discord.com',
+            'https://api.telegram.org'
+        ]
+    
+    async def check_all_concurrent(self) -> Dict[str, any]:
         """
-        并发执行所有检查（5-10秒内完成）
+        并发检查所有环境（5-10秒完成）
         
         Returns:
-            完整的检查结果
+            检查结果字典
         """
-        start_time = asyncio.get_event_loop().time()
+        import time
+        start_time = time.time()
         
         logger.info("🔍 开始并发环境检测...")
         
-        # 🔥 并发执行所有检查
+        # 并发执行所有检查
         results = await asyncio.gather(
-            self._check_python(),
-            self._check_chromium(),
-            self._check_redis(),
-            self._check_network(),
-            self._check_ports(),
-            self._check_disk_space(),
+            self.check_python_version(),
+            self.check_chromium(),
+            self.check_redis(),
+            self.check_network(),
+            self.check_ports(),
+            self.check_disk_space(),
             return_exceptions=True
         )
         
-        python_ok, chromium_ok, redis_ok, network_ok, ports_ok, disk_ok = results
+        elapsed = time.time() - start_time
         
-        duration = asyncio.get_event_loop().time() - start_time
+        # 整理结果
+        check_results = {
+            'python': results[0] if not isinstance(results[0], Exception) else self._error_result('Python', results[0]),
+            'chromium': results[1] if not isinstance(results[1], Exception) else self._error_result('Chromium', results[1]),
+            'redis': results[2] if not isinstance(results[2], Exception) else self._error_result('Redis', results[2]),
+            'network': results[3] if not isinstance(results[3], Exception) else self._error_result('Network', results[3]),
+            'ports': results[4] if not isinstance(results[4], Exception) else self._error_result('Ports', results[4]),
+            'disk': results[5] if not isinstance(results[5], Exception) else self._error_result('Disk', results[5]),
+        }
         
-        # 收集可修复的问题
-        fixable_issues = []
+        # 计算总体状态
+        all_passed = all(
+            r['passed'] for r in check_results.values()
+            if isinstance(r, dict)
+        )
         
-        if not chromium_ok.get("installed", False):
-            fixable_issues.append({
-                "issue": "Chromium未安装",
-                "fix_command": "playwright install chromium --with-deps",
-                "severity": "critical"
-            })
+        result = {
+            'elapsed': round(elapsed, 2),
+            'all_passed': all_passed,
+            **check_results
+        }
         
-        if not redis_ok.get("running", False):
-            fixable_issues.append({
-                "issue": "Redis未运行",
-                "fix_command": "启动内置Redis服务",
-                "severity": "critical"
-            })
+        logger.info(f"✅ 环境检测完成，耗时{elapsed:.2f}秒，{'全部通过' if all_passed else '存在问题'}")
         
-        if not ports_ok.get("all_available", False):
-            occupied_ports = [
-                port for port, info in ports_ok.get("results", {}).items()
-                if not info.get("available", True)
-            ]
-            if occupied_ports:
-                fixable_issues.append({
-                    "issue": f"端口被占用: {occupied_ports}",
-                    "fix_command": "kill_process_by_port",
-                    "severity": "warning"
-                })
+        return result
+    
+    def _error_result(self, name: str, exception: Exception) -> Dict:
+        """生成错误结果"""
+        return {
+            'name': name,
+            'passed': False,
+            'message': f'❌ 检测异常: {str(exception)}',
+            'fix_available': False
+        }
+    
+    async def check_python_version(self) -> Dict:
+        """检查Python版本"""
+        version = sys.version_info
+        required = self.python_required
         
-        # 判断是否全部通过
-        all_passed = all([
-            python_ok.get("version_ok", False),
-            chromium_ok.get("installed", False),
-            redis_ok.get("running", False),
-            network_ok.get("all_reachable", False),
-            ports_ok.get("all_available", False),
-            disk_ok.get("sufficient", False)
-        ])
-        
-        logger.info(f"✅ 环境检测完成（耗时{duration:.2f}秒）")
+        passed = version >= required
         
         return {
-            "all_passed": all_passed,
-            "duration": round(duration, 2),
-            "results": {
-                "python": python_ok,
-                "chromium": chromium_ok,
-                "redis": redis_ok,
-                "network": network_ok,
-                "ports": ports_ok,
-                "disk_space": disk_ok
-            },
-            "fixable_issues": fixable_issues,
-            "summary": {
-                "total_checks": 6,
-                "passed_checks": sum([
-                    python_ok.get("version_ok", False),
-                    chromium_ok.get("installed", False),
-                    redis_ok.get("running", False),
-                    network_ok.get("all_reachable", False),
-                    ports_ok.get("all_available", False),
-                    disk_ok.get("sufficient", False)
-                ]),
-                "critical_issues": len([i for i in fixable_issues if i.get("severity") == "critical"])
+            'name': 'Python版本',
+            'passed': passed,
+            'current': f"{version.major}.{version.minor}.{version.micro}",
+            'required': f"{required[0]}.{required[1]}+",
+            'platform': platform.python_implementation(),
+            'fix_available': False,
+            'fix_command': None,
+            'message': f'✅ Python {version.major}.{version.minor}.{version.micro} 符合要求' if passed
+                      else f'❌ Python版本过低（{version.major}.{version.minor}），需要{required[0]}.{required[1]}+',
+            'details': {
+                'executable': sys.executable,
+                'version_full': sys.version
             }
         }
     
-    async def _check_python(self) -> Dict:
-        """检查Python版本（需要3.11+）"""
-        try:
-            version = sys.version_info
-            version_ok = version.major == 3 and version.minor >= 11
-            
-            return {
-                "version": f"{version.major}.{version.minor}.{version.micro}",
-                "version_ok": version_ok,
-                "required": "3.11+",
-                "status": "✅ 正常" if version_ok else "❌ 版本过低"
-            }
-        except Exception as e:
-            return {"error": str(e), "status": "❌ 检测失败"}
-    
-    async def _check_chromium(self) -> Dict:
+    async def check_chromium(self) -> Dict:
         """检查Chromium浏览器"""
         try:
             from playwright.async_api import async_playwright
             
-            async with async_playwright() as p:
-                browser_path = p.chromium.executable_path
-                installed = Path(browser_path).exists() if browser_path else False
-                
-                return {
-                    "installed": installed,
-                    "path": str(browser_path) if installed else None,
-                    "status": "✅ 已安装" if installed else "❌ 未安装"
-                }
-        except Exception as e:
-            return {"installed": False, "error": str(e), "status": "❌ 检测失败"}
-    
-    async def _check_redis(self) -> Dict:
-        """检查Redis服务"""
-        try:
-            from ..queue.redis_client import redis_queue
-            
-            await redis_queue.connect()
-            running = redis_queue.is_connected()
-            
-            return {
-                "running": running,
-                "host": settings.redis_host,
-                "port": settings.redis_port,
-                "status": "✅ 运行中" if running else "❌ 未运行"
-            }
-        except Exception as e:
-            return {"running": False, "error": str(e), "status": "❌ 连接失败"}
-    
-    async def _check_network(self) -> Dict:
-        """检查网络连接（3个测试点）"""
-        test_urls = [
-            "https://www.kookapp.cn",
-            "https://discord.com/api/v10",
-            "https://api.telegram.org"
-        ]
-        
-        results = {}
-        
-        timeout = aiohttp.ClientTimeout(total=5)
-        
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            for url in test_urls:
-                try:
-                    async with session.get(url) as resp:
-                        results[url] = resp.status in [200, 301, 302]
-                except:
-                    results[url] = False
-        
-        all_reachable = all(results.values())
-        reachable_count = sum(results.values())
-        
-        return {
-            "all_reachable": all_reachable,
-            "results": results,
-            "status": f"✅ {reachable_count}/3 可达" if all_reachable else f"⚠️ {reachable_count}/3 可达"
-        }
-    
-    async def _check_ports(self) -> Dict:
-        """检查端口可用性（9527/6379/9528）"""
-        ports_to_check = [
-            (settings.api_port, "API服务"),
-            (settings.redis_port, "Redis"),
-            (settings.image_server_port, "图床服务")
-        ]
-        
-        results = {}
-        
-        for port, name in ports_to_check:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(1)
+            # 尝试启动Playwright
+            p = await async_playwright().start()
             
             try:
-                sock.bind(('127.0.0.1', port))
-                sock.close()
-                results[port] = {"available": True, "name": name}
-            except:
-                results[port] = {"available": False, "name": name}
+                # 检查Chromium可执行文件
+                executable_path = p.chromium.executable_path
+                
+                if not Path(executable_path).exists():
+                    raise FileNotFoundError(f"Chromium不存在: {executable_path}")
+                
+                # 尝试启动浏览器
+                browser = await p.chromium.launch(headless=True)
+                version = browser.version
+                await browser.close()
+                
+                await p.stop()
+                
+                return {
+                    'name': 'Chromium浏览器',
+                    'passed': True,
+                    'message': f'✅ Chromium {version} 已安装且可用',
+                    'version': version,
+                    'executable': str(executable_path),
+                    'fix_available': False
+                }
+            
+            finally:
+                try:
+                    await p.stop()
+                except:
+                    pass
         
-        all_available = all(r["available"] for r in results.values())
+        except ImportError:
+            return {
+                'name': 'Chromium浏览器',
+                'passed': False,
+                'message': '❌ Playwright未安装',
+                'fix_available': True,
+                'fix_command': 'pip install playwright',
+                'fix_description': '安装Playwright库'
+            }
+        
+        except Exception as e:
+            error_msg = str(e)
+            
+            # 判断是否是Chromium未安装
+            if 'Executable doesn\'t exist' in error_msg or 'not found' in error_msg.lower():
+                return {
+                    'name': 'Chromium浏览器',
+                    'passed': False,
+                    'message': '❌ Chromium未安装',
+                    'fix_available': True,
+                    'fix_command': 'playwright install chromium',
+                    'fix_description': '自动下载并安装Chromium浏览器'
+                }
+            else:
+                return {
+                    'name': 'Chromium浏览器',
+                    'passed': False,
+                    'message': f'❌ Chromium检测失败: {error_msg}',
+                    'fix_available': True,
+                    'fix_command': 'playwright install chromium',
+                    'fix_description': '重新安装Chromium浏览器'
+                }
+    
+    async def check_redis(self) -> Dict:
+        """检查Redis服务"""
+        try:
+            import redis.asyncio as aioredis
+            
+            # 尝试连接Redis
+            r = await aioredis.from_url(
+                'redis://localhost:6379',
+                socket_connect_timeout=3
+            )
+            
+            # 发送PING命令
+            response = await r.ping()
+            
+            # 获取Redis信息
+            info = await r.info()
+            redis_version = info.get('redis_version', 'unknown')
+            
+            await r.close()
+            
+            if response:
+                return {
+                    'name': 'Redis服务',
+                    'passed': True,
+                    'message': f'✅ Redis {redis_version} 运行正常',
+                    'version': redis_version,
+                    'fix_available': False,
+                    'details': {
+                        'port': 6379,
+                        'uptime_seconds': info.get('uptime_in_seconds', 0),
+                        'connected_clients': info.get('connected_clients', 0)
+                    }
+                }
+        
+        except ImportError:
+            return {
+                'name': 'Redis服务',
+                'passed': False,
+                'message': '❌ Redis库未安装',
+                'fix_available': True,
+                'fix_command': 'pip install redis',
+                'fix_description': '安装Redis Python客户端'
+            }
+        
+        except Exception as e:
+            error_msg = str(e)
+            
+            # 判断错误类型
+            if 'Connection refused' in error_msg:
+                return {
+                    'name': 'Redis服务',
+                    'passed': False,
+                    'message': '❌ Redis未启动',
+                    'fix_available': True,
+                    'fix_command': 'auto_start_redis',
+                    'fix_description': '自动启动嵌入式Redis服务'
+                }
+            elif 'Timeout' in error_msg:
+                return {
+                    'name': 'Redis服务',
+                    'passed': False,
+                    'message': '❌ Redis连接超时',
+                    'fix_available': True,
+                    'fix_command': 'auto_start_redis',
+                    'fix_description': '重新启动Redis服务'
+                }
+            else:
+                return {
+                    'name': 'Redis服务',
+                    'passed': False,
+                    'message': f'❌ Redis连接失败: {error_msg}',
+                    'fix_available': True,
+                    'fix_command': 'auto_start_redis',
+                    'fix_description': '尝试启动Redis服务'
+                }
+    
+    async def check_network(self) -> Dict:
+        """检查网络连接（3个测试点）"""
+        import aiohttp
+        
+        results = {}
+        
+        for url in self.network_test_urls:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                        results[url] = {
+                            'success': resp.status == 200,
+                            'status': resp.status,
+                            'time': resp.headers.get('Date', 'unknown')
+                        }
+            except asyncio.TimeoutError:
+                results[url] = {
+                    'success': False,
+                    'error': 'Timeout'
+                }
+            except Exception as e:
+                results[url] = {
+                    'success': False,
+                    'error': str(e)
+                }
+        
+        # 计算成功率
+        success_count = sum(1 for r in results.values() if r.get('success'))
+        total_count = len(results)
+        passed = success_count >= 2  # 至少2个可达
         
         return {
-            "all_available": all_available,
-            "results": results,
-            "status": "✅ 全部可用" if all_available else "⚠️ 部分端口被占用"
+            'name': '网络连接',
+            'passed': passed,
+            'message': f'{"✅" if passed else "⚠️"} 网络{'正常' if passed else '不稳定'} ({success_count}/{total_count}可达)',
+            'success_count': success_count,
+            'total_count': total_count,
+            'fix_available': False,
+            'details': results
         }
     
-    async def _check_disk_space(self) -> Dict:
-        """检查磁盘空间（至少5GB）"""
+    async def check_ports(self) -> Dict:
+        """检查端口可用性"""
+        occupied = []
+        
+        for port in self.required_ports:
+            if self._is_port_in_use(port):
+                process_info = self._get_process_using_port(port)
+                occupied.append({
+                    'port': port,
+                    'process': process_info
+                })
+        
+        if not occupied:
+            return {
+                'name': '端口可用性',
+                'passed': True,
+                'message': f'✅ 所有端口可用 ({", ".join(map(str, self.required_ports))})',
+                'ports': self.required_ports,
+                'fix_available': False
+            }
+        else:
+            port_list = [str(p['port']) for p in occupied]
+            return {
+                'name': '端口可用性',
+                'passed': False,
+                'message': f'❌ 端口被占用: {", ".join(port_list)}',
+                'occupied_ports': occupied,
+                'fix_available': True,
+                'fix_command': 'kill_processes',
+                'fix_description': '自动终止占用端口的进程（仅python/node/redis）'
+            }
+    
+    def _is_port_in_use(self, port: int) -> bool:
+        """检查端口是否被占用"""
         try:
-            stat = shutil.disk_usage(settings.data_dir)
+            for conn in psutil.net_connections():
+                if conn.laddr.port == port and conn.status == 'LISTEN':
+                    return True
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            pass
+        
+        return False
+    
+    def _get_process_using_port(self, port: int) -> Optional[Dict]:
+        """获取占用端口的进程信息"""
+        try:
+            for conn in psutil.net_connections():
+                if conn.laddr.port == port and conn.status == 'LISTEN':
+                    try:
+                        process = psutil.Process(conn.pid)
+                        return {
+                            'pid': conn.pid,
+                            'name': process.name(),
+                            'exe': process.exe(),
+                            'cmdline': ' '.join(process.cmdline())
+                        }
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        return {
+                            'pid': conn.pid,
+                            'name': 'Unknown',
+                            'exe': 'Unknown'
+                        }
+        except (psutil.AccessDenied, psutil.NoSuchProcess):
+            pass
+        
+        return None
+    
+    async def check_disk_space(self) -> Dict:
+        """检查磁盘空间"""
+        try:
+            data_dir = Path.home() / "Documents" / "KookForwarder"
+            data_dir.mkdir(parents=True, exist_ok=True)
             
-            free_gb = stat.free / (1024 ** 3)
-            sufficient = free_gb >= 5.0
+            # 获取磁盘使用情况
+            disk = psutil.disk_usage(str(data_dir))
+            free_gb = disk.free / (1024**3)
+            total_gb = disk.total / (1024**3)
+            used_percent = disk.percent
+            
+            required_gb = self.disk_required_gb
+            passed = free_gb >= required_gb
             
             return {
-                "sufficient": sufficient,
-                "free_gb": round(free_gb, 2),
-                "total_gb": round(stat.total / (1024 ** 3), 2),
-                "used_percent": round((stat.used / stat.total) * 100, 2),
-                "status": f"✅ 剩余 {free_gb:.1f}GB" if sufficient else f"⚠️ 仅剩 {free_gb:.1f}GB"
+                'name': '磁盘空间',
+                'passed': passed,
+                'message': f'{"✅" if passed else "❌"} 磁盘空间{"充足" if passed else "不足"} ({free_gb:.2f}GB可用/{total_gb:.2f}GB总计)',
+                'free_gb': round(free_gb, 2),
+                'total_gb': round(total_gb, 2),
+                'used_percent': used_percent,
+                'required_gb': required_gb,
+                'fix_available': False,
+                'details': {
+                    'data_dir': str(data_dir),
+                    'filesystem': disk._asdict() if hasattr(disk, '_asdict') else {}
+                }
             }
-        except Exception as e:
-            return {"sufficient": False, "error": str(e), "status": "❌ 检测失败"}
-    
-    async def auto_fix_all(self) -> Dict:
-        """
-        自动修复所有可修复的问题
         
+        except Exception as e:
+            return {
+                'name': '磁盘空间',
+                'passed': False,
+                'message': f'❌ 磁盘检查失败: {str(e)}',
+                'fix_available': False
+            }
+    
+    async def auto_fix(self, check_name: str) -> Dict:
+        """
+        自动修复问题
+        
+        Args:
+            check_name: 检查项名称（python/chromium/redis/ports）
+            
         Returns:
             修复结果
         """
-        fixed = []
-        failed = []
+        logger.info(f"🔧 开始自动修复: {check_name}")
         
-        logger.info("🔧 开始自动修复...")
-        
-        check_result = await self.check_all_concurrent()
-        
-        for issue in check_result.get("fixable_issues", []):
-            try:
-                if "Chromium" in issue["issue"]:
-                    logger.info("📥 安装Chromium浏览器...")
-                    import subprocess
-                    result = subprocess.run(
-                        ["playwright", "install", "chromium", "--with-deps"],
-                        capture_output=True,
-                        text=True
-                    )
-                    if result.returncode == 0:
-                        fixed.append(issue["issue"])
-                        logger.info("✅ Chromium安装成功")
-                    else:
-                        failed.append({"issue": issue["issue"], "reason": result.stderr})
-                        logger.error(f"❌ Chromium安装失败: {result.stderr}")
-                
-                elif "Redis" in issue["issue"]:
-                    logger.info("🚀 启动Redis服务...")
-                    from ..utils.redis_manager_enhanced import redis_manager
-                    success, msg = await redis_manager.start()
-                    if success:
-                        fixed.append(issue["issue"])
-                        logger.info("✅ Redis启动成功")
-                    else:
-                        failed.append({"issue": issue["issue"], "reason": msg})
-                        logger.error(f"❌ Redis启动失败: {msg}")
+        if check_name == 'chromium':
+            return await self._fix_chromium()
+        elif check_name == 'redis':
+            return await self._fix_redis()
+        elif check_name == 'ports':
+            return await self._fix_ports()
+        else:
+            return {
+                'success': False,
+                'message': f'不支持自动修复: {check_name}'
+            }
+    
+    async def _fix_chromium(self) -> Dict:
+        """自动安装Chromium"""
+        try:
+            logger.info("📥 正在下载并安装Chromium...")
             
-            except Exception as e:
-                failed.append({"issue": issue["issue"], "reason": str(e)})
-                logger.error(f"❌ 修复失败: {issue['issue']} - {e}")
+            process = await asyncio.create_subprocess_exec(
+                sys.executable, '-m', 'playwright', 'install', 'chromium',
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            
+            stdout, stderr = await asyncio.wait_for(
+                process.communicate(),
+                timeout=300  # 5分钟超时
+            )
+            
+            if process.returncode == 0:
+                logger.info("✅ Chromium安装成功")
+                return {
+                    'success': True,
+                    'message': '✅ Chromium安装成功',
+                    'output': stdout.decode() if stdout else ''
+                }
+            else:
+                error_msg = stderr.decode() if stderr else 'Unknown error'
+                logger.error(f"❌ Chromium安装失败: {error_msg}")
+                return {
+                    'success': False,
+                    'message': f'❌ Chromium安装失败: {error_msg}'
+                }
         
-        logger.info(f"🎉 修复完成: 成功{len(fixed)}个, 失败{len(failed)}个")
+        except asyncio.TimeoutError:
+            return {
+                'success': False,
+                'message': '❌ Chromium安装超时（5分钟）'
+            }
+        except Exception as e:
+            logger.error(f"❌ Chromium安装异常: {str(e)}")
+            return {
+                'success': False,
+                'message': f'❌ 安装异常: {str(e)}'
+            }
+    
+    async def _fix_redis(self) -> Dict:
+        """自动启动Redis"""
+        try:
+            from ..utils.redis_manager_enhanced import redis_manager
+            
+            logger.info("🚀 正在启动Redis服务...")
+            
+            success, message = await redis_manager.start()
+            
+            if success:
+                logger.info("✅ Redis启动成功")
+            else:
+                logger.error(f"❌ Redis启动失败: {message}")
+            
+            return {
+                'success': success,
+                'message': message
+            }
         
+        except ImportError:
+            return {
+                'success': False,
+                'message': '❌ Redis管理器未安装'
+            }
+        except Exception as e:
+            logger.error(f"❌ Redis启动异常: {str(e)}")
+            return {
+                'success': False,
+                'message': f'❌ Redis启动失败: {str(e)}'
+            }
+    
+    async def _fix_ports(self) -> Dict:
+        """自动清理占用的端口"""
+        try:
+            check_result = await self.check_ports()
+            
+            if check_result['passed']:
+                return {
+                    'success': True,
+                    'message': '✅ 端口已可用'
+                }
+            
+            occupied = check_result.get('occupied_ports', [])
+            killed = []
+            failed = []
+            
+            for port_info in occupied:
+                process_info = port_info['process']
+                pid = process_info['pid']
+                process_name = process_info['name']
+                
+                try:
+                    # 仅kill特定进程（避免误杀系统进程）
+                    safe_names = ['python', 'python.exe', 'node', 'node.exe', 'redis-server', 'redis-server.exe']
+                    
+                    if any(name.lower() in process_name.lower() for name in safe_names):
+                        process = psutil.Process(pid)
+                        process.terminate()
+                        
+                        # 等待进程结束
+                        try:
+                            process.wait(timeout=5)
+                            killed.append(f"{process_name}(PID:{pid},端口:{port_info['port']})")
+                            logger.info(f"✅ 已终止进程: {process_name}(PID:{pid})")
+                        except psutil.TimeoutExpired:
+                            # 强制kill
+                            process.kill()
+                            killed.append(f"{process_name}(PID:{pid},端口:{port_info['port']},强制)")
+                            logger.info(f"✅ 已强制终止进程: {process_name}(PID:{pid})")
+                    else:
+                        failed.append(f"{process_name}(PID:{pid},端口:{port_info['port']},不安全)")
+                        logger.warning(f"⚠️  跳过进程（不安全）: {process_name}(PID:{pid})")
+                
+                except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                    failed.append(f"{process_name}(PID:{pid},端口:{port_info['port']},{str(e)})")
+                    logger.error(f"❌ 终止进程失败: {process_name}(PID:{pid}) - {str(e)}")
+            
+            if killed:
+                message = f'✅ 已终止进程: {", ".join(killed)}'
+                if failed:
+                    message += f'\n⚠️  跳过进程: {", ".join(failed)}'
+                
+                return {
+                    'success': True,
+                    'message': message,
+                    'killed': killed,
+                    'failed': failed
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': f'❌ 无法自动终止进程，请手动处理: {", ".join(failed)}',
+                    'failed': failed
+                }
+        
+        except Exception as e:
+            logger.error(f"❌ 端口清理异常: {str(e)}")
+            return {
+                'success': False,
+                'message': f'❌ 端口清理失败: {str(e)}'
+            }
+    
+    def get_system_info(self) -> Dict:
+        """获取系统信息"""
         return {
-            "fixed": fixed,
-            "failed": failed,
-            "success": len(failed) == 0
+            'os': platform.system(),
+            'os_version': platform.version(),
+            'architecture': platform.machine(),
+            'python_version': sys.version,
+            'hostname': platform.node(),
+            'processor': platform.processor()
         }
 
 
 # 创建全局实例
-ultimate_env_checker = UltimateEnvironmentChecker()
+environment_checker = EnvironmentChecker()
