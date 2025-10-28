@@ -1,225 +1,235 @@
 /**
- * KOOK Cookie导出工具 - 弹出窗口逻辑
- * 版本: v1.0.0
+ * Popup脚本
  */
 
-const statusEl = document.getElementById('status')
-const exportBtn = document.getElementById('exportBtn')
-const buttonText = document.getElementById('buttonText')
-const cookieInfoEl = document.getElementById('cookieInfo')
-const cookieCountEl = document.getElementById('cookieCount')
-const statsEl = document.getElementById('stats')
-const exportCountEl = document.getElementById('exportCount')
-const lastExportEl = document.getElementById('lastExport')
-
-// 显示状态
-function showStatus(message, type = 'success') {
-  statusEl.textContent = message
-  statusEl.className = `status ${type} show`
-  setTimeout(() => {
-    statusEl.classList.remove('show')
-  }, 5000)
+// DOM元素
+const elements = {
+  cookieCount: document.getElementById('cookie-count'),
+  cookieValidity: document.getElementById('cookie-validity'),
+  systemStatus: document.getElementById('system-status'),
+  autoSendBtn: document.getElementById('auto-send-btn'),
+  sendLoading: document.getElementById('send-loading'),
+  exportJsonBtn: document.getElementById('export-json-btn'),
+  exportNetscapeBtn: document.getElementById('export-netscape-btn'),
+  exportHeaderBtn: document.getElementById('export-header-btn'),
+  historyList: document.getElementById('history-list'),
+  clearHistory: document.getElementById('clear-history'),
+  openSettings: document.getElementById('open-settings')
 }
 
-// 更新统计信息
-async function updateStats() {
+// 初始化
+document.addEventListener('DOMContentLoaded', async () => {
+  await checkStatus()
+  await loadHistory()
+  bindEvents()
+})
+
+/**
+ * 检查状态
+ */
+async function checkStatus() {
   try {
-    const stats = await chrome.storage.local.get(['exportCount', 'lastExport'])
+    // 1. 检查Cookie
+    const allCookies = []
+    const domains = ['.kookapp.cn', 'www.kookapp.cn']
     
-    if (stats.exportCount) {
-      exportCountEl.textContent = stats.exportCount
-      statsEl.style.display = 'grid'
+    for (const domain of domains) {
+      const cookies = await chrome.cookies.getAll({ domain })
+      allCookies.push(...cookies)
     }
     
-    if (stats.lastExport) {
-      const date = new Date(stats.lastExport)
-      const now = new Date()
-      const diff = Math.floor((now - date) / 1000)
-      
-      if (diff < 60) {
-        lastExportEl.textContent = `${diff}秒前`
-      } else if (diff < 3600) {
-        lastExportEl.textContent = `${Math.floor(diff / 60)}分钟前`
-      } else if (diff < 86400) {
-        lastExportEl.textContent = `${Math.floor(diff / 3600)}小时前`
-      } else {
-        lastExportEl.textContent = `${Math.floor(diff / 86400)}天前`
-      }
-    }
-  } catch (error) {
-    console.error('更新统计失败:', error)
-  }
-}
-
-// 保存统计信息
-async function saveStats() {
-  try {
-    const stats = await chrome.storage.local.get(['exportCount'])
-    const newCount = (stats.exportCount || 0) + 1
+    elements.cookieCount.textContent = `${allCookies.length}个`
     
-    await chrome.storage.local.set({
-      exportCount: newCount,
-      lastExport: Date.now()
-    })
+    // 2. 验证Cookie
+    const requiredFields = ['token', 'session', 'user_id']
+    const foundFields = allCookies.filter(c => requiredFields.includes(c.name))
     
-    await updateStats()
-  } catch (error) {
-    console.error('保存统计失败:', error)
-  }
-}
-
-// 验证Cookie
-function validateCookies(cookies) {
-  const warnings = []
-  
-  // 检查数量
-  if (cookies.length === 0) {
-    return { valid: false, error: '未找到Cookie，请先登录KOOK' }
-  }
-  
-  if (cookies.length < 3) {
-    warnings.push(`Cookie数量较少（${cookies.length}个）`)
-  }
-  
-  // 检查域名
-  const hasKookDomain = cookies.some(c => 
-    c.domain && (c.domain.includes('kookapp.cn') || c.domain.includes('kaiheila.cn'))
-  )
-  
-  if (!hasKookDomain) {
-    warnings.push('Cookie域名可能不正确')
-  }
-  
-  // 检查关键字段
-  const requiredFields = ['name', 'value']
-  const hasRequiredFields = cookies.every(c => 
-    requiredFields.every(field => field in c && c[field])
-  )
-  
-  if (!hasRequiredFields) {
-    return { valid: false, error: 'Cookie格式不完整' }
-  }
-  
-  return { valid: true, warnings }
-}
-
-// 导出Cookie
-async function exportCookies() {
-  try {
-    exportBtn.disabled = true
-    buttonText.textContent = '导出中...'
-    
-    // 获取当前标签页
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    
-    // 检查是否在KOOK页面
-    if (!tab.url || (!tab.url.includes('kookapp.cn') && !tab.url.includes('kaiheila.cn'))) {
-      showStatus('⚠️  请在KOOK网页版使用此扩展', 'warning')
-      exportBtn.disabled = false
-      buttonText.textContent = '导出Cookie到剪贴板'
-      return
-    }
-    
-    // 获取KOOK的所有Cookie
-    const cookies = await chrome.cookies.getAll({
-      domain: '.kookapp.cn'
-    })
-    
-    // 如果没找到，尝试kaiheila.cn
-    if (cookies.length === 0) {
-      const cookies2 = await chrome.cookies.getAll({
-        domain: '.kaiheila.cn'
-      })
-      cookies.push(...cookies2)
-    }
-    
-    // 验证Cookie
-    const validation = validateCookies(cookies)
-    
-    if (!validation.valid) {
-      showStatus(`❌ ${validation.error}`, 'error')
-      exportBtn.disabled = false
-      buttonText.textContent = '导出Cookie到剪贴板'
-      return
-    }
-    
-    // 转换为JSON格式（格式化，方便阅读）
-    const cookiesJSON = JSON.stringify(cookies, null, 2)
-    
-    // 复制到剪贴板
-    await navigator.clipboard.writeText(cookiesJSON)
-    
-    // 保存统计
-    await saveStats()
-    
-    // 成功提示
-    let message = `✅ 成功导出 ${cookies.length} 个Cookie到剪贴板！`
-    if (validation.warnings && validation.warnings.length > 0) {
-      message += `\n⚠️  ${validation.warnings.join(', ')}`
-    }
-    
-    showStatus(message, 'success')
-    
-    // 更新按钮
-    buttonText.innerHTML = '<span class="icon">✓</span>已复制到剪贴板'
-    
-    // 3秒后恢复按钮
-    setTimeout(() => {
-      exportBtn.disabled = false
-      buttonText.innerHTML = '<span class="icon">📋</span>导出Cookie到剪贴板'
-    }, 3000)
-    
-  } catch (error) {
-    console.error('导出失败:', error)
-    showStatus(`❌ 导出失败: ${error.message}`, 'error')
-    exportBtn.disabled = false
-    buttonText.textContent = '导出Cookie到剪贴板'
-  }
-}
-
-// 检查Cookie状态
-async function checkCookieStatus() {
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    
-    if (!tab.url) {
-      return
-    }
-    
-    if (tab.url.includes('kookapp.cn') || tab.url.includes('kaiheila.cn')) {
-      // 获取Cookie数量
-      const cookies = await chrome.cookies.getAll({ domain: '.kookapp.cn' })
-      const cookies2 = await chrome.cookies.getAll({ domain: '.kaiheila.cn' })
-      const totalCookies = cookies.length + cookies2.length
-      
-      if (totalCookies > 0) {
-        cookieCountEl.textContent = totalCookies
-        cookieInfoEl.style.display = 'block'
-        showStatus(`✓ 检测到 ${totalCookies} 个Cookie，可以导出`, 'info')
-      } else {
-        showStatus('⚠️  未检测到Cookie，请先登录KOOK', 'warning')
-      }
+    if (foundFields.length === requiredFields.length) {
+      elements.cookieValidity.textContent = '✅ 有效'
+      elements.cookieValidity.classList.add('success')
     } else {
-      showStatus('ℹ️  请在KOOK网页版使用此扩展', 'info')
+      elements.cookieValidity.textContent = '⚠️ 部分缺失'
+      elements.cookieValidity.classList.add('error')
     }
+    
+    // 3. 检查本地系统
+    const isSystemOnline = await checkLocalSystem()
+    
+    if (isSystemOnline) {
+      elements.systemStatus.textContent = '✅ 在线'
+      elements.systemStatus.classList.add('success')
+    } else {
+      elements.systemStatus.textContent = '❌ 离线'
+      elements.systemStatus.classList.add('error')
+      elements.autoSendBtn.disabled = true
+      elements.autoSendBtn.innerHTML = '<span>⚠️</span><span>本地系统未运行</span>'
+    }
+    
   } catch (error) {
     console.error('状态检查失败:', error)
   }
 }
 
-// 绑定事件
-exportBtn.addEventListener('click', exportCookies)
+/**
+ * 检查本地系统是否在线
+ */
+async function checkLocalSystem() {
+  const urls = [
+    'http://localhost:9527/health',
+    'http://127.0.0.1:9527/health'
+  ]
+  
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: AbortSignal.timeout(2000)  // 2秒超时
+      })
+      
+      if (response.ok) {
+        return true
+      }
+    } catch (error) {
+      continue
+    }
+  }
+  
+  return false
+}
 
-// 页面加载时执行
-window.addEventListener('load', async () => {
-  await updateStats()
-  await checkCookieStatus()
-})
+/**
+ * 加载历史记录
+ */
+async function loadHistory() {
+  try {
+    const result = await chrome.storage.local.get('history')
+    const history = result.history || []
+    
+    if (history.length === 0) {
+      elements.historyList.innerHTML = '<div class="history-item"><div class="time">暂无历史记录</div></div>'
+      return
+    }
+    
+    elements.historyList.innerHTML = history.slice(0, 5).map(record => {
+      const date = new Date(record.timestamp)
+      const timeStr = date.toLocaleString('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+      
+      return `
+        <div class="history-item">
+          <div class="time">${timeStr}</div>
+          <div>
+            <span class="format">${formatName(record.format)}</span>
+            · ${record.cookies.length}个Cookie
+            · ${record.validation.isValid ? '✅' : '⚠️'}
+          </div>
+        </div>
+      `
+    }).join('')
+    
+  } catch (error) {
+    console.error('加载历史失败:', error)
+  }
+}
 
-// 监听键盘快捷键
-document.addEventListener('keydown', (e) => {
-  // Ctrl+Enter 或 Cmd+Enter 快速导出
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-    exportCookies()
+/**
+ * 格式名称
+ */
+function formatName(format) {
+  const map = {
+    'json': 'JSON',
+    'netscape': 'Netscape',
+    'header': 'Header',
+    'auto-send': '自动发送'
+  }
+  return map[format] || format
+}
+
+/**
+ * 绑定事件
+ */
+function bindEvents() {
+  // 一键导入
+  elements.autoSendBtn.addEventListener('click', async () => {
+    elements.sendLoading.classList.remove('hidden')
+    elements.autoSendBtn.disabled = true
+    
+    try {
+      await chrome.runtime.sendMessage({ action: 'exportAndSend' })
+      await loadHistory()
+    } catch (error) {
+      console.error('发送失败:', error)
+    } finally {
+      elements.sendLoading.classList.add('hidden')
+      elements.autoSendBtn.disabled = false
+    }
+  })
+  
+  // 导出JSON
+  elements.exportJsonBtn.addEventListener('click', async () => {
+    await chrome.runtime.sendMessage({ action: 'exportCookies', format: 'json' })
+    await loadHistory()
+  })
+  
+  // 导出Netscape
+  elements.exportNetscapeBtn.addEventListener('click', async () => {
+    await chrome.runtime.sendMessage({ action: 'exportCookies', format: 'netscape' })
+    await loadHistory()
+  })
+  
+  // 导出Header
+  elements.exportHeaderBtn.addEventListener('click', async () => {
+    await chrome.runtime.sendMessage({ action: 'exportCookies', format: 'header' })
+    await loadHistory()
+  })
+  
+  // 清空历史
+  elements.clearHistory.addEventListener('click', async (e) => {
+    e.preventDefault()
+    
+    if (confirm('确定要清空所有历史记录吗？')) {
+      await chrome.storage.local.set({ history: [] })
+      await loadHistory()
+    }
+  })
+  
+  // 设置
+  elements.openSettings.addEventListener('click', (e) => {
+    e.preventDefault()
+    chrome.runtime.openOptionsPage()
+  })
+}
+
+// 监听来自background的消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'exportCookies') {
+    exportCookies(message.format)
+  } else if (message.action === 'exportAndSend') {
+    exportAndSend()
   }
 })
+
+/**
+ * 导出Cookie（调用background脚本）
+ */
+async function exportCookies(format) {
+  // 实际导出逻辑在background.js中
+  // 这里只是触发
+  chrome.runtime.sendMessage({
+    action: 'exportCookies',
+    format: format
+  })
+}
+
+/**
+ * 导出并发送
+ */
+async function exportAndSend() {
+  chrome.runtime.sendMessage({
+    action: 'exportAndSend'
+  })
+}

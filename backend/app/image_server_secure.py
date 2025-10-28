@@ -1,367 +1,361 @@
 """
-安全图片服务器 - P1-2优化
-提供Token验证、路径防护、本地访问限制的图片服务
+图床安全服务器 - 完整安全机制实现
+✅ P0-4优化: Token验证 + IP白名单 + 路径遍历防护
 """
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
 import secrets
 import time
+import asyncio
 from pathlib import Path
-from typing import Dict
-import re
-from .utils.logger import logger
+from typing import Dict, Optional, Set
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
 from .config import settings
-
-app = FastAPI(title="Secure Image Server")
-
-# Token存储（生产环境应使用Redis）
-image_tokens: Dict[str, dict] = {}
-
-# 图片目录
-IMAGE_DIR = Path(settings.image_dir) if hasattr(settings, 'image_dir') else Path("data/images")
-IMAGE_DIR.mkdir(parents=True, exist_ok=True)
-
-# 允许的IP白名单
-ALLOWED_IPS = ["127.0.0.1", "localhost", "::1", "0.0.0.0"]
-
-# Token有效期（秒）
-TOKEN_EXPIRE_TIME = 7200  # 2小时
-
-# 自动清理间隔（秒）
-CLEANUP_INTERVAL = 900  # 15分钟
+from .utils.logger import logger
 
 
-@app.post("/generate-token")
-async def generate_token(filename: str, request: Request):
-    """
-    生成图片访问Token
+class SecureImageServer:
+    """安全的图床服务器"""
     
-    Args:
-        filename: 文件名
-    
-    Returns:
-        {
-            "success": bool,
-            "url": str,
-            "token": str,
-            "expire_at": float
+    def __init__(self):
+        # Token存储：{token: {'filename': str, 'expire_at': float}}
+        self.tokens: Dict[str, Dict] = {}
+        
+        # IP白名单（只允许本地访问）
+        self.whitelist_ips: Set[str] = {
+            '127.0.0.1',
+            '::1',
+            'localhost',
+            '0.0.0.0'  # Docker容器内部访问
         }
-    """
-    # 1. 检查访问来源（仅允许本地）
-    client_ip = request.client.host
-    if client_ip not in ALLOWED_IPS:
-        raise HTTPException(
-            status_code=403,
-            detail="仅允许本地访问"
-        )
-    
-    # 2. 验证文件名安全性
-    if not is_safe_filename(filename):
-        raise HTTPException(status_code=400, detail="非法文件名")
-    
-    # 3. 检查文件是否存在
-    file_path = IMAGE_DIR / filename
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="文件不存在")
-    
-    # 4. 生成Token
-    token = secrets.token_urlsafe(32)
-    
-    # 5. 存储Token
-    expire_at = time.time() + TOKEN_EXPIRE_TIME
-    image_tokens[token] = {
-        "filename": filename,
-        "created_at": time.time(),
-        "expire_at": expire_at,
-        "access_count": 0,
-        "client_ip": client_ip
-    }
-    
-    # 6. 构建完整URL
-    port = settings.image_server_port if hasattr(settings, 'image_server_port') else 8765
-    url = f"http://127.0.0.1:{port}/images/{filename}?token={token}"
-    
-    logger.info(
-        f"生成图片Token: {filename}, "
-        f"token={token[:10]}..., "
-        f"expire_at={expire_at}"
-    )
-    
-    return {
-        "success": True,
-        "url": url,
-        "token": token,
-        "expire_at": expire_at,
-        "valid_for_seconds": TOKEN_EXPIRE_TIME
-    }
-
-
-@app.get("/images/{filename}")
-async def serve_image(filename: str, token: str, request: Request):
-    """
-    提供图片服务（安全版）
-    
-    Args:
-        filename: 文件名
-        token: 访问Token
-    
-    Returns:
-        FileResponse
-    """
-    # 1. 检查访问来源
-    client_ip = request.client.host
-    if client_ip not in ALLOWED_IPS:
-        logger.warning(f"拒绝非本地访问: {client_ip}")
-        raise HTTPException(
-            status_code=403,
-            detail="仅允许本地访问"
-        )
-    
-    # 2. 验证Token
-    if token not in image_tokens:
-        logger.warning(f"无效Token: {token[:10]}...")
-        raise HTTPException(
-            status_code=401,
-            detail="Token无效或已过期"
-        )
-    
-    token_data = image_tokens[token]
-    
-    # 3. 检查Token是否过期
-    if time.time() > token_data["expire_at"]:
-        del image_tokens[token]
-        logger.warning(f"Token已过期: {token[:10]}...")
-        raise HTTPException(
-            status_code=401,
-            detail="Token已过期"
-        )
-    
-    # 4. 验证文件名匹配
-    if token_data["filename"] != filename:
-        logger.warning(
-            f"Token与文件名不匹配: "
-            f"expected={token_data['filename']}, got={filename}"
-        )
-        raise HTTPException(
-            status_code=403,
-            detail="Token与文件名不匹配"
-        )
-    
-    # 5. 路径遍历防护
-    if not is_safe_filename(filename):
-        logger.warning(f"检测到非法文件名: {filename}")
-        raise HTTPException(
-            status_code=400,
-            detail="非法文件名"
-        )
-    
-    # 6. 构建安全的文件路径
-    file_path = (IMAGE_DIR / filename).resolve()
-    
-    # 7. 确保文件在允许的目录内
-    if not str(file_path).startswith(str(IMAGE_DIR.resolve())):
-        logger.warning(f"路径遍历攻击: {file_path}")
-        raise HTTPException(
-            status_code=403,
-            detail="非法路径"
-        )
-    
-    # 8. 检查文件是否存在
-    if not file_path.exists():
-        logger.warning(f"文件不存在: {file_path}")
-        raise HTTPException(
-            status_code=404,
-            detail="文件不存在"
-        )
-    
-    # 9. 更新访问计数
-    token_data["access_count"] += 1
-    token_data["last_access"] = time.time()
-    
-    # 10. 返回文件
-    media_type = get_media_type(filename)
-    
-    logger.debug(
-        f"提供图片: {filename}, "
-        f"token={token[:10]}..., "
-        f"access_count={token_data['access_count']}"
-    )
-    
-    return FileResponse(
-        file_path,
-        media_type=media_type,
-        headers={
-            "Cache-Control": "public, max-age=3600",
-            "X-Token-Access-Count": str(token_data["access_count"]),
-            "X-Token-Expire": str(int(token_data["expire_at"]))
-        }
-    )
-
-
-def is_safe_filename(filename: str) -> bool:
-    """
-    检查文件名是否安全
-    
-    Args:
-        filename: 文件名
-    
-    Returns:
-        是否安全
-    """
-    # 1. 禁止路径遍历
-    if ".." in filename or "/" in filename or "\\" in filename:
-        return False
-    
-    # 2. 禁止隐藏文件
-    if filename.startswith('.'):
-        return False
-    
-    # 3. 只允许字母、数字、-、_、.
-    if not re.match(r'^[a-zA-Z0-9_\-\.]+$', filename):
-        return False
-    
-    # 4. 检查扩展名
-    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
-    if not any(filename.lower().endswith(ext) for ext in allowed_extensions):
-        return False
-    
-    # 5. 文件名长度限制
-    if len(filename) > 255:
-        return False
-    
-    return True
-
-
-def get_media_type(filename: str) -> str:
-    """
-    根据文件扩展名获取MIME类型
-    
-    Args:
-        filename: 文件名
-    
-    Returns:
-        MIME类型
-    """
-    ext = filename.lower().split('.')[-1]
-    
-    media_types = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp',
-        'bmp': 'image/bmp'
-    }
-    
-    return media_types.get(ext, 'application/octet-stream')
-
-
-@app.get("/stats")
-async def get_stats(request: Request):
-    """
-    获取统计信息（仅本地访问）
-    
-    Returns:
-        Token统计信息
-    """
-    # 检查访问来源
-    client_ip = request.client.host
-    if client_ip not in ALLOWED_IPS:
-        raise HTTPException(
-            status_code=403,
-            detail="仅允许本地访问"
-        )
-    
-    current_time = time.time()
-    
-    stats = {
-        "total_tokens": len(image_tokens),
-        "active_tokens": sum(
-            1 for data in image_tokens.values()
-            if current_time <= data["expire_at"]
-        ),
-        "expired_tokens": sum(
-            1 for data in image_tokens.values()
-            if current_time > data["expire_at"]
-        ),
-        "total_accesses": sum(
-            data["access_count"] for data in image_tokens.values()
-        ),
-        "tokens": [
-            {
-                "filename": data["filename"],
-                "created_at": data["created_at"],
-                "expire_at": data["expire_at"],
-                "expires_in": max(0, int(data["expire_at"] - current_time)),
-                "access_count": data["access_count"],
-                "expired": current_time > data["expire_at"]
-            }
-            for data in list(image_tokens.values())[:100]  # 最多返回100个
-        ]
-    }
-    
-    return stats
-
-
-@app.post("/cleanup")
-async def cleanup_expired_tokens(request: Request):
-    """
-    手动清理过期Token（仅本地访问）
-    
-    Returns:
-        清理结果
-    """
-    # 检查访问来源
-    client_ip = request.client.host
-    if client_ip not in ALLOWED_IPS:
-        raise HTTPException(
-            status_code=403,
-            detail="仅允许本地访问"
-        )
-    
-    current_time = time.time()
-    expired_tokens = [
-        token for token, data in image_tokens.items()
-        if current_time > data["expire_at"]
-    ]
-    
-    for token in expired_tokens:
-        del image_tokens[token]
-    
-    logger.info(f"清理了 {len(expired_tokens)} 个过期Token")
-    
-    return {
-        "success": True,
-        "cleaned_count": len(expired_tokens),
-        "remaining_count": len(image_tokens)
-    }
-
-
-# 启动时自动清理任务
-@app.on_event("startup")
-async def startup_cleanup_task():
-    """启动自动清理任务"""
-    import asyncio
-    
-    async def cleanup_loop():
-        while True:
-            await asyncio.sleep(CLEANUP_INTERVAL)
+        
+        # 危险路径模式
+        self.dangerous_patterns = ['..', '~', '/etc/', '/root/', 'C:\\', 'D:\\']
+        
+        # 清理任务
+        self.cleanup_task = None
+        
+    def generate_token(self, filename: str, ttl: int = 7200) -> str:
+        """
+        生成安全Token
+        
+        Args:
+            filename: 文件名（仅文件名，不含路径）
+            ttl: 有效期（秒），默认2小时
             
+        Returns:
+            32字节的随机Token
+            
+        Raises:
+            ValueError: 文件名不合法
+        """
+        # 1. 验证文件名安全性
+        if self._is_dangerous_path(filename):
+            raise ValueError(f"非法文件名: {filename}")
+        
+        # 2. 验证文件存在
+        file_path = settings.image_storage_path / filename
+        if not file_path.exists():
+            raise FileNotFoundError(f"文件不存在: {filename}")
+        
+        # 3. 生成随机Token（256位熵）
+        token = secrets.token_urlsafe(32)
+        
+        # 4. 存储Token信息
+        self.tokens[token] = {
+            'filename': filename,
+            'expire_at': time.time() + ttl,
+            'created_at': time.time()
+        }
+        
+        logger.debug(f"生成Token: {token[:10]}... -> {filename} (有效期{ttl}秒)")
+        
+        return token
+    
+    def _is_dangerous_path(self, path: str) -> bool:
+        """检查路径是否包含危险模式"""
+        path_lower = path.lower()
+        
+        for pattern in self.dangerous_patterns:
+            if pattern in path_lower:
+                return True
+        
+        # 检查路径分隔符（防止跨目录访问）
+        if '/' in path or '\\' in path:
+            return True
+        
+        return False
+    
+    async def serve_image(self, request: Request, token: str) -> FileResponse:
+        """
+        提供图片服务（带完整安全检查）
+        
+        Args:
+            request: FastAPI请求对象
+            token: 访问Token
+            
+        Returns:
+            FileResponse对象
+            
+        Raises:
+            HTTPException: 各种安全检查失败
+        """
+        # 1. IP白名单检查
+        client_ip = request.client.host
+        
+        if client_ip not in self.whitelist_ips:
+            logger.warning(f"⚠️ 拒绝非白名单IP访问: {client_ip}")
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden: 仅允许本地访问"
+            )
+        
+        # 2. Token存在性检查
+        if token not in self.tokens:
+            logger.warning(f"⚠️ 无效Token访问: {token[:10]}... from {client_ip}")
+            raise HTTPException(
+                status_code=404,
+                detail="Token无效或已过期"
+            )
+        
+        token_info = self.tokens[token]
+        
+        # 3. Token过期检查
+        if time.time() > token_info['expire_at']:
+            logger.info(f"Token已过期: {token[:10]}...")
+            # 删除过期Token
+            del self.tokens[token]
+            raise HTTPException(
+                status_code=410,
+                detail="Token已过期"
+            )
+        
+        # 4. 文件名安全检查
+        filename = token_info['filename']
+        
+        if self._is_dangerous_path(filename):
+            logger.error(f"🚨 检测到路径遍历攻击: {filename} from {client_ip}")
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden: 路径遍历攻击"
+            )
+        
+        # 5. 路径规范化检查（防止符号链接攻击）
+        file_path = settings.image_storage_path / filename
+        
+        try:
+            # 获取真实路径
+            real_path = file_path.resolve()
+            allowed_path = settings.image_storage_path.resolve()
+            
+            # 确保文件在允许的目录内
+            if not str(real_path).startswith(str(allowed_path)):
+                logger.error(f"🚨 检测到目录遍历攻击: {filename} -> {real_path}")
+                raise HTTPException(
+                    status_code=403,
+                    detail="Forbidden: 目录遍历攻击"
+                )
+        except Exception as e:
+            logger.error(f"路径检查失败: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail="Internal Server Error"
+            )
+        
+        # 6. 文件存在性检查
+        if not file_path.exists():
+            logger.warning(f"文件不存在: {filename}")
+            raise HTTPException(
+                status_code=404,
+                detail="文件不存在"
+            )
+        
+        # 7. 记录访问日志（最近100条）
+        self._log_access(token, filename, client_ip)
+        
+        # 8. 返回文件
+        logger.info(f"✅ 提供图片: {filename} to {client_ip}")
+        
+        return FileResponse(
+            path=file_path,
+            media_type=self._get_media_type(filename),
+            headers={
+                'Cache-Control': 'public, max-age=3600',  # 缓存1小时
+                'X-Content-Type-Options': 'nosniff',      # 防止MIME嗅探
+                'X-Frame-Options': 'DENY'                 # 防止点击劫持
+            }
+        )
+    
+    def _get_media_type(self, filename: str) -> str:
+        """根据文件扩展名返回MIME类型"""
+        ext = filename.lower().split('.')[-1]
+        
+        mime_types = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'webp': 'image/webp',
+            'svg': 'image/svg+xml'
+        }
+        
+        return mime_types.get(ext, 'application/octet-stream')
+    
+    def _log_access(self, token: str, filename: str, client_ip: str):
+        """记录访问日志（环形缓冲，保留最近100条）"""
+        if not hasattr(self, '_access_logs'):
+            self._access_logs = []
+        
+        self._access_logs.append({
+            'token': token[:10] + '...',
+            'filename': filename,
+            'client_ip': client_ip,
+            'timestamp': time.time()
+        })
+        
+        # 保留最近100条
+        if len(self._access_logs) > 100:
+            self._access_logs = self._access_logs[-100:]
+    
+    def get_access_logs(self, limit: int = 50) -> list:
+        """获取访问日志"""
+        if not hasattr(self, '_access_logs'):
+            return []
+        
+        return self._access_logs[-limit:]
+    
+    async def cleanup_expired_tokens(self):
+        """清理过期Token（定时任务）"""
+        while True:
             try:
-                current_time = time.time()
+                await asyncio.sleep(900)  # 每15分钟清理一次
+                
+                now = time.time()
                 expired_tokens = [
-                    token for token, data in image_tokens.items()
-                    if current_time > data["expire_at"]
+                    token for token, info in self.tokens.items()
+                    if now > info['expire_at']
                 ]
                 
                 for token in expired_tokens:
-                    del image_tokens[token]
+                    del self.tokens[token]
                 
                 if expired_tokens:
-                    logger.info(f"自动清理了 {len(expired_tokens)} 个过期Token")
-            
+                    logger.info(f"🧹 清理了{len(expired_tokens)}个过期Token")
+                
+                # 统计信息
+                logger.debug(f"Token统计: 总数={len(self.tokens)}, 清理={len(expired_tokens)}")
+                
             except Exception as e:
-                logger.error(f"自动清理失败: {e}")
+                logger.error(f"清理Token异常: {e}")
     
-    asyncio.create_task(cleanup_loop())
-    logger.info(f"自动清理任务已启动，间隔{CLEANUP_INTERVAL}秒")
+    def start_cleanup_task(self):
+        """启动清理任务"""
+        if self.cleanup_task is None:
+            self.cleanup_task = asyncio.create_task(self.cleanup_expired_tokens())
+            logger.info("✅ Token清理任务已启动")
+    
+    def stop_cleanup_task(self):
+        """停止清理任务"""
+        if self.cleanup_task:
+            self.cleanup_task.cancel()
+            logger.info("Token清理任务已停止")
+    
+    def get_stats(self) -> Dict:
+        """获取统计信息"""
+        now = time.time()
+        
+        active_tokens = sum(1 for info in self.tokens.values() if now <= info['expire_at'])
+        expired_tokens = len(self.tokens) - active_tokens
+        
+        return {
+            'total_tokens': len(self.tokens),
+            'active_tokens': active_tokens,
+            'expired_tokens': expired_tokens,
+            'whitelist_ips': list(self.whitelist_ips),
+            'total_accesses': len(getattr(self, '_access_logs', []))
+        }
+
+
+# 全局实例
+secure_image_server = SecureImageServer()
+
+
+# FastAPI应用
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期"""
+    # 启动时
+    logger.info("🔒 启动安全图床服务器...")
+    secure_image_server.start_cleanup_task()
+    
+    yield
+    
+    # 关闭时
+    logger.info("🔒 关闭安全图床服务器...")
+    secure_image_server.stop_cleanup_task()
+
+
+app = FastAPI(
+    title="KOOK图床安全服务器",
+    description="带Token验证和IP白名单的安全图床",
+    lifespan=lifespan
+)
+
+
+@app.get("/images/{token}/{filename}")
+async def serve_image(request: Request, token: str, filename: str):
+    """提供图片服务（兼容旧URL格式）"""
+    return await secure_image_server.serve_image(request, token)
+
+
+@app.get("/images/{filename}")
+async def serve_image_with_token(request: Request, filename: str, token: str):
+    """提供图片服务（Token作为查询参数）"""
+    return await secure_image_server.serve_image(request, token)
+
+
+@app.get("/stats")
+async def get_stats():
+    """获取统计信息（仅本地访问）"""
+    return secure_image_server.get_stats()
+
+
+@app.get("/logs")
+async def get_logs(limit: int = 50):
+    """获取访问日志（仅本地访问）"""
+    return {
+        'logs': secure_image_server.get_access_logs(limit)
+    }
+
+
+@app.get("/health")
+async def health_check():
+    """健康检查"""
+    return {
+        'status': 'healthy',
+        'active_tokens': len(secure_image_server.tokens)
+    }
+
+
+# 启动函数
+async def start_secure_image_server():
+    """启动安全图床服务器"""
+    import uvicorn
+    
+    config = uvicorn.Config(
+        app=app,
+        host="127.0.0.1",  # 仅本地访问
+        port=settings.image_server_port,
+        log_level="info"
+    )
+    
+    server = uvicorn.Server(config)
+    
+    logger.info(f"🔒 安全图床服务器启动在: http://127.0.0.1:{settings.image_server_port}")
+    
+    await server.serve()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(start_secure_image_server())

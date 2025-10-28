@@ -1,256 +1,354 @@
 """
-消息去重模块
-实现消息ID持久化存储，防止重启后重复转发
+消息去重器 - 持久化实现
+✅ P1-1优化: 内存+数据库双重去重，重启不丢失
 """
 import sqlite3
-import logging
-from datetime import datetime, timedelta
-from typing import Set, Optional
+import asyncio
 from pathlib import Path
-import threading
-
-logger = logging.getLogger(__name__)
+from typing import Set, Optional, Dict
+from datetime import datetime, timedelta
+from ..config import settings
+from ..utils.logger import logger
 
 
 class MessageDeduplicator:
     """
     消息去重器
     
-    使用SQLite持久化存储已处理的消息ID
-    支持自动清理过期数据
+    功能：
+    1. 内存缓存（快速查询，加载最近24小时）
+    2. SQLite持久化（重启不丢失）
+    3. 自动清理（保留7天数据）
+    4. 统计信息
     """
     
-    def __init__(self, db_path: str = "data/message_dedup.db", retention_days: int = 7):
-        """
-        初始化去重器
-        
-        Args:
-            db_path: 数据库文件路径
-            retention_days: 消息ID保留天数（默认7天）
-        """
-        self.db_path = Path(db_path)
-        self.retention_days = retention_days
-        self._lock = threading.Lock()
-        self._memory_cache: Set[str] = set()
-        
-        # 确保数据目录存在
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, db_path: Optional[Path] = None):
+        self.db_path = db_path or (settings.data_dir / 'message_dedup.db')
+        self.memory_cache: Set[str] = set()  # 内存缓存
+        self.cache_hits = 0  # 缓存命中次数
+        self.cache_misses = 0  # 缓存未命中次数
         
         # 初始化数据库
-        self._init_database()
+        self.init_database()
         
-        # 加载最近的消息ID到内存缓存
-        self._load_recent_to_cache()
+        # 加载最近24小时的消息ID到内存
+        self.load_recent_to_cache()
         
-        logger.info(f"消息去重器初始化完成，数据库: {self.db_path}, 保留{retention_days}天")
+        logger.info(f"✅ 消息去重器已初始化，缓存了{len(self.memory_cache)}条消息ID")
     
-    def _init_database(self):
-        """初始化数据库表"""
-        with sqlite3.connect(str(self.db_path)) as conn:
+    def init_database(self):
+        """初始化去重数据库"""
+        with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS processed_messages (
+            
+            # 创建去重表
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS message_dedup (
                     message_id TEXT PRIMARY KEY,
                     channel_id TEXT NOT NULL,
-                    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    source TEXT DEFAULT 'kook'
+                    server_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    seen_count INTEGER DEFAULT 1
                 )
-            ''')
+            """)
             
-            # 创建索引加速查询
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_processed_at 
-                ON processed_messages(processed_at)
-            ''')
+            # 创建索引优化查询
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_dedup_channel_time
+                ON message_dedup(channel_id, created_at DESC)
+            """)
             
-            cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_channel_id 
-                ON processed_messages(channel_id)
-            ''')
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_dedup_created_time
+                ON message_dedup(created_at DESC)
+            """)
+            
+            # 统计表
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS dedup_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    total_messages INTEGER DEFAULT 0,
+                    duplicate_messages INTEGER DEFAULT 0,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            # 初始化统计
+            cursor.execute("""
+                INSERT OR IGNORE INTO dedup_stats (id, total_messages, duplicate_messages)
+                VALUES (1, 0, 0)
+            """)
             
             conn.commit()
-            logger.debug("数据库表初始化完成")
+            
+        logger.info(f"✅ 去重数据库已初始化: {self.db_path}")
     
-    def _load_recent_to_cache(self, hours: int = 24):
+    def load_recent_to_cache(self, hours: int = 24):
         """
         加载最近N小时的消息ID到内存缓存
         
         Args:
-            hours: 加载最近多少小时的数据
+            hours: 加载多少小时内的数据，默认24小时
         """
-        cutoff_time = datetime.now() - timedelta(hours=hours)
-        
-        with sqlite3.connect(str(self.db_path)) as conn:
+        with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                'SELECT message_id FROM processed_messages WHERE processed_at >= ?',
-                (cutoff_time,)
-            )
             
-            self._memory_cache = {row[0] for row in cursor.fetchall()}
-            logger.info(f"已加载 {len(self._memory_cache)} 条最近{hours}小时的消息ID到缓存")
+            cutoff_time = (datetime.now() - timedelta(hours=hours)).isoformat()
+            
+            cursor.execute("""
+                SELECT message_id FROM message_dedup
+                WHERE created_at > ?
+            """, (cutoff_time,))
+            
+            rows = cursor.fetchall()
+            
+            self.memory_cache = {row[0] for row in rows}
+            
+            logger.info(f"✅ 加载了{len(self.memory_cache)}条消息ID到内存缓存（最近{hours}小时）")
     
-    def is_processed(self, message_id: str) -> bool:
+    async def is_duplicate(self, message_id: str) -> bool:
         """
-        检查消息是否已处理
+        检查消息是否重复
         
         Args:
             message_id: 消息ID
             
         Returns:
-            bool: 已处理返回True，否则返回False
+            True=重复, False=新消息
         """
-        # 先检查内存缓存（快速路径）
-        if message_id in self._memory_cache:
+        # 1. 快速内存查询（优先）
+        if message_id in self.memory_cache:
+            self.cache_hits += 1
             return True
         
-        # 检查数据库（慢速路径）
-        with sqlite3.connect(str(self.db_path)) as conn:
+        # 2. 数据库查询（缓存未命中）
+        self.cache_misses += 1
+        
+        with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                'SELECT 1 FROM processed_messages WHERE message_id = ? LIMIT 1',
-                (message_id,)
-            )
-            exists = cursor.fetchone() is not None
             
-            # 如果数据库中存在但缓存中没有，更新缓存
-            if exists:
-                self._memory_cache.add(message_id)
+            cursor.execute("""
+                SELECT 1 FROM message_dedup
+                WHERE message_id = ?
+            """, (message_id,))
             
-            return exists
+            result = cursor.fetchone()
+            
+            if result:
+                # 补充到缓存
+                self.memory_cache.add(message_id)
+                return True
+            
+            return False
     
-    def mark_processed(self, message_id: str, channel_id: str, source: str = 'kook'):
+    async def mark_as_seen(
+        self,
+        message_id: str,
+        channel_id: str,
+        server_id: Optional[str] = None
+    ):
         """
         标记消息为已处理
         
         Args:
             message_id: 消息ID
             channel_id: 频道ID
-            source: 消息来源（默认kook）
+            server_id: 服务器ID（可选）
         """
-        with self._lock:
-            try:
-                with sqlite3.connect(str(self.db_path)) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        '''
-                        INSERT OR IGNORE INTO processed_messages 
-                        (message_id, channel_id, source, processed_at)
-                        VALUES (?, ?, ?, ?)
-                        ''',
-                        (message_id, channel_id, source, datetime.now())
-                    )
-                    conn.commit()
-                
-                # 更新内存缓存
-                self._memory_cache.add(message_id)
-                
-            except Exception as e:
-                logger.error(f"标记消息失败: {e}")
-    
-    def cleanup_old_messages(self) -> int:
-        """
-        清理过期的消息记录
+        # 1. 添加到内存缓存
+        self.memory_cache.add(message_id)
         
-        Returns:
-            int: 清理的记录数
-        """
-        cutoff_date = datetime.now() - timedelta(days=self.retention_days)
-        
-        with self._lock:
-            try:
-                with sqlite3.connect(str(self.db_path)) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        'DELETE FROM processed_messages WHERE processed_at < ?',
-                        (cutoff_date,)
-                    )
-                    deleted_count = cursor.rowcount
-                    conn.commit()
-                
-                # 重新加载缓存
-                self._load_recent_to_cache()
-                
-                logger.info(f"清理了 {deleted_count} 条过期消息记录（{self.retention_days}天前）")
-                return deleted_count
-                
-            except Exception as e:
-                logger.error(f"清理过期消息失败: {e}")
-                return 0
+        # 2. 持久化到数据库
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 插入或增加计数
+            cursor.execute("""
+                INSERT INTO message_dedup (message_id, channel_id, server_id, seen_count)
+                VALUES (?, ?, ?, 1)
+                ON CONFLICT(message_id) DO UPDATE SET
+                    seen_count = seen_count + 1,
+                    created_at = CURRENT_TIMESTAMP
+            """, (message_id, channel_id, server_id))
+            
+            # 更新统计
+            cursor.execute("""
+                UPDATE dedup_stats
+                SET total_messages = total_messages + 1,
+                    last_updated = CURRENT_TIMESTAMP
+                WHERE id = 1
+            """)
+            
+            conn.commit()
     
-    def get_stats(self) -> dict:
+    async def cleanup_old_messages(self, days: int = 7):
+        """
+        清理旧消息（定时任务）
+        
+        Args:
+            days: 保留多少天的数据，默认7天
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            cutoff_time = (datetime.now() - timedelta(days=days)).isoformat()
+            
+            # 删除旧数据
+            cursor.execute("""
+                DELETE FROM message_dedup
+                WHERE created_at < ?
+            """, (cutoff_time,))
+            
+            deleted_count = cursor.rowcount
+            
+            conn.commit()
+            
+            logger.info(f"🧹 清理了{deleted_count}条{days}天前的消息记录")
+        
+        # 重建缓存（释放内存）
+        self.load_recent_to_cache()
+        
+        # 执行VACUUM优化数据库
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("VACUUM")
+            logger.info("✅ 数据库已优化（VACUUM）")
+    
+    def get_stats(self) -> Dict:
         """
         获取统计信息
         
         Returns:
-            dict: 包含统计信息的字典
+            统计数据字典
         """
-        with sqlite3.connect(str(self.db_path)) as conn:
+        with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
-            # 总记录数
-            cursor.execute('SELECT COUNT(*) FROM processed_messages')
-            total = cursor.fetchone()[0]
+            # 总体统计
+            cursor.execute("""
+                SELECT total_messages, duplicate_messages, last_updated
+                FROM dedup_stats WHERE id = 1
+            """)
             
-            # 最近24小时
-            yesterday = datetime.now() - timedelta(hours=24)
-            cursor.execute(
-                'SELECT COUNT(*) FROM processed_messages WHERE processed_at >= ?',
-                (yesterday,)
-            )
-            last_24h = cursor.fetchone()[0]
+            stats_row = cursor.fetchone()
             
-            # 最近7天
-            week_ago = datetime.now() - timedelta(days=7)
-            cursor.execute(
-                'SELECT COUNT(*) FROM processed_messages WHERE processed_at >= ?',
-                (week_ago,)
-            )
-            last_7d = cursor.fetchone()[0]
+            # 数据库消息数
+            cursor.execute("SELECT COUNT(*) FROM message_dedup")
+            db_count = cursor.fetchone()[0]
             
-            # 最早和最晚记录
-            cursor.execute('SELECT MIN(processed_at), MAX(processed_at) FROM processed_messages')
-            oldest, newest = cursor.fetchone()
+            # 最新消息时间
+            cursor.execute("""
+                SELECT MAX(created_at) FROM message_dedup
+            """)
+            last_message = cursor.fetchone()[0]
+            
+            # 缓存命中率
+            total_queries = self.cache_hits + self.cache_misses
+            cache_hit_rate = (self.cache_hits / total_queries * 100) if total_queries > 0 else 0
             
             return {
-                'total_messages': total,
-                'cache_size': len(self._memory_cache),
-                'last_24h': last_24h,
-                'last_7d': last_7d,
-                'oldest_record': oldest,
-                'newest_record': newest,
-                'retention_days': self.retention_days,
-                'database_path': str(self.db_path)
+                'memory_cache_size': len(self.memory_cache),
+                'database_records': db_count,
+                'total_messages_processed': stats_row[0] if stats_row else 0,
+                'duplicate_messages': stats_row[1] if stats_row else 0,
+                'last_updated': stats_row[2] if stats_row else None,
+                'last_message_time': last_message,
+                'cache_hits': self.cache_hits,
+                'cache_misses': self.cache_misses,
+                'cache_hit_rate': round(cache_hit_rate, 2)
             }
     
-    def reset(self):
-        """清空所有去重记录（谨慎使用）"""
-        with self._lock:
-            try:
-                with sqlite3.connect(str(self.db_path)) as conn:
-                    cursor = conn.cursor()
-                    cursor.execute('DELETE FROM processed_messages')
-                    conn.commit()
-                
-                self._memory_cache.clear()
-                logger.warning("已清空所有去重记录")
-                
-            except Exception as e:
-                logger.error(f"重置去重记录失败: {e}")
+    async def get_channel_stats(self, channel_id: str) -> Dict:
+        """
+        获取特定频道的统计
+        
+        Args:
+            channel_id: 频道ID
+            
+        Returns:
+            频道统计数据
+        """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 频道消息数
+            cursor.execute("""
+                SELECT COUNT(*) FROM message_dedup
+                WHERE channel_id = ?
+            """, (channel_id,))
+            
+            total_count = cursor.fetchone()[0]
+            
+            # 最近消息
+            cursor.execute("""
+                SELECT MAX(created_at) FROM message_dedup
+                WHERE channel_id = ?
+            """, (channel_id,))
+            
+            last_message = cursor.fetchone()[0]
+            
+            # 最近24小时消息数
+            cutoff_24h = (datetime.now() - timedelta(hours=24)).isoformat()
+            cursor.execute("""
+                SELECT COUNT(*) FROM message_dedup
+                WHERE channel_id = ? AND created_at > ?
+            """, (channel_id, cutoff_24h))
+            
+            count_24h = cursor.fetchone()[0]
+            
+            return {
+                'channel_id': channel_id,
+                'total_messages': total_count,
+                'messages_24h': count_24h,
+                'last_message_time': last_message
+            }
+    
+    async def reset(self):
+        """重置去重器（清空所有数据）"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("DELETE FROM message_dedup")
+            cursor.execute("""
+                UPDATE dedup_stats
+                SET total_messages = 0, duplicate_messages = 0
+                WHERE id = 1
+            """)
+            
+            conn.commit()
+        
+        # 清空缓存
+        self.memory_cache.clear()
+        self.cache_hits = 0
+        self.cache_misses = 0
+        
+        logger.warning("⚠️ 去重器已重置，所有数据已清空")
 
 
 # 全局实例
-_deduplicator_instance: Optional[MessageDeduplicator] = None
+message_deduplicator = MessageDeduplicator()
 
 
-def get_deduplicator() -> MessageDeduplicator:
-    """
-    获取全局去重器实例（单例模式）
-    
-    Returns:
-        MessageDeduplicator: 去重器实例
-    """
-    global _deduplicator_instance
-    if _deduplicator_instance is None:
-        _deduplicator_instance = MessageDeduplicator()
-    return _deduplicator_instance
+# 定时清理任务（每天凌晨3点）
+async def schedule_cleanup():
+    """定时清理任务"""
+    while True:
+        try:
+            # 计算距离下次清理的时间
+            now = datetime.now()
+            next_cleanup = now.replace(hour=3, minute=0, second=0, microsecond=0)
+            
+            if next_cleanup <= now:
+                next_cleanup += timedelta(days=1)
+            
+            wait_seconds = (next_cleanup - now).total_seconds()
+            
+            logger.info(f"下次清理时间: {next_cleanup.isoformat()}")
+            
+            await asyncio.sleep(wait_seconds)
+            
+            # 执行清理
+            await message_deduplicator.cleanup_old_messages()
+            
+        except Exception as e:
+            logger.error(f"定时清理任务异常: {e}")
+            await asyncio.sleep(3600)  # 出错后1小时重试

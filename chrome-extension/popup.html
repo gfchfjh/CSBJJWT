@@ -10,248 +10,274 @@
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      width: 380px;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      width: 400px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #333;
+      padding: 20px;
     }
-    
+
     .container {
       background: white;
       border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
-    
+
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
-    
-    .header h2 {
+
+    .header img {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 12px;
+    }
+
+    .header h1 {
       font-size: 20px;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    
-    .header .version {
-      font-size: 12px;
-      color: #999;
-    }
-    
-    .status {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      font-size: 14px;
-      line-height: 1.5;
-      display: none;
-    }
-    
-    .status.show {
-      display: block;
-      animation: slideIn 0.3s ease-out;
-    }
-    
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .status.success {
-      background-color: #f0f9ff;
-      border: 1px solid #0ea5e9;
-      color: #0c4a6e;
-    }
-    
-    .status.error {
-      background-color: #fef2f2;
-      border: 1px solid #ef4444;
-      color: #7f1d1d;
-    }
-    
-    .status.warning {
-      background-color: #fffbeb;
-      border: 1px solid #f59e0b;
-      color: #78350f;
-    }
-    
-    .status.info {
-      background-color: #f0f9ff;
-      border: 1px solid #3b82f6;
-      color: #1e3a8a;
-    }
-    
-    .cookie-info {
-      margin-bottom: 16px;
-      padding: 12px;
-      background: #f8fafc;
-      border-radius: 8px;
-      font-size: 13px;
-    }
-    
-    .cookie-info .label {
-      color: #64748b;
+      color: #303133;
       margin-bottom: 4px;
     }
-    
-    .cookie-info .value {
-      font-weight: 600;
-      color: #0ea5e9;
-      font-size: 16px;
+
+    .header .version {
+      font-size: 12px;
+      color: #909399;
     }
-    
-    button {
-      width: 100%;
-      padding: 14px;
-      border: none;
+
+    .status-card {
+      background: #f5f7fa;
       border-radius: 8px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-size: 15px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .status-item .label {
+      color: #606266;
+      font-size: 14px;
+    }
+
+    .status-item .value {
+      color: #303133;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .status-item .value.success {
+      color: #67c23a;
+    }
+
+    .status-item .value.error {
+      color: #f56c6c;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
-      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
-    
-    button:hover {
+
+    .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
-    
-    button:active {
+
+    .btn:active {
       transform: translateY(0);
     }
-    
-    button:disabled {
-      background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
-      cursor: not-allowed;
-      box-shadow: none;
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
     }
-    
-    button .icon {
-      display: inline-block;
-      margin-right: 8px;
+
+    .btn-secondary {
+      background: #ecf5ff;
+      color: #409eff;
     }
-    
-    .info-box {
-      margin-top: 16px;
-      padding: 16px;
-      background: #f1f5f9;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #475569;
-      line-height: 1.6;
-    }
-    
-    .info-box strong {
-      display: block;
-      margin-bottom: 8px;
-      color: #334155;
-      font-size: 13px;
-    }
-    
-    .info-box ol {
-      margin: 8px 0;
-      padding-left: 20px;
-    }
-    
-    .info-box li {
-      margin-bottom: 4px;
-    }
-    
-    .warning-text {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #e2e8f0;
-      font-size: 11px;
-      color: #ef4444;
-      text-align: center;
-    }
-    
-    .stats {
+
+    .btn-group {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
     }
-    
-    .stat-card {
-      padding: 12px;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 8px;
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .divider {
+      height: 1px;
+      background: #ebeef5;
+      margin: 20px 0;
+    }
+
+    .footer {
       text-align: center;
+      font-size: 12px;
+      color: #909399;
     }
-    
-    .stat-card .label {
-      font-size: 11px;
-      color: #64748b;
-      margin-bottom: 4px;
+
+    .footer a {
+      color: #409eff;
+      text-decoration: none;
     }
-    
-    .stat-card .value {
-      font-size: 18px;
-      font-weight: 700;
-      color: #667eea;
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .history-section {
+      margin-top: 20px;
+    }
+
+    .history-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303133;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      padding: 8px;
+      background: #f5f7fa;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .history-item .time {
+      color: #909399;
+    }
+
+    .history-item .format {
+      color: #409eff;
+      font-weight: 600;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #409eff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h2>🍪 KOOK Cookie导出</h2>
-      <div class="version">v1.0.0</div>
+      <img src="icons/icon-128.png" alt="KOOK">
+      <h1>KOOK Cookie导出神器</h1>
+      <div class="version">v3.0.0 Ultimate</div>
     </div>
-    
-    <div id="status" class="status"></div>
-    
-    <div id="cookieInfo" class="cookie-info" style="display: none;">
-      <div class="label">检测到Cookie数量</div>
-      <div class="value" id="cookieCount">0</div>
-    </div>
-    
-    <div id="stats" class="stats" style="display: none;">
-      <div class="stat-card">
-        <div class="label">导出次数</div>
-        <div class="value" id="exportCount">0</div>
+
+    <!-- 状态卡片 -->
+    <div class="status-card">
+      <div class="status-item">
+        <span class="label">Cookie数量:</span>
+        <span class="value" id="cookie-count">检测中...</span>
       </div>
-      <div class="stat-card">
-        <div class="label">最后导出</div>
-        <div class="value" id="lastExport">-</div>
+      <div class="status-item">
+        <span class="label">有效性:</span>
+        <span class="value" id="cookie-validity">检测中...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">本地系统:</span>
+        <span class="value" id="system-status">检测中...</span>
       </div>
     </div>
-    
-    <button id="exportBtn">
-      <span class="icon">📋</span>
-      <span id="buttonText">导出Cookie到剪贴板</span>
-    </button>
-    
-    <div class="info-box">
-      <strong>💡 使用说明：</strong>
-      <ol>
-        <li>确保已登录KOOK网页版</li>
-        <li>点击"导出Cookie"按钮</li>
-        <li>在软件中粘贴Cookie（Ctrl+V）</li>
-      </ol>
-      <p style="margin-top: 12px;">
-        <strong>🔧 支持格式：</strong>JSON数组格式（软件自动识别）
+
+    <!-- 主要操作 -->
+    <div class="actions">
+      <button class="btn btn-primary" id="auto-send-btn">
+        <span>🚀</span>
+        <span>一键导入到本地系统</span>
+        <span class="loading hidden" id="send-loading"></span>
+      </button>
+
+      <div class="btn-group">
+        <button class="btn btn-secondary btn-small" id="export-json-btn">
+          JSON
+        </button>
+        <button class="btn btn-secondary btn-small" id="export-netscape-btn">
+          Netscape
+        </button>
+        <button class="btn btn-secondary btn-small" id="export-header-btn">
+          Header
+        </button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 历史记录 -->
+    <div class="history-section">
+      <div class="history-title">
+        <span>📝 导出历史</span>
+        <a href="#" id="clear-history" style="font-size: 12px">清空</a>
+      </div>
+      <div class="history-list" id="history-list">
+        <!-- 动态生成 -->
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+      <p>快捷键: <strong>Ctrl+Shift+K</strong></p>
+      <p style="margin-top: 8px">
+        <a href="https://github.com/gfchfjh/CSBJJWT" target="_blank">帮助文档</a> |
+        <a href="#" id="open-settings">设置</a>
       </p>
-      <div class="warning-text">
-        ⚠️  Cookie包含登录凭证，请妥善保管，切勿泄露给他人
-      </div>
     </div>
   </div>
-  
+
   <script src="popup.js"></script>
 </body>
 </html>
