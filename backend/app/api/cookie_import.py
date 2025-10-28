@@ -343,3 +343,155 @@ async def validate_cookie_friendly(request: CookieValidateRequest):
             status_code=500,
             detail=f"验证失败: {str(e)}"
         )
+
+
+# ============ ✅ P0-3优化: Chrome扩展自动发送Cookie ============
+
+class AutoImportRequest(BaseModel):
+    """✅ P0-3优化: 自动导入请求"""
+    cookies: List[Dict]
+    source: str = 'chrome-extension'
+    extension_version: str = ''
+    timestamp: int = 0
+
+
+@router.post("/auto")
+async def auto_import_cookie(request: AutoImportRequest, req: Request):
+    """
+    ✅ P0-3优化: 自动接收Chrome扩展发送的Cookie
+    
+    Chrome扩展会尝试POST Cookie到这个端点
+    如果成功，Cookie将被保存到临时表，前端可以轮询获取
+    
+    Args:
+        request: Cookie数据
+        
+    Returns:
+        成功响应
+    """
+    try:
+        from ..database import db
+        
+        logger.info(f"[CookieImport] 收到来自 {request.source} 的Cookie自动导入请求")
+        logger.info(f"[CookieImport] IP: {req.client.host}, 扩展版本: {request.extension_version}")
+        logger.info(f"[CookieImport] Cookie数量: {len(request.cookies)}")
+        
+        # 验证Cookie
+        if not request.cookies or len(request.cookies) == 0:
+            raise HTTPException(status_code=400, detail="Cookie列表为空")
+        
+        # 保存到临时表（用于前端轮询获取）
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS cookie_import_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cookies TEXT NOT NULL,
+                source TEXT DEFAULT 'chrome-extension',
+                extension_version TEXT,
+                ip_address TEXT,
+                imported BOOLEAN DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # 插入Cookie数据
+        db.execute("""
+            INSERT INTO cookie_import_queue 
+            (cookies, source, extension_version, ip_address)
+            VALUES (?, ?, ?, ?)
+        """, (
+            json.dumps(request.cookies),
+            request.source,
+            request.extension_version,
+            req.client.host
+        ))
+        
+        db.commit()
+        
+        logger.info("[CookieImport] Cookie已保存到导入队列")
+        
+        return {
+            "success": True,
+            "message": "Cookie自动导入成功",
+            "cookie_count": len(request.cookies),
+            "source": request.source
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[CookieImport] 自动导入失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"导入失败: {str(e)}")
+
+
+@router.get("/poll")
+async def poll_imported_cookies():
+    """
+    前端轮询检测是否有新导入的Cookie
+    
+    Returns:
+        最新的未导入Cookie数据
+    """
+    try:
+        from ..database import db
+        
+        # 查询最新的未导入Cookie
+        result = db.execute("""
+            SELECT id, cookies, source, extension_version, created_at
+            FROM cookie_import_queue
+            WHERE imported = 0
+            ORDER BY created_at DESC
+            LIMIT 1
+        """).fetchone()
+        
+        if not result:
+            return {
+                "has_new": False,
+                "message": "没有新的Cookie"
+            }
+        
+        # 解析Cookie
+        cookies = json.loads(result['cookies'])
+        
+        return {
+            "has_new": True,
+            "cookie_id": result['id'],
+            "cookies": cookies,
+            "source": result['source'],
+            "extension_version": result['extension_version'],
+            "created_at": result['created_at']
+        }
+        
+    except Exception as e:
+        logger.error(f"[CookieImport] 轮询失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"轮询失败: {str(e)}")
+
+
+@router.post("/confirm/{cookie_id}")
+async def confirm_import(cookie_id: int):
+    """
+    确认导入Cookie
+    
+    前端在用户确认后调用此接口，标记Cookie已导入
+    
+    Args:
+        cookie_id: Cookie记录ID
+    """
+    try:
+        from ..database import db
+        
+        db.execute("""
+            UPDATE cookie_import_queue
+            SET imported = 1
+            WHERE id = ?
+        """, (cookie_id,))
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "已确认导入"
+        }
+        
+    except Exception as e:
+        logger.error(f"[CookieImport] 确认导入失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"确认失败: {str(e)}")

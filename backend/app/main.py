@@ -301,6 +301,10 @@ app.include_router(database_optimizer_api.router)  # 数据库优化 🆕 v9.0.0
 from .api import mapping_learning_api
 app.include_router(mapping_learning_api.router)  # 映射学习 🆕 v9.0.0
 
+# ✅ P0-2优化: 服务器自动发现API
+from .api import server_discovery
+app.include_router(server_discovery.router)  # 服务器/频道自动获取 🆕 P0-2优化
+
 
 @app.get("/")
 async def root():
