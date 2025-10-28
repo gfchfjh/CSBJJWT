@@ -1,15 +1,15 @@
-# 🚀 KOOK消息转发系统 v12.1.0
+# 🚀 KOOK消息转发系统 v13.0.0
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-12.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-13.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Vue](https://img.shields.io/badge/vue-3.4-green.svg)
 ![Electron](https://img.shields.io/badge/electron-28.0-purple.svg)
 ![Status](https://img.shields.io/badge/status-production%20ready-success.svg)
 
-**3分钟安装 · 3步配置 · 零代码基础 · AI智能推荐 · 图文教程内置 · 真正人人可用**
+**一键安装 · 零配置 · Cookie自动导入 · AI智能推荐 · 生产级安全 · 真正开箱即用**
 
 [🎬 快速开始](#-快速开始) | [📖 完整文档](docs/用户手册.md) | [🏗️ 架构设计](docs/架构设计.md) | [🐛 问题反馈](https://github.com/gfchfjh/CSBJJWT/issues)
 
@@ -17,24 +17,35 @@
 
 ---
 
-## ✨ v12.1.0 - 深度优化版 🎉
+## ✨ v13.0.0 - 生产级优化版 🎉
 
-🚀 **9大核心优化全部完成！** 真正达到"下载即用"的产品级体验！
+🚀 **10大深度优化全部完成！** 真正达到"开箱即用"的企业级体验！
 
-**9项核心优化** | **14个新文件** | **5,000+行代码**
+**10项深度优化** | **全面提升易用性与安全性**
 
-### 🎯 v12.1.0 核心特性
+### 🎯 v13.0.0 核心特性（全新升级）
 
-- ⚡ **极速安装** - 3分钟完成安装，内置所有依赖
-- 🎯 **3步配置** - 统一配置向导，快速开始使用
-- 🚀 **即学即用** - 零学习成本，图文教程内置
-- 💪 **超强稳定** - 智能重连，自动恢复
-- 🍪 **Cookie神器** - Chrome扩展v3.0，1键导入（3种格式）
-- 🧠 **AI智能** - 智能推荐+学习能力
-- 🔒 **银行级安全** - 256位Token+IP白名单+路径防护
-- 📚 **教程系统** - Cookie/Discord/Telegram/飞书全覆盖
-- 📊 **性能优化** - 数据库连接池+复合索引
-- 🔄 **永不掉线** - 指数退避+心跳检测，智能重连
+#### 🎁 **零配置体验**
+- 🛠️ **一键安装打包** - 统一`build.sh/bat`，自动处理所有依赖
+- 🎯 **服务器自动获取** - Cookie导入后自动拉取服务器/频道列表
+- 🍪 **Cookie自动导入** - Chrome扩展一键发送到本地系统
+- 📚 **内置教程系统** - Cookie/Discord/Telegram/飞书分步教程
+
+#### 🧠 **AI智能推荐**
+- 🤖 **智能映射学习** - 用户反馈+时间衰减，持续优化推荐
+- 📊 **4维评分算法** - 完全匹配+相似度+关键词+历史学习
+- 🎓 **学习反馈机制** - 记录接受/拒绝，自动优化准确度
+
+#### 🔒 **生产级安全**
+- 🛡️ **图床IP白名单** - 仅允许本地访问，拦截外网请求
+- 🔐 **路径遍历防护** - 检测`../`等危险路径，防止目录遍历
+- 🔑 **Token验证机制** - 256位随机Token，24小时自毁
+
+#### 📈 **性能与稳定性**
+- 💾 **数据库自动维护** - 归档历史消息，VACUUM优化，碎片清理
+- 🔄 **多账号并发限制** - 最多3个并行，防止资源耗尽
+- 📊 **托盘智能告警** - 5秒实时刷新，队列/成功率/服务异常告警
+- 🎯 **验证码体验优化** - 显示账号邮箱+等待时长+优先级标记
 
 > 📖 **用户手册**: [docs/用户手册.md](docs/用户手册.md)  
 > 📖 **快速入门**: [docs/tutorials/01-快速入门指南.md](docs/tutorials/01-快速入门指南.md)  
@@ -102,26 +113,375 @@
 
 ---
 
-## 🆕 v12.1.0 深度优化功能
+## 🆕 v13.0.0 深度优化功能详解
 
-### 🎯 统一的3步配置向导
-**真正的傻瓜式配置**
+### 📦 P0-1: 一键安装打包流程
 
+**从"手动配置依赖"到"解压即用"**
+
+```bash
+# 统一打包脚本（自动处理所有依赖）
+./build.sh        # Linux/macOS
+build.bat         # Windows
+
+功能：
+✅ 自动检测Python环境
+✅ 安装所有依赖（pip + npm）
+✅ 编译前端（Vue + Vite）
+✅ 打包后端（PyInstaller）
+✅ 生成可执行文件
+✅ 创建发布包（.zip/.tar.gz）
+
+输出：
+├── dist/KookForwarder-v13.0.0-Windows.zip
+├── dist/KookForwarder-v13.0.0-Linux.tar.gz
+└── dist/KookForwarder-v13.0.0-macOS.dmg
 ```
-步骤1: 登录KOOK
-  ├─ Cookie导入（推荐）- 使用Chrome扩展一键导入
-  └─ 账号密码登录 - 自动处理验证码
 
-步骤2: 配置Bot
-  ├─ Discord Webhook - 粘贴URL即可
-  ├─ Telegram Bot - 自动获取Chat ID
-  └─ 飞书应用 - 一键测试连接
+**核心实现**: `build/build_unified.py`（500+行）
 
-步骤3: AI智能映射
-  ├─ 自动推荐映射
-  ├─ 智能匹配算法
-  └─ 一键应用完成
+---
+
+### 🎯 P0-2: KOOK服务器/频道自动获取
+
+**从"手动输入频道ID"到"自动拉取列表"**
+
+```python
+# 用户体验流程
+1. 导入Cookie → 自动登录KOOK
+2. 系统自动拉取：
+   ├── 所有服务器列表
+   ├── 每个服务器的频道列表
+   ├── 频道名称和ID映射
+   └── 实时更新状态
+
+3. 前端展示：
+   └── 树形结构选择器
+       └── 服务器1
+           ├── #公告频道
+           ├── #闲聊频道
+           └── #技术讨论
 ```
+
+**API端点**:
+- `GET /api/servers/discover` - 自动获取服务器列表
+- `POST /api/servers/import-from-cookie` - 从Cookie导入
+
+**核心实现**: `backend/app/api/server_discovery.py`（260+行）
+
+---
+
+### 🍪 P0-3: Chrome扩展自动发送Cookie
+
+**从"手动复制粘贴"到"一键自动导入"**
+
+```javascript
+// Chrome扩展工作流程
+1. 用户登录KOOK网页版
+2. 点击扩展图标 → 一键导出
+3. 扩展自动：
+   ├── 提取Cookie（token + session）
+   ├── 验证Cookie完整性
+   ├── POST到 localhost:9527/api/cookie/import
+   └── 显示导入结果
+
+4. 系统自动：
+   ├── 保存Cookie到数据库
+   ├── 验证登录状态
+   ├── 拉取服务器列表
+   └── 通知前端更新
+```
+
+**Chrome扩展功能**:
+- ✅ 自动检测KOOK域名（www.kookapp.cn）
+- ✅ 智能提取Token/Session/UserID
+- ✅ 自动发送到本地系统（POST请求）
+- ✅ 降级处理（系统未启动时复制到剪贴板）
+- ✅ 实时反馈（成功/失败提示）
+
+**核心实现**:
+- `chrome-extension/background.js`（增强自动发送）
+- `backend/app/api/cookie_import_enhanced.py`（300+行）
+
+---
+
+### 🔒 P0-4: 图床安全机制加固
+
+**从"完全开放"到"银行级安全"**
+
+```python
+# 三重防护体系
+🛡️ 防护层1: IP白名单
+   ├── 仅允许: 127.0.0.1, ::1, localhost
+   ├── 拦截: 所有外网IP
+   └── 日志: 记录所有访问尝试
+
+🔐 防护层2: 路径遍历防护
+   ├── 检测: ../, ~/, /etc/, \\..\\
+   ├── 规范化: 转换为绝对路径
+   └── 验证: 必须在images目录内
+
+🔑 防护层3: Token验证
+   ├── 生成: secrets.token_urlsafe(32) # 256位
+   ├── 有效期: 24小时
+   ├── 自毁: 过期自动删除
+   └── 验证: 每次请求检查Token
+
+# 安全URL示例
+✅ http://127.0.0.1:8765/images/abc.jpg?token=<valid_token>
+❌ http://192.168.1.1:8765/images/abc.jpg  # 外网IP被拦截
+❌ http://127.0.0.1:8765/images/../../etc/passwd  # 路径遍历被拦截
+❌ http://127.0.0.1:8765/images/abc.jpg?token=<expired>  # 过期Token被拒绝
+```
+
+**核心实现**: `backend/app/image_server_secure.py`（600+行）
+
+---
+
+### 📚 P1-5: 内置帮助系统
+
+**从"外部查找教程"到"系统内置分步指导"**
+
+```javascript
+// 结构化教程数据
+const tutorials = {
+  cookieGuide: {  // Cookie获取教程
+    steps: [
+      { title: "安装Chrome扩展", image: "...", tips: [...] },
+      { title: "登录KOOK网页版", warnings: [...] },
+      { title: "一键导出Cookie", video: "..." },
+      { title: "验证Cookie有效性", faq: [...] }
+    ]
+  },
+  
+  discordGuide: {  // Discord Webhook教程
+    steps: [
+      "打开服务器设置",
+      "创建Webhook",
+      "复制URL",
+      "测试连接"
+    ],
+    estimatedTime: "2分钟"
+  },
+  
+  telegramGuide: { /* 6步骤 */ },
+  feishuGuide: { /* 7步骤 */ },
+  quickStart: { /* 快速入门 */ }
+}
+```
+
+**特色**:
+- 📸 每步都有截图标注
+- 💡 提示（Tips）和警告（Warnings）
+- 📝 代码示例和FAQ
+- ⏱️ 预计耗时和难度标记
+
+**核心实现**: `frontend/src/data/tutorials.js`（700+行）
+
+---
+
+### 🤖 P1-6: 智能映射学习反馈机制
+
+**从"固定推荐"到"持续学习优化"**
+
+```python
+# 学习算法
+class MappingLearner:
+    def record_user_feedback(user_choice):
+        """记录用户接受/拒绝推荐"""
+        feedback = {
+            'accepted': True/False,
+            'timestamp': now(),
+            'confidence_score': 0.85
+        }
+        save_to_database(feedback)
+    
+    def calculate_learning_weight():
+        """计算学习权重（带时间衰减）"""
+        # 30天半衰期公式
+        decay = exp(-ln(2) * days_passed / 30)
+        
+        # 综合评分
+        weight = (
+            accepted_count * decay -
+            rejected_count * decay
+        )
+        
+        return sigmoid(weight)  # 归一化到0-1
+    
+    def optimize_recommendation():
+        """优化推荐算法"""
+        final_score = (
+            base_similarity * 0.7 +    # 基础匹配70%
+            learning_weight * 0.3       # 学习权重30%
+        )
+```
+
+**核心实现**:
+- `backend/app/utils/mapping_learner.py`（400+行）
+- `backend/app/api/mapping_learning_feedback.py`（150+行）
+
+---
+
+### 📊 P1-7: 系统托盘智能告警
+
+**从"手动查看状态"到"主动实时告警"**
+
+```javascript
+// 托盘菜单（5秒实时刷新）
+┌────────────────────────────┐
+│ 📊 KOOK消息转发系统         │
+├────────────────────────────┤
+│ 🟢 状态: 运行中             │
+│ 📈 转发总数: 1,234          │
+│ ✅ 成功率: 98.5%            │
+│ 📦 队列消息: 5              │
+├────────────────────────────┤
+│ ⚠️  队列堆积告警 (>100)     │  ← 自动检测
+│ ⚠️  成功率下降 (<80%)       │  ← 智能告警
+├────────────────────────────┤
+│ 📁 显示主窗口               │
+│ ❌ 退出                     │
+└────────────────────────────┘
+
+// 智能告警规则
+alerts = {
+  queue_backlog: queue_size > 100,  // 队列堆积
+  low_success_rate: success_rate < 0.8,  // 成功率低
+  service_error: status == 'error'  // 服务异常
+}
+
+// 防骚扰：1分钟内同一告警只通知一次
+```
+
+**核心实现**: `frontend/electron/tray-manager.js`（已增强）
+
+---
+
+### 🎯 P2-8: 验证码处理体验优化
+
+**从"不知道哪个账号需要验证"到"一目了然"**
+
+```javascript
+// 增强的验证码队列
+GET /api/captcha/pending
+{
+  "captchas": [
+    {
+      "id": 1,
+      "image_base64": "...",
+      "account_email": "user@example.com",  // ✅ 新增
+      "waiting_seconds": 45,                 // ✅ 新增
+      "priority": "high",                    // ✅ 新增（>60秒）
+      "created_at": "2025-10-28 12:30:00"
+    }
+  ]
+}
+
+// 前端展示
+┌─────────────────────────────────────┐
+│ 🔐 验证码待处理 (高优先级)            │
+│                                      │
+│ 账号: user@example.com               │
+│ 等待时长: 45秒                       │
+│ 优先级: 🔴 高                        │
+│ [图片展示]                           │
+│ [输入框] [提交]                      │
+└─────────────────────────────────────┘
+```
+
+**核心实现**: `backend/app/api/captcha.py`（已增强）
+
+---
+
+### 💾 P2-9: 数据库定期维护和归档
+
+**从"手动清理"到"自动维护"**
+
+```python
+# 数据库维护引擎
+class DatabaseMaintenance:
+    def run_full_maintenance():
+        """完整维护流程"""
+        # 1. 归档旧消息（7天前）
+        archive_old_messages(days=7)
+        # ├── 导出到 message_archive.db
+        # └── 从主库删除
+        
+        # 2. 清理临时数据
+        cleanup_old_data({
+            "captcha_queue": 1,      # 保留1天
+            "cookie_import_queue": 1
+        })
+        
+        # 3. VACUUM优化
+        vacuum_database()
+        # ├── 回收碎片空间
+        # ├── 重建索引
+        # └── 更新统计信息
+        
+        # 4. 生成报告
+        return {
+            "archived_messages": 1234,
+            "cleaned_temp_data": 56,
+            "database_size_mb": 12.5,
+            "duration_seconds": 3.2
+        }
+```
+
+**自动任务**:
+- 每日凌晨3点自动运行
+- 保留7天活动数据
+- 归档到独立数据库
+
+**核心实现**: `backend/app/utils/database_maintenance.py`（500+行）
+
+---
+
+### 🔄 P2-10: 多账号并行抓取优化
+
+**从"无限制并发"到"智能并发控制"**
+
+```python
+# 账号并发限制器
+class AccountLimiter:
+    def __init__(self, max_parallel=3):
+        """最多3个账号同时运行"""
+        self.semaphore = asyncio.Semaphore(3)
+    
+    async def acquire(account_id):
+        """获取执行许可（超过3个会等待）"""
+        await self.semaphore.acquire()
+        logger.info(f"账号{account_id}获得执行许可")
+    
+    def release(account_id):
+        """释放许可（允许下一个账号运行）"""
+        self.semaphore.release()
+
+# 使用示例
+async def start_scraper(account_id):
+    await limiter.acquire(account_id)  # 等待许可
+    try:
+        await run_playwright(account_id)  # 运行抓取器
+    finally:
+        limiter.release(account_id)  # 释放许可
+
+# 效果
+├── 账号1: 运行中 ✅
+├── 账号2: 运行中 ✅
+├── 账号3: 运行中 ✅
+├── 账号4: 等待中 ⏳
+└── 账号5: 等待中 ⏳
+```
+
+**为什么限制并发？**
+- Playwright每个实例占用~200MB内存
+- 超过3个会导致系统卡顿
+- 合理控制资源使用
+
+**核心实现**:
+- `backend/app/utils/account_limiter.py`（200+行）
+- `backend/app/kook/scraper.py`（已集成）
 
 ### 🍪 Chrome扩展 v3.0 Ultimate
 **真正的一键导入**
@@ -266,11 +626,6 @@
       ├── ANALYZE更新统计
       └── 每周自动执行
 ```
-
-**查询性能对比**:
-- 优化前: 850ms（1000条日志）
-- 优化后: 18ms（1000条日志）
-- 提升: +47倍 ⚡
 
 ### 📊 系统托盘实时统计
 **5秒自动刷新，智能告警**
@@ -476,7 +831,7 @@
 │  └── 飞书应用 App ID/Secret                  │
 ├─────────────────────────────────────────────┤
 │  步骤3: AI智能映射 (1分钟)                   │
-│  ├── 三重匹配算法（90%+准确度）               │
+│  ├── 三重匹配算法                             │
 │  ├── 中英文互译                               │
 │  ├── 历史学习 + 时间衰减                      │
 │  └── 一键应用推荐                             │
@@ -583,7 +938,7 @@ python -m backend.app.utils.environment_checker
 
 ### P1-2: AI映射学习引擎
 
-**三重匹配算法** - 业界领先的90%+准确度
+**三重匹配算法**
 
 ```python
 final_score = (
@@ -796,7 +1151,7 @@ start.bat     # Windows
 - **消息队列**: Redis + 批量处理（10条/次）
 - **格式转换**: KMarkdown → Markdown/HTML
 - **智能转发**: 重试+限流+图片直传
-- **AI推荐**: 三重匹配算法（90%+准确度）
+- **AI推荐**: 三重匹配算法
 
 ---
 

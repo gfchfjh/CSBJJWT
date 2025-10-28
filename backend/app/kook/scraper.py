@@ -642,26 +642,61 @@ class KookScraper:
 
 
 class ScraperManager:
-    """抓取器管理器"""
+    """✅ P2-10优化: 抓取器管理器（支持并行限制）"""
     
     def __init__(self):
         self.scrapers: Dict[int, KookScraper] = {}
         self.tasks: Dict[int, asyncio.Task] = {}
+        # ✅ P2-10优化: 导入账号限制器
+        from ..utils.account_limiter import account_limiter
+        self.limiter = account_limiter
     
     async def start_scraper(self, account_id: int):
-        """启动指定账号的抓取器"""
+        """
+        ✅ P2-10优化: 启动指定账号的抓取器（带并发限制）
+        
+        如果超过最大并行数，会等待其他账号释放资源
+        """
         if account_id in self.scrapers:
             logger.warning(f"账号{account_id}的抓取器已在运行")
             return
         
-        scraper = KookScraper(account_id)
-        self.scrapers[account_id] = scraper
+        # ✅ P2-10优化: 获取执行许可
+        acquired = await self.limiter.acquire(account_id)
         
-        # 创建任务
-        task = asyncio.create_task(scraper.start())
-        self.tasks[account_id] = task
+        if not acquired:
+            logger.warning(f"账号{account_id}未能获取执行许可")
+            return
         
-        logger.info(f"账号{account_id}的抓取器已启动")
+        try:
+            scraper = KookScraper(account_id)
+            self.scrapers[account_id] = scraper
+            
+            # 创建任务
+            task = asyncio.create_task(self._run_scraper_with_cleanup(account_id, scraper))
+            self.tasks[account_id] = task
+            
+            logger.info(f"账号{account_id}的抓取器已启动")
+            
+        except Exception as e:
+            logger.error(f"启动账号{account_id}的抓取器失败: {e}")
+            # 释放许可
+            self.limiter.release(account_id)
+            raise
+    
+    async def _run_scraper_with_cleanup(self, account_id: int, scraper: KookScraper):
+        """
+        运行抓取器并确保清理资源
+        
+        Args:
+            account_id: 账号ID
+            scraper: 抓取器实例
+        """
+        try:
+            await scraper.start()
+        finally:
+            # 确保释放限制器许可
+            self.limiter.release(account_id)
     
     async def stop_scraper(self, account_id: int):
         """停止指定账号的抓取器"""

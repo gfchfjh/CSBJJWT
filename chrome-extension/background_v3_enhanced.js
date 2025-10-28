@@ -116,7 +116,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 })
 
-// 导出Cookie
+// ✅ P0-3优化：导出Cookie（支持自动发送到本地系统）
 async function exportCookies(tab, format) {
   try {
     // 获取KOOK的所有Cookie
@@ -125,6 +125,31 @@ async function exportCookies(tab, format) {
     if (!cookies || cookies.length === 0) {
       showNotification('错误', '未找到KOOK Cookie，请先登录KOOK网站', 'error')
       return
+    }
+    
+    // ✅ P0-3优化：优先尝试自动发送到本地系统
+    if (format === 'json') {
+      const autoSendSuccess = await sendToLocalSystem(cookies)
+      
+      if (autoSendSuccess) {
+        showNotification(
+          '✅ 成功',
+          'Cookie已自动导入到KOOK转发系统！',
+          'success'
+        )
+        
+        // 保存到历史记录
+        await saveToHistory({
+          format: 'json (自动导入)',
+          cookieCount: cookies.length,
+          timestamp: Date.now()
+        })
+        
+        return
+      }
+      
+      // 自动发送失败，降级到下载文件
+      console.log('自动发送失败，将下载Cookie文件')
     }
     
     // 转换为指定格式
@@ -201,6 +226,58 @@ async function getAllKookCookies() {
   }
   
   return uniqueCookies
+}
+
+/**
+ * ✅ P0-3优化：发送Cookie到本地KOOK转发系统
+ * 
+ * @param {Array} cookies - Cookie数组
+ * @returns {Promise<boolean>} - 是否成功发送
+ */
+async function sendToLocalSystem(cookies) {
+  // 尝试的本地URL列表
+  const localUrls = [
+    'http://localhost:9527/api/cookie-import/auto',
+    'http://127.0.0.1:9527/api/cookie-import/auto',
+  ]
+  
+  for (const url of localUrls) {
+    try {
+      console.log(`尝试连接本地系统: ${url}`)
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cookies: cookies,
+          source: 'chrome-extension',
+          extension_version: EXTENSION_VERSION,
+          timestamp: Date.now()
+        }),
+        // 2秒超时
+        signal: AbortSignal.timeout(2000)
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Cookie自动导入成功:', result)
+        return true
+      } else {
+        console.log(`服务器返回错误: ${response.status}`)
+      }
+      
+    } catch (error) {
+      console.log(`连接 ${url} 失败:`, error.message)
+      // 继续尝试下一个URL
+      continue
+    }
+  }
+  
+  // 所有URL都失败
+  console.log('所有本地URL连接失败')
+  return false
 }
 
 // 转换为Netscape格式
