@@ -1,7 +1,6 @@
 # Git
 .git
 .gitignore
-.github
 
 # Python
 __pycache__
@@ -9,61 +8,48 @@ __pycache__
 *$py.class
 *.so
 .Python
-env/
 venv/
-ENV/
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
-.pytest_cache/
-.coverage
-htmlcov/
+env/
 *.egg-info/
-dist/
-build/
 
 # Node
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-frontend/dist/
-frontend/dist-electron/
+
+# 构建产物
+dist/
+build/
+dist-electron/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*.swn
-.DS_Store
 
-# 文档
-docs/
-*.md
-!README.md
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
 
 # 数据文件
 data/
 *.db
 *.sqlite
+
+# 日志
+logs/
 *.log
 
-# 构建产物
-build/
-*.exe
-*.dmg
-*.AppImage
+# 临时文件
+.DS_Store
+Thumbs.db
+*.tmp
 
-# 测试
-tests/
-pytest.ini
-.pytest_cache/
-
-# 其他
-redis/
-归档文档/
-快速命令参考.txt
-新功能使用指南.md
-代码完善总结.md
-代码完成度检查报告.md
+# 文档
+docs/
+README.md
+LICENSE
+CHANGELOG.md

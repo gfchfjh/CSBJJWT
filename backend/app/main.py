@@ -100,11 +100,14 @@ async def lifespan(app: FastAPI):
         background_tasks.append(retry_task)
         logger.info("✅ 失败消息重试Worker已启动")
         
-        # 启动图床服务器
-        from .image_server import start_image_server
+        # ✅ P0-5深度优化: 启动安全图床服务器
+        from .image_server_secure import start_image_server
         image_server_task = asyncio.create_task(start_image_server())
         background_tasks.append(image_server_task)
-        logger.info(f"✅ 图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
+        logger.info(f"✅ 安全图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
+        logger.info(f"   - IP白名单已启用（仅本地访问）")
+        logger.info(f"   - Token验证已启用（2小时有效期）")
+        logger.info(f"   - 路径遍历防护已启用")
         
         # 启动定时任务调度器
         setup_scheduled_tasks()
@@ -304,6 +307,10 @@ app.include_router(mapping_learning_api.router)  # 映射学习 🆕 v9.0.0
 # ✅ P0-2优化: 服务器自动发现API
 from .api import server_discovery
 app.include_router(server_discovery.router)  # 服务器/频道自动获取 🆕 P0-2优化
+
+# ✅ P0-4深度优化: 服务器自动发现增强API
+from .api import server_discovery_enhanced
+app.include_router(server_discovery_enhanced.router)  # 服务器/频道自动获取增强版 🆕 P0-4深度优化
 
 # ✅ P1-6优化: 映射学习反馈API
 from .api import mapping_learning_feedback

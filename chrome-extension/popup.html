@@ -3,96 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KOOK Cookie导出</title>
+  <title>KOOK Cookie导入</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
+    
     body {
-      width: 400px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      width: 360px;
+      min-height: 480px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
+    
+    .container {
       padding: 20px;
     }
-
-    .container {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    }
-
+    
     .header {
       text-align: center;
-      margin-bottom: 24px;
+      color: white;
+      margin-bottom: 30px;
     }
-
-    .header img {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 12px;
-    }
-
+    
     .header h1 {
-      font-size: 20px;
-      color: #303133;
-      margin-bottom: 4px;
-    }
-
-    .header .version {
-      font-size: 12px;
-      color: #909399;
-    }
-
-    .status-card {
-      background: #f5f7fa;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-
-    .status-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-    }
-
-    .status-item .label {
-      color: #606266;
-      font-size: 14px;
-    }
-
-    .status-item .value {
-      color: #303133;
+      font-size: 22px;
+      margin-bottom: 8px;
       font-weight: 600;
-      font-size: 14px;
     }
-
-    .status-item .value.success {
-      color: #67c23a;
+    
+    .header p {
+      font-size: 13px;
+      opacity: 0.9;
     }
-
-    .status-item .value.error {
-      color: #f56c6c;
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
     }
-
-    .actions {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
+    
     .btn {
-      padding: 12px 20px;
+      width: 100%;
+      padding: 14px;
       border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
       cursor: pointer;
       transition: all 0.3s;
       display: flex;
@@ -100,184 +62,187 @@
       justify-content: center;
       gap: 8px;
     }
-
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn:active {
-      transform: translateY(0);
-    }
-
+    
     .btn-primary {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    
     .btn-secondary {
-      background: #ecf5ff;
-      color: #409eff;
+      background: #f5f5f5;
+      color: #666;
+      font-size: 13px;
+      padding: 10px;
     }
-
-    .btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
     }
-
-    .btn-small {
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .status.success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-left: 4px solid #4caf50;
+    }
+    
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+      border-left: 4px solid #f44336;
+    }
+    
+    .status.info {
+      background: #e3f2fd;
+      color: #1565c0;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .status.show {
+      display: block;
+    }
+    
+    .instructions {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #666;
+    }
+    
+    .instructions ol {
+      margin-left: 20px;
+      margin-top: 12px;
+    }
+    
+    .instructions li {
+      margin-bottom: 8px;
+    }
+    
+    .instructions code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      color: #d63384;
+    }
+    
+    .history {
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 12px;
+    }
+    
+    .history-item {
       padding: 8px 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      margin-bottom: 8px;
       font-size: 12px;
-    }
-
-    .divider {
-      height: 1px;
-      background: #ebeef5;
-      margin: 20px 0;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      color: #909399;
-    }
-
-    .footer a {
-      color: #409eff;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .history-section {
-      margin-top: 20px;
-    }
-
-    .history-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #303133;
-      margin-bottom: 12px;
+      color: #666;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    .history-list {
-      max-height: 200px;
-      overflow-y: auto;
-    }
-
-    .history-item {
-      padding: 8px;
-      background: #f5f7fa;
-      border-radius: 4px;
-      margin-bottom: 8px;
+    
+    .history-empty {
+      text-align: center;
+      color: #999;
       font-size: 12px;
+      padding: 20px;
     }
-
-    .history-item .time {
-      color: #909399;
-    }
-
-    .history-item .format {
-      color: #409eff;
-      font-weight: 600;
-    }
-
-    .loading {
+    
+    .spinner {
       display: inline-block;
       width: 16px;
       height: 16px;
-      border: 2px solid #f3f3f3;
-      border-top: 2px solid #409eff;
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
     }
-
+    
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      to { transform: rotate(360deg); }
     }
-
-    .hidden {
-      display: none;
+    
+    .divider {
+      height: 1px;
+      background: #e0e0e0;
+      margin: 16px 0;
+    }
+    
+    .footer {
+      text-align: center;
+      color: white;
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <img src="icons/icon-128.png" alt="KOOK">
-      <h1>KOOK Cookie导出神器</h1>
-      <div class="version">v3.0.0 Ultimate</div>
+      <h1>🍪 Cookie一键导入</h1>
+      <p>快速导出KOOK Cookie到本地系统</p>
     </div>
-
-    <!-- 状态卡片 -->
-    <div class="status-card">
-      <div class="status-item">
-        <span class="label">Cookie数量:</span>
-        <span class="value" id="cookie-count">检测中...</span>
-      </div>
-      <div class="status-item">
-        <span class="label">有效性:</span>
-        <span class="value" id="cookie-validity">检测中...</span>
-      </div>
-      <div class="status-item">
-        <span class="label">本地系统:</span>
-        <span class="value" id="system-status">检测中...</span>
-      </div>
-    </div>
-
-    <!-- 主要操作 -->
-    <div class="actions">
-      <button class="btn btn-primary" id="auto-send-btn">
+    
+    <div id="status" class="status"></div>
+    
+    <div class="card">
+      <button id="exportBtn" class="btn btn-primary">
         <span>🚀</span>
-        <span>一键导入到本地系统</span>
-        <span class="loading hidden" id="send-loading"></span>
+        <span>一键导出Cookie</span>
       </button>
-
-      <div class="btn-group">
-        <button class="btn btn-secondary btn-small" id="export-json-btn">
-          JSON
-        </button>
-        <button class="btn btn-secondary btn-small" id="export-netscape-btn">
-          Netscape
-        </button>
-        <button class="btn btn-secondary btn-small" id="export-header-btn">
-          Header
-        </button>
+      
+      <div class="divider"></div>
+      
+      <div class="instructions">
+        <strong>📖 使用步骤：</strong>
+        <ol>
+          <li>确保已登录 <strong>www.kookapp.cn</strong></li>
+          <li>点击上方"一键导出Cookie"按钮</li>
+          <li>等待自动导入到本地系统</li>
+          <li>或使用快捷键 <code>Ctrl+Shift+K</code></li>
+        </ol>
       </div>
     </div>
-
-    <div class="divider"></div>
-
-    <!-- 历史记录 -->
-    <div class="history-section">
-      <div class="history-title">
-        <span>📝 导出历史</span>
-        <a href="#" id="clear-history" style="font-size: 12px">清空</a>
+    
+    <div class="card">
+      <strong style="font-size: 14px; display: block; margin-bottom: 12px;">📊 导出历史</strong>
+      <div id="history" class="history">
+        <div class="history-empty">暂无导出记录</div>
       </div>
-      <div class="history-list" id="history-list">
-        <!-- 动态生成 -->
-      </div>
+      <button id="clearHistoryBtn" class="btn btn-secondary" style="margin-top: 12px;">
+        清空历史
+      </button>
     </div>
-
-    <div class="divider"></div>
-
-    <!-- 页脚 -->
+    
     <div class="footer">
-      <p>快捷键: <strong>Ctrl+Shift+K</strong></p>
-      <p style="margin-top: 8px">
-        <a href="https://github.com/gfchfjh/CSBJJWT" target="_blank">帮助文档</a> |
-        <a href="#" id="open-settings">设置</a>
-      </p>
+      KOOK消息转发系统 v3.0.0
     </div>
   </div>
-
+  
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,153 +1,242 @@
 <template>
-  <el-container class="layout-container">
+  <div class="layout-container">
     <!-- 侧边栏 -->
-    <el-aside width="200px" class="sidebar">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="logo">
-        <h2>KOOK转发系统</h2>
+        <img src="/icon.png" alt="Logo" class="logo-image">
+        <span v-if="!sidebarCollapsed" class="logo-text">KOOK转发</span>
       </div>
       
       <el-menu
-        :default-active="activeMenu"
-        class="menu"
+        :default-active="currentRoute"
+        class="sidebar-menu"
+        :collapse="sidebarCollapsed"
         router
-        :unique-opened="true"
       >
-        <el-menu-item index="/home">
-          <el-icon><House /></el-icon>
-          <span>概览</span>
+        <el-menu-item index="/">
+          <el-icon><HomeFilled /></el-icon>
+          <template #title>概览</template>
         </el-menu-item>
         
-        <el-menu-item index="/accounts" class="sidebar-accounts">
+        <el-menu-item index="/accounts">
           <el-icon><User /></el-icon>
-          <span>账号管理</span>
+          <template #title>账号管理</template>
         </el-menu-item>
         
-        <el-menu-item index="/bots" class="sidebar-bots">
+        <el-menu-item index="/bots">
           <el-icon><Robot /></el-icon>
-          <span>机器人配置</span>
+          <template #title>Bot配置</template>
         </el-menu-item>
         
-        <el-menu-item index="/mapping" class="sidebar-mapping">
+        <el-menu-item index="/mapping">
           <el-icon><Connection /></el-icon>
-          <span>频道映射</span>
+          <template #title>频道映射</template>
         </el-menu-item>
         
-        <el-menu-item index="/filter">
-          <el-icon><Filter /></el-icon>
-          <span>过滤规则</span>
-        </el-menu-item>
-        
-        <el-menu-item index="/logs" class="sidebar-logs">
+        <el-menu-item index="/logs">
           <el-icon><Document /></el-icon>
-          <span>实时日志</span>
+          <template #title>实时日志</template>
         </el-menu-item>
         
-        <el-menu-item index="/settings" class="sidebar-settings">
+        <el-menu-item index="/settings">
           <el-icon><Setting /></el-icon>
-          <span>系统设置</span>
+          <template #title>系统设置</template>
         </el-menu-item>
         
-        <el-menu-item index="/advanced">
-          <el-icon><Tools /></el-icon>
-          <span>高级功能</span>
-        </el-menu-item>
-        
-        <el-menu-item index="/help" class="sidebar-help">
+        <el-menu-item index="/help">
           <el-icon><QuestionFilled /></el-icon>
-          <span>帮助中心</span>
+          <template #title>帮助中心</template>
         </el-menu-item>
       </el-menu>
-    </el-aside>
+      
+      <div class="sidebar-footer">
+        <el-button 
+          :icon="sidebarCollapsed ? Expand : Fold" 
+          circle
+          size="small"
+          @click="toggleSidebar"
+        />
+      </div>
+    </aside>
     
     <!-- 主内容区 -->
-    <el-container>
+    <div class="main-content">
       <!-- 顶部栏 -->
-      <el-header class="header app-header">
+      <header class="header">
         <div class="header-left">
-          <h3>{{ $route.meta.title || '概览' }}</h3>
+          <el-breadcrumb separator="/">
+            <el-breadcrumb-item v-for="crumb in breadcrumbs" :key="crumb.path">
+              {{ crumb.name }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
         </div>
         
         <div class="header-right">
-          <el-tag :type="statusType" effect="dark">
-            {{ statusText }}
-          </el-tag>
+          <!-- 系统状态指示器 -->
+          <div class="status-indicator" :class="systemStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ statusText }}</span>
+          </div>
           
-          <el-button
-            :type="serviceRunning ? 'warning' : 'success'"
-            size="small"
-            @click="toggleService"
-          >
-            {{ serviceRunning ? '停止服务' : '启动服务' }}
-          </el-button>
+          <!-- 通知 -->
+          <el-badge :value="notificationCount" :hidden="notificationCount === 0">
+            <el-button :icon="Bell" circle @click="showNotifications" />
+          </el-badge>
           
-          <el-button type="info" size="small" circle>
-            <el-icon><QuestionFilled /></el-icon>
-          </el-button>
+          <!-- 用户菜单 -->
+          <el-dropdown>
+            <el-avatar :size="32">
+              <el-icon><User /></el-icon>
+            </el-avatar>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="goToSettings">
+                  <el-icon><Setting /></el-icon>
+                  设置
+                </el-dropdown-item>
+                <el-dropdown-item @click="showAbout">
+                  <el-icon><InfoFilled /></el-icon>
+                  关于
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="logout">
+                  <el-icon><SwitchButton /></el-icon>
+                  退出
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
-      </el-header>
+      </header>
       
-      <!-- 内容区 -->
-      <el-main class="main-content">
-        <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      <!-- 路由视图 -->
+      <div class="content-wrapper">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useSystemStore } from '../store/system'
-import { ElMessage } from 'element-plus'
-import { startFirstTimeOnboarding } from '@/utils/onboarding'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import {
+  HomeFilled,
+  User,
+  Robot,
+  Connection,
+  Document,
+  Setting,
+  QuestionFilled,
+  Bell,
+  InfoFilled,
+  SwitchButton,
+  Expand,
+  Fold
+} from '@element-plus/icons-vue'
+import axios from 'axios'
 
+const router = useRouter()
 const route = useRoute()
-const systemStore = useSystemStore()
 
-const activeMenu = computed(() => route.path)
+// 侧边栏状态
+const sidebarCollapsed = ref(false)
 
-const serviceRunning = computed(() => systemStore.status.service_running)
-const redisConnected = computed(() => systemStore.status.redis_connected)
+// 当前路由
+const currentRoute = computed(() => route.path)
 
-const statusType = computed(() => {
-  if (serviceRunning.value && redisConnected.value) return 'success'
-  if (serviceRunning.value) return 'warning'
-  return 'danger'
+// 面包屑
+const breadcrumbs = computed(() => {
+  const routeMap = {
+    '/': { name: '概览' },
+    '/accounts': { name: '账号管理' },
+    '/bots': { name: 'Bot配置' },
+    '/mapping': { name: '频道映射' },
+    '/logs': { name: '实时日志' },
+    '/settings': { name: '系统设置' },
+    '/help': { name: '帮助中心' }
+  }
+  
+  const current = routeMap[route.path]
+  return current ? [{ name: current.name, path: route.path }] : []
 })
 
+// 系统状态
+const systemStatus = ref('running')  // running/stopped/error
+const notificationCount = ref(0)
+
+// 状态文本
 const statusText = computed(() => {
-  if (serviceRunning.value && redisConnected.value) return '运行中'
-  if (serviceRunning.value) return 'Redis未连接'
-  return '已停止'
+  const statusMap = {
+    running: '运行中',
+    stopped: '已停止',
+    error: '异常'
+  }
+  return statusMap[systemStatus.value] || '未知'
 })
 
+// 定时器
 let statusInterval = null
 
-const toggleService = async () => {
-  try {
-    if (serviceRunning.value) {
-      await systemStore.stopService()
-      ElMessage.success('服务已停止')
-    } else {
-      await systemStore.startService()
-      ElMessage.success('服务已启动')
-    }
-  } catch (error) {
-    ElMessage.error('操作失败: ' + error.message)
+// 方法：切换侧边栏
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('sidebarCollapsed', sidebarCollapsed.value)
+}
+
+// 方法：显示通知
+const showNotifications = () => {
+  router.push('/notifications')
+}
+
+// 方法：跳转设置
+const goToSettings = () => {
+  router.push('/settings')
+}
+
+// 方法：显示关于
+const showAbout = () => {
+  // 显示关于对话框
+  alert('KOOK消息转发系统 v1.0.0')
+}
+
+// 方法：退出
+const logout = () => {
+  if (confirm('确定要退出吗？')) {
+    localStorage.clear()
+    router.push('/login')
   }
 }
 
+// 方法：获取系统状态
+const fetchSystemStatus = async () => {
+  try {
+    const response = await axios.get('/api/system/stats')
+    systemStatus.value = response.data.status || 'running'
+  } catch (error) {
+    systemStatus.value = 'error'
+  }
+}
+
+// 生命周期：挂载
 onMounted(() => {
-  // 定期刷新状态
-  systemStore.fetchSystemStatus()
-  statusInterval = setInterval(() => {
-    systemStore.fetchSystemStatus()
-  }, 5000)
+  // 恢复侧边栏状态
+  const savedState = localStorage.getItem('sidebarCollapsed')
+  if (savedState !== null) {
+    sidebarCollapsed.value = savedState === 'true'
+  }
   
-  // ✅ P0-1新增：首次启动引导
-  startFirstTimeOnboarding()
+  // 获取系统状态
+  fetchSystemStatus()
+  
+  // 定期刷新状态（10秒）
+  statusInterval = setInterval(fetchSystemStatus, 10000)
 })
 
+// 生命周期：卸载
 onUnmounted(() => {
   if (statusInterval) {
     clearInterval(statusInterval)
@@ -157,57 +246,158 @@ onUnmounted(() => {
 
 <style scoped>
 .layout-container {
+  display: flex;
   height: 100vh;
+  background: #f5f5f5;
 }
 
+/* 侧边栏 */
 .sidebar {
-  background-color: #545c64;
-  color: #fff;
+  width: 240px;
+  background: #001529;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.collapsed {
+  width: 64px;
 }
 
 .logo {
-  height: 60px;
+  padding: 20px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid #434a50;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.logo h2 {
+.logo-image {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.logo-text {
   font-size: 18px;
-  color: #fff;
-  margin: 0;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
-.menu {
+.sidebar-menu {
+  flex: 1;
   border-right: none;
-  background-color: #545c64;
 }
 
+.sidebar-footer {
+  padding: 16px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 主内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 顶部栏 */
 .header {
-  background-color: #fff;
-  border-bottom: 1px solid #dcdfe6;
+  height: 60px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.header-left h3 {
-  margin: 0;
-  font-size: 18px;
-  color: #303133;
+.header-left {
+  flex: 1;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.main-content {
-  background-color: #f5f5f5;
-  padding: 20px;
+/* 状态指示器 */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: #f0f0f0;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #999;
+}
+
+.status-indicator.running .status-dot {
+  background: #52c41a;
+  box-shadow: 0 0 4px #52c41a;
+}
+
+.status-indicator.stopped .status-dot {
+  background: #d9d9d9;
+}
+
+.status-indicator.error .status-dot {
+  background: #ff4d4f;
+  box-shadow: 0 0 4px #ff4d4f;
+}
+
+/* 内容区 */
+.content-wrapper {
+  flex: 1;
+  padding: 24px;
   overflow-y: auto;
+}
+
+/* 路由过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* 滚动条样式 */
+.content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
 }
 </style>
