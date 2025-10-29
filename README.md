@@ -126,6 +126,8 @@ cd CSBJJWT
 
 ## 📖 使用文档
 
+> 📚 **完整文档索引**: [DOCS_INDEX.md](DOCS_INDEX.md)（快速查找所需文档）
+
 ### 新手教程
 
 1. [📘 快速入门教程](docs/tutorials/01-quick-start.md)（5分钟上手）
@@ -136,11 +138,11 @@ cd CSBJJWT
 
 ### 进阶文档
 
-- [📓 频道映射详解](docs/tutorials/06-频道映射详解教程.md)
-- [📒 过滤规则技巧](docs/tutorials/07-过滤规则使用技巧.md)
-- [📋 API接口文档](docs/API接口文档.md)
-- [🏗️ 架构设计](docs/架构设计.md)
-- [💻 开发指南](docs/开发指南.md)
+- [📓 完整用户手册](docs/用户手册.md) - 详细功能说明
+- [❓ 常见问题FAQ](docs/tutorials/FAQ-常见问题.md) - 问题解答
+- [📋 API接口文档](docs/API接口文档.md) - API说明
+- [🏗️ 架构设计](docs/架构设计.md) - 系统架构
+- [💻 开发指南](docs/开发指南.md) - 开发者文档
 
 ### 升级文档
 
