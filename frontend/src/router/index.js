@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Layout from '../views/Layout.vue'
 import Home from '../views/Home.vue'
+import HomeEnhanced from '../views/HomeEnhanced.vue'  // ✅ P1-2新增：增强版主界面
 import Accounts from '../views/Accounts.vue'
 import Bots from '../views/Bots.vue'
 import Mapping from '../views/Mapping.vue'
+import MappingVisual from '../views/MappingVisual.vue'  // ✅ P0-4新增：可视化映射编辑器
 import Filter from '../views/Filter.vue'
 import Logs from '../views/Logs.vue'
 import Settings from '../views/Settings.vue'
@@ -14,6 +16,7 @@ import Wizard from '../views/Wizard.vue'
 import WizardQuick3Steps from '../views/WizardQuick3Steps.vue'
 import WizardUltimate3Steps from '../views/WizardUltimate3Steps.vue'
 import WizardUnified from '../views/WizardUnified.vue'  // ✅ v9.0.0新增：统一向导
+import WizardSimple3Steps from '../views/WizardSimple3Steps.vue'  // ✅ P0-1新增：真正的3步向导
 import QuickSetup from '../views/QuickSetup.vue'
 import Login from '../views/Login.vue'
 
@@ -27,8 +30,14 @@ const routes = [
   {
     path: '/wizard',
     name: 'Wizard',
-    component: WizardUnified,  // ✅ v9.0.0优化: 使用统一向导（快速/专业双模式）
+    component: WizardSimple3Steps,  // ✅ P0-1优化: 使用真正的3步向导（傻瓜式）
     meta: { title: '配置向导', requiresAuth: true }
+  },
+  {
+    path: '/wizard-advanced',
+    name: 'WizardAdvanced',
+    component: WizardUnified,  // 保留高级向导作为备选
+    meta: { title: '高级配置向导', requiresAuth: true }
   },
   {
     path: '/wizard-ultimate',
@@ -63,8 +72,14 @@ const routes = [
       {
         path: '/home',
         name: 'Home',
-        component: Home,
+        component: HomeEnhanced,  // ✅ P1-2优化: 使用增强版主界面
         meta: { title: '概览', requiresAuth: true }
+      },
+      {
+        path: '/home-simple',
+        name: 'HomeSimple',
+        component: Home,  // 保留简单版作为备选
+        meta: { title: '概览（简单）', requiresAuth: true }
       },
       {
         path: '/accounts',
@@ -81,8 +96,14 @@ const routes = [
       {
         path: '/mapping',
         name: 'Mapping',
-        component: Mapping,
-        meta: { title: '频道映射' }
+        component: MappingVisual,  // ✅ P0-4优化: 使用可视化映射编辑器
+        meta: { title: '频道映射（可视化）' }
+      },
+      {
+        path: '/mapping-table',
+        name: 'MappingTable',
+        component: Mapping,  // 保留表格式映射作为备选
+        meta: { title: '频道映射（表格）' }
       },
       {
         path: '/filter',

@@ -230,6 +230,10 @@ app.include_router(smart_mapping_enhanced.router)  # ✅ 增强版智能映射�
 app.include_router(smart_mapping_ultimate.router)  # ✅ P0-4优化：终极版智能映射
 app.include_router(health.router)  # 健康检查
 app.include_router(updates.router)  # 更新检查
+
+# ✅ P2-2优化: 更新检查增强API
+from .api import update_checker_enhanced
+app.include_router(update_checker_enhanced.router)  # 更新检查增强 🆕 P2-2优化
 app.include_router(selectors.router)  # 选择器配置
 app.include_router(performance.router)  # 性能监控 🆕 v1.12.0
 app.include_router(telegram_helper.router)  # Telegram辅助工具 🆕 v1.15.0
@@ -244,6 +248,9 @@ app.include_router(video_api.router)  # 视频管理API 🆕 P0-1优化
 app.include_router(email_api.router)  # 邮件管理API 🆕 P0-2优化
 app.include_router(file_security_api.router)  # 文件安全API 🆕 P0-4优化
 app.include_router(cookie_import_enhanced.router)  # Cookie导入增强API 🆕 v6.0.0
+# ✅ P0-3终极优化: Cookie一键导入API（支持Chrome扩展自动发送）
+from .api import cookie_import_ultimate
+app.include_router(cookie_import_ultimate.router)  # Cookie一键导入API 🆕 P0-3终极优化
 app.include_router(wizard_testing.router)  # 配置向导测试API 🆕 P0-2深度优化
 app.include_router(wizard_testing_enhanced.router)  # 配置向导测试API增强版 🆕 P0-2深度优化完整版
 app.include_router(image_storage_manager.router)  # 图床存储管理API 🆕 P0-3深度优化
@@ -307,6 +314,10 @@ app.include_router(mapping_learning_api.router)  # 映射学习 🆕 v9.0.0
 # ✅ P0-2优化: 服务器自动发现API
 from .api import server_discovery
 app.include_router(server_discovery.router)  # 服务器/频道自动获取 🆕 P0-2优化
+
+# ✅ P0-2终极优化: 服务器自动发现API（使用真实KOOK API）
+from .api import servers_discovery_ultimate
+app.include_router(servers_discovery_ultimate.router)  # 服务器/频道自动获取终极版 🆕 P0-2终极优化
 
 # ✅ P0-4深度优化: 服务器自动发现增强API
 from .api import server_discovery_enhanced
