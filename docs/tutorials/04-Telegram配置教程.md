@@ -231,7 +231,7 @@ Telegram Bot API限制：
 
 **解决方法**：
 1. 确认Bot在群组成员列表中
-2. 检查群组设置 → 权限
+2. 检查群组设置 到 权限
 3. 重新复制Token，确保完整
 
 ---
@@ -304,7 +304,7 @@ Telegram Bot API限制：
 - 不需要「删除消息」「管理员」等权限
 
 **配置方法**：
-1. 群组设置 → 权限
+1. 群组设置 到 权限
 2. 为Bot设置自定义权限
 3. 仅保留必要权限
 
@@ -322,8 +322,8 @@ Telegram Bot API限制：
 ### 2. 频道命名
 
 建议Telegram群组名称与KOOK频道对应：
-- KOOK「公告」 → Telegram「KOOK公告群」
-- KOOK「活动」 → Telegram「KOOK活动群」
+- KOOK「公告」 到 Telegram「KOOK公告群」
+- KOOK「活动」 到 Telegram「KOOK活动群」
 
 智能映射会更准确！
 

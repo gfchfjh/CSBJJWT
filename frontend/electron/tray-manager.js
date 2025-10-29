@@ -1,9 +1,9 @@
 /**
- * 系统托盘管理器
- * ✅ P2-3优化: 实时统计（5秒刷新）+ 智能通知
+ * 系统托盘管理器 - P1-5深度优化
+ * 功能：5秒实时刷新，智能告警，动态统计
  */
 
-const { Tray, Menu, nativeImage, Notification } = require('electron');
+const { Tray, Menu, nativeImage, app } = require('electron');
 const path = require('path');
 const axios = require('axios');
 
@@ -14,135 +14,211 @@ class TrayManager {
     
     // 统计数据
     this.stats = {
-      total: 0,
-      success: 0,
-      failed: 0,
+      totalForwarded: 0,
       successRate: 0,
-      queue: 0,
-      status: 'stopped'
+      queueSize: 0,
+      status: 'stopped',  // stopped/running/error
+      lastUpdate: null
     };
     
-    // 刷新定时器
-    this.refreshInterval = null;
+    // 告警状态
+    this.alerts = {
+      queueBacklog: false,    // 队列堆积
+      lowSuccessRate: false,  // 成功率低
+      serviceError: false     // 服务异常
+    };
     
-    // 后端API配置
-    this.apiUrl = 'http://localhost:9527';
+    // 告警防骚扰：1分钟内同一告警只通知一次
+    this.lastAlertTime = {};
     
-    // 初始化托盘
+    // 定时器
+    this.statsInterval = null;
+    this.animationInterval = null;
+    
+    // 初始化
     this.init();
   }
   
   /**
-   * 初始化系统托盘
+   * 初始化托盘
    */
   init() {
-    // 创建托盘图标
-    const iconPath = path.join(__dirname, '../build/icon.png');
-    const icon = nativeImage.createFromPath(iconPath);
-    const trayIcon = icon.resize({ width: 16, height: 16 });
-    
-    this.tray = new Tray(trayIcon);
-    this.tray.setToolTip('KOOK消息转发系统');
-    
-    // 设置右键菜单
-    this.updateMenu();
-    
-    // 双击托盘图标显示主窗口
-    this.tray.on('double-click', () => {
-      if (this.mainWindow) {
-        if (this.mainWindow.isMinimized()) {
-          this.mainWindow.restore();
-        }
-        this.mainWindow.show();
-        this.mainWindow.focus();
-      }
-    });
-    
-    // 启动定时刷新（每5秒）
-    this.startAutoRefresh();
-    
-    console.log('✅ 系统托盘已初始化');
-  }
-  
-  /**
-   * 启动自动刷新
-   */
-  startAutoRefresh() {
-    // 立即刷新一次
-    this.updateStats();
-    
-    // 每5秒刷新一次
-    this.refreshInterval = setInterval(() => {
-      this.updateStats();
-    }, 5000);
-    
-    console.log('✅ 托盘统计自动刷新已启动（5秒间隔）');
-  }
-  
-  /**
-   * 停止自动刷新
-   */
-  stopAutoRefresh() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
-      console.log('托盘统计自动刷新已停止');
+    try {
+      // 创建托盘图标
+      const iconPath = path.join(__dirname, '../public/icon.png');
+      const icon = nativeImage.createFromPath(iconPath);
+      this.tray = new Tray(icon.resize({ width: 16, height: 16 }));
+      
+      this.tray.setToolTip('KOOK消息转发系统');
+      
+      // 设置点击事件
+      this.tray.on('click', () => {
+        this.showMainWindow();
+      });
+      
+      // 初始化菜单
+      this.updateTrayMenu();
+      
+      // 启动定时刷新
+      this.startStatsPolling();
+      
+      console.log('[TrayManager] 托盘管理器已初始化');
+    } catch (error) {
+      console.error('[TrayManager] 初始化失败:', error);
     }
   }
   
   /**
-   * 更新统计数据
+   * 启动统计轮询（5秒一次）
    */
-  async updateStats() {
+  startStatsPolling() {
+    // 立即执行一次
+    this.fetchStats();
+    
+    // 每5秒刷新一次
+    this.statsInterval = setInterval(() => {
+      this.fetchStats();
+    }, 5000);
+    
+    console.log('[TrayManager] 统计轮询已启动（5秒间隔）');
+  }
+  
+  /**
+   * 停止统计轮询
+   */
+  stopStatsPolling() {
+    if (this.statsInterval) {
+      clearInterval(this.statsInterval);
+      this.statsInterval = null;
+    }
+    
+    if (this.animationInterval) {
+      clearInterval(this.animationInterval);
+      this.animationInterval = null;
+    }
+  }
+  
+  /**
+   * 获取统计数据
+   */
+  async fetchStats() {
     try {
-      // 调用后端API获取统计
-      const response = await axios.get(`${this.apiUrl}/api/system/stats`, {
+      const response = await axios.get('http://localhost:9527/api/system/stats', {
         timeout: 3000
       });
       
-      if (response.data && response.data.success) {
-        const data = response.data.data;
-        
-        // 更新统计数据
-        const oldStats = { ...this.stats };
-        
-        this.stats = {
-          total: data.total_messages || 0,
-          success: data.success_count || 0,
-          failed: data.failed_count || 0,
-          successRate: data.success_rate || 0,
-          queue: data.queue_size || 0,
-          status: data.service_status || 'stopped',
-          activeAccounts: data.active_accounts || 0,
-          activeBots: data.active_bots || 0
-        };
-        
-        // 更新菜单
-        this.updateMenu();
-        
-        // 检查是否需要通知
-        this.checkAlerts(oldStats, this.stats);
-      }
+      const data = response.data;
+      
+      // 更新统计数据
+      this.stats = {
+        totalForwarded: data.total_forwarded || 0,
+        successRate: data.success_rate || 0,
+        queueSize: data.queue_size || 0,
+        status: data.status || 'running',
+        lastUpdate: new Date()
+      };
+      
+      // 检查告警条件
+      this.checkAlerts();
+      
+      // 更新托盘菜单
+      this.updateTrayMenu();
       
     } catch (error) {
-      console.error('获取统计失败:', error.message);
+      console.error('[TrayManager] 获取统计失败:', error.message);
       
-      // 标记为离线状态
-      if (this.stats.status !== 'offline') {
-        this.stats.status = 'offline';
-        this.updateMenu();
-      }
+      // 服务异常
+      this.stats.status = 'error';
+      this.updateTrayMenu();
+      
+      // 触发服务异常告警
+      this.triggerAlert('serviceError', '⚠️ 服务异常', '无法连接到后端服务');
     }
+  }
+  
+  /**
+   * 检查告警条件
+   */
+  checkAlerts() {
+    const { queueSize, successRate } = this.stats;
+    
+    // 1. 队列堆积告警（>100）
+    if (queueSize > 100) {
+      if (!this.alerts.queueBacklog) {
+        this.triggerAlert(
+          'queueBacklog',
+          '⚠️ 队列堆积',
+          `当前队列：${queueSize}条消息`
+        );
+      }
+      this.alerts.queueBacklog = true;
+    } else {
+      this.alerts.queueBacklog = false;
+    }
+    
+    // 2. 成功率下降告警（<80%）
+    if (successRate < 0.8 && this.stats.totalForwarded > 0) {
+      if (!this.alerts.lowSuccessRate) {
+        this.triggerAlert(
+          'lowSuccessRate',
+          '⚠️ 成功率下降',
+          `当前成功率：${(successRate * 100).toFixed(1)}%`
+        );
+      }
+      this.alerts.lowSuccessRate = true;
+    } else {
+      this.alerts.lowSuccessRate = false;
+    }
+    
+    // 3. 服务异常（由fetchStats设置）
+    if (this.stats.status === 'error') {
+      this.alerts.serviceError = true;
+    } else {
+      this.alerts.serviceError = false;
+    }
+  }
+  
+  /**
+   * 触发告警（带防骚扰）
+   */
+  triggerAlert(alertType, title, message) {
+    const now = Date.now();
+    const lastTime = this.lastAlertTime[alertType] || 0;
+    
+    // 1分钟内不重复通知
+    if (now - lastTime < 60000) {
+      return;
+    }
+    
+    this.lastAlertTime[alertType] = now;
+    
+    // 显示系统通知
+    if (this.mainWindow) {
+      this.mainWindow.webContents.send('notification', {
+        type: 'warning',
+        title: title,
+        message: message
+      });
+    }
+    
+    console.log(`[TrayManager] 告警: ${title} - ${message}`);
   }
   
   /**
    * 更新托盘菜单
    */
-  updateMenu() {
-    const statusIcon = this.getStatusIcon(this.stats.status);
-    const statusText = this.getStatusText(this.stats.status);
+  updateTrayMenu() {
+    const { totalForwarded, successRate, queueSize, status } = this.stats;
     
-    const menu = Menu.buildFromTemplate([
+    // 状态图标
+    const statusIcon = {
+      running: '🟢',
+      stopped: '🔴',
+      error: '⚠️'
+    }[status] || '⚪';
+    
+    // 构建菜单
+    const menuTemplate = [
       // 标题
       {
         label: '📊 KOOK消息转发系统',
@@ -150,187 +226,128 @@ class TrayManager {
       },
       { type: 'separator' },
       
-      // 运行状态
-      {
-        label: `${statusIcon} 状态: ${statusText}`,
-        enabled: false
-      },
-      { type: 'separator' },
-      
-      // 统计信息
+      // 实时统计
       {
         label: '📈 实时统计',
         enabled: false
       },
       {
-        label: `   转发总数: ${this.formatNumber(this.stats.total)}`,
+        label: `   转发总数: ${totalForwarded.toLocaleString()}`,
         enabled: false
       },
       {
-        label: `   成功: ${this.formatNumber(this.stats.success)} | 失败: ${this.stats.failed}`,
+        label: `   成功率: ${(successRate * 100).toFixed(1)}%`,
         enabled: false
       },
       {
-        label: `   成功率: ${this.stats.successRate}%`,
+        label: `   队列消息: ${queueSize}`,
         enabled: false
       },
       {
-        label: `   队列消息: ${this.stats.queue}`,
-        enabled: false,
-        // 队列堆积时高亮显示
-        ...(this.stats.queue > 50 && { icon: this.getWarningIcon() })
+        label: `   状态: ${statusIcon} ${this.getStatusText(status)}`,
+        enabled: false
       },
       { type: 'separator' },
       
-      // 服务控制
+      // 告警（如果有）
+      ...(this.hasAlerts() ? [
+        {
+          label: '⚠️ 告警',
+          enabled: false
+        },
+        ...(this.alerts.queueBacklog ? [{
+          label: `   ⚠️ 队列堆积 (${queueSize}条)`,
+          enabled: false
+        }] : []),
+        ...(this.alerts.lowSuccessRate ? [{
+          label: `   ⚠️ 成功率下降 (${(successRate * 100).toFixed(1)}%)`,
+          enabled: false
+        }] : []),
+        ...(this.alerts.serviceError ? [{
+          label: '   ⚠️ 服务异常',
+          enabled: false
+        }] : []),
+        { type: 'separator' }
+      ] : []),
+      
+      // 操作按钮
       {
-        label: '⚙️ 服务控制',
-        enabled: false
+        label: status === 'running' ? '⏸️  停止服务' : '▶️  启动服务',
+        click: () => this.toggleService()
       },
       {
-        label: '   ▶️ 启动服务',
-        enabled: this.stats.status === 'stopped',
-        click: () => this.startService()
-      },
-      {
-        label: '   ⏸️ 停止服务',
-        enabled: this.stats.status === 'running',
-        click: () => this.stopService()
-      },
-      {
-        label: '   🔄 重启服务',
-        enabled: this.stats.status === 'running',
+        label: '🔄 重启服务',
         click: () => this.restartService()
       },
       { type: 'separator' },
       
-      // 快捷操作
+      // 窗口控制
       {
         label: '📁 打开主窗口',
-        click: () => {
-          if (this.mainWindow) {
-            this.mainWindow.show();
-            this.mainWindow.focus();
-          }
-        }
+        click: () => this.showMainWindow()
       },
       {
         label: '📋 查看日志',
-        click: () => this.openLogs()
-      },
-      {
-        label: '⚙️ 设置',
-        click: () => this.openSettings()
+        click: () => this.showLogs()
       },
       { type: 'separator' },
       
       // 退出
       {
         label: '❌ 退出',
-        click: () => {
-          if (this.mainWindow) {
-            this.mainWindow.destroy();
-          }
-          process.exit(0);
-        }
+        click: () => this.quit()
       }
-    ]);
+    ];
     
-    this.tray.setContextMenu(menu);
-    
-    // 更新Tooltip
-    const tooltip = `KOOK消息转发系统\n状态: ${statusText}\n转发: ${this.stats.total} | 成功率: ${this.stats.successRate}%`;
-    this.tray.setToolTip(tooltip);
+    const contextMenu = Menu.buildFromTemplate(menuTemplate);
+    this.tray.setContextMenu(contextMenu);
   }
   
   /**
-   * 检查告警条件
+   * 检查是否有告警
    */
-  checkAlerts(oldStats, newStats) {
-    // 1. 队列堆积告警（超过100条）
-    if (newStats.queue > 100 && oldStats.queue <= 100) {
-      this.showNotification(
-        '⚠️ 队列堆积',
-        `当前有${newStats.queue}条消息等待发送，可能存在网络问题`,
-        'warning'
-      );
-    }
-    
-    // 2. 成功率下降告警（低于80%且总数>100）
-    if (newStats.total > 100 && newStats.successRate < 80 && oldStats.successRate >= 80) {
-      this.showNotification(
-        '⚠️ 成功率下降',
-        `当前成功率${newStats.successRate}%，请检查目标平台连接`,
-        'warning'
-      );
-    }
-    
-    // 3. 服务停止告警
-    if (newStats.status === 'stopped' && oldStats.status === 'running') {
-      this.showNotification(
-        '❌ 服务已停止',
-        'KOOK消息转发服务已停止运行',
-        'error'
-      );
-    }
-    
-    // 4. 服务启动通知
-    if (newStats.status === 'running' && oldStats.status !== 'running') {
-      this.showNotification(
-        '✅ 服务已启动',
-        'KOOK消息转发服务正在运行',
-        'success'
-      );
-    }
+  hasAlerts() {
+    return this.alerts.queueBacklog || 
+           this.alerts.lowSuccessRate || 
+           this.alerts.serviceError;
   }
   
   /**
-   * 显示系统通知
+   * 获取状态文本
    */
-  showNotification(title, body, type = 'info') {
-    const notification = new Notification({
-      title: title,
-      body: body,
-      icon: path.join(__dirname, '../build/icon.png'),
-      silent: false
-    });
-    
-    notification.show();
+  getStatusText(status) {
+    const statusMap = {
+      running: '运行中',
+      stopped: '已停止',
+      error: '异常'
+    };
+    return statusMap[status] || '未知';
   }
   
   /**
-   * 启动服务
+   * 切换服务状态
    */
-  async startService() {
+  async toggleService() {
     try {
-      await axios.post(`${this.apiUrl}/api/system/start`);
+      const action = this.stats.status === 'running' ? 'stop' : 'start';
+      
+      await axios.post(`http://localhost:9527/api/system/${action}`, {}, {
+        timeout: 10000
+      });
       
       // 立即刷新状态
-      await this.updateStats();
-      
-      this.showNotification('✅ 服务启动', '消息转发服务已启动', 'success');
+      await this.fetchStats();
       
     } catch (error) {
-      console.error('启动服务失败:', error);
-      this.showNotification('❌ 启动失败', error.message, 'error');
-    }
-  }
-  
-  /**
-   * 停止服务
-   */
-  async stopService() {
-    try {
-      await axios.post(`${this.apiUrl}/api/system/stop`);
+      console.error('[TrayManager] 切换服务失败:', error);
       
-      // 立即刷新状态
-      await this.updateStats();
-      
-      this.showNotification('⏸️ 服务停止', '消息转发服务已停止', 'info');
-      
-    } catch (error) {
-      console.error('停止服务失败:', error);
-      this.showNotification('❌ 停止失败', error.message, 'error');
+      if (this.mainWindow) {
+        this.mainWindow.webContents.send('notification', {
+          type: 'error',
+          title: '操作失败',
+          message: '无法切换服务状态'
+        });
+      }
     }
   }
   
@@ -339,98 +356,69 @@ class TrayManager {
    */
   async restartService() {
     try {
-      await this.stopService();
+      await axios.post('http://localhost:9527/api/system/restart', {}, {
+        timeout: 10000
+      });
       
-      // 等待2秒
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      await this.startService();
+      // 等待3秒让服务重启
+      setTimeout(() => {
+        this.fetchStats();
+      }, 3000);
       
     } catch (error) {
-      console.error('重启服务失败:', error);
-      this.showNotification('❌ 重启失败', error.message, 'error');
+      console.error('[TrayManager] 重启服务失败:', error);
     }
   }
   
   /**
-   * 打开日志
+   * 显示主窗口
    */
-  openLogs() {
+  showMainWindow() {
     if (this.mainWindow) {
+      if (this.mainWindow.isMinimized()) {
+        this.mainWindow.restore();
+      }
       this.mainWindow.show();
       this.mainWindow.focus();
-      
-      // 发送消息到渲染进程，切换到日志页面
+    }
+  }
+  
+  /**
+   * 显示日志
+   */
+  showLogs() {
+    if (this.mainWindow) {
+      this.mainWindow.show();
       this.mainWindow.webContents.send('navigate-to', '/logs');
     }
   }
   
   /**
-   * 打开设置
+   * 退出应用
    */
-  openSettings() {
-    if (this.mainWindow) {
-      this.mainWindow.show();
-      this.mainWindow.focus();
-      
-      // 发送消息到渲染进程，切换到设置页面
-      this.mainWindow.webContents.send('navigate-to', '/settings');
+  quit() {
+    // 停止轮询
+    this.stopStatsPolling();
+    
+    // 销毁托盘
+    if (this.tray) {
+      this.tray.destroy();
     }
+    
+    // 退出应用
+    app.quit();
   }
   
   /**
-   * 获取状态图标
-   */
-  getStatusIcon(status) {
-    const icons = {
-      'running': '🟢',
-      'stopped': '🔴',
-      'offline': '⚫',
-      'error': '🔴'
-    };
-    return icons[status] || '⚪';
-  }
-  
-  /**
-   * 获取状态文本
-   */
-  getStatusText(status) {
-    const texts = {
-      'running': '运行中',
-      'stopped': '已停止',
-      'offline': '离线',
-      'error': '错误'
-    };
-    return texts[status] || '未知';
-  }
-  
-  /**
-   * 获取警告图标
-   */
-  getWarningIcon() {
-    // 返回一个小的警告图标（可选）
-    return null;
-  }
-  
-  /**
-   * 格式化数字（添加千位分隔符）
-   */
-  formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  }
-  
-  /**
-   * 销毁托盘
+   * 销毁托盘管理器
    */
   destroy() {
-    this.stopAutoRefresh();
+    this.stopStatsPolling();
     
     if (this.tray) {
       this.tray.destroy();
       this.tray = null;
     }
-    
-    console.log('✅ 系统托盘已销毁');
   }
 }
 

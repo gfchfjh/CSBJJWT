@@ -1,23 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "KOOK Cookie导出神器",
+  "name": "KOOK Cookie自动导入助手",
   "version": "3.0.0",
-  "description": "一键导出KOOK Cookie，支持3种格式，自动发送到本地系统",
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
-  },
+  "description": "一键导出KOOK Cookie到本地转发系统，零手动操作",
   "permissions": [
     "cookies",
     "storage",
-    "contextMenus",
     "notifications"
   ],
   "host_permissions": [
     "*://*.kookapp.cn/*",
-    "http://localhost:9527/*",
-    "http://127.0.0.1:9527/*"
+    "*://www.kookapp.cn/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -25,11 +18,15 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
-      "16": "icons/icon-16.png",
-      "48": "icons/icon-48.png",
-      "128": "icons/icon-128.png"
-    },
-    "default_title": "KOOK Cookie导出"
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
   },
   "commands": {
     "export-cookie": {
