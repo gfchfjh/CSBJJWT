@@ -312,6 +312,10 @@ app.include_router(server_discovery.router)  # 服务器/频道自动获取 🆕
 from .api import server_discovery_enhanced
 app.include_router(server_discovery_enhanced.router)  # 服务器/频道自动获取增强版 🆕 P0-4深度优化
 
+# ✅ P1-5深度优化: 实时统计API
+from .api import system_stats_realtime
+app.include_router(system_stats_realtime.router)  # 实时统计API 🆕 P1-5深度优化
+
 # ✅ P1-6优化: 映射学习反馈API
 from .api import mapping_learning_feedback
 app.include_router(mapping_learning_feedback.router)  # 映射学习反馈 🆕 P1-6优化
