@@ -147,9 +147,9 @@ Discord单条消息最多2000字符。
 同一个Discord服务器可以创建多个Webhook。
 
 **使用场景**：
-- KOOK「#公告」 → Discord「#announcements」（Webhook A）
-- KOOK「#活动」 → Discord「#events」（Webhook B）
-- KOOK「#技术」 → Discord「#tech」（Webhook C）
+- KOOK「#公告」 到 Discord「#announcements」（Webhook A）
+- KOOK「#活动」 到 Discord「#events」（Webhook B）
+- KOOK「#技术」 到 Discord「#tech」（Webhook C）
 
 **配置方法**：
 - 在不同Discord频道中分别创建Webhook
@@ -196,7 +196,7 @@ Discord对Webhook有速率限制：
 - Webhook被删除
 
 **排查步骤**：
-1. 检查映射配置（KOOK频道 → Discord频道）
+1. 检查映射配置（KOOK频道 到 Discord频道）
 2. 确认服务状态为「运行中」
 3. 在Discord中确认Webhook存在
 4. 查看日志中的错误信息
@@ -248,8 +248,8 @@ Discord对Webhook有速率限制：
 ### 1. 频道命名规范
 
 建议Discord频道名称与KOOK频道对应：
-- KOOK「公告」 → Discord「announcements」
-- KOOK「活动」 → Discord「events」
+- KOOK「公告」 到 Discord「announcements」
+- KOOK「活动」 到 Discord「events」
 
 这样智能映射会更准确！
 
