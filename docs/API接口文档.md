@@ -16,7 +16,7 @@
 6. [🤖 AI智能映射（统一版）](#ai智能映射统一版)
 7. [🆘 用户友好错误处理](#用户友好错误处理)
 8. [📊 队列可视化监控](#队列可视化监控)
-9. [🏥 系统健康度评分](#系统健康度评分)
+9. [🏥 系统健康监控](#系统健康监控)
 10. [消息日志](#消息日志)
 11. [系统控制](#系统控制)
 12. [图床服务](#图床服务)
@@ -113,12 +113,11 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "scores": {
-    "exact_match": 0.9,
-    "similarity": 0.75,
-    "keyword": 0.85
+  "match_details": {
+    "exact_match": true,
+    "similarity": "high",
+    "keyword": "matched"
   },
-  "final_score": 0.85,
   "recommended": true
 }
 ```
@@ -216,26 +215,25 @@ DELETE /api/queue/clear/{queue_type}
 
 ---
 
-### 🏥 系统健康度评分
+### 🏥 系统健康监控
 
-#### 获取健康度评分
+#### 获取系统健康状态
 
 ```http
-GET /api/system/health-score
+GET /api/system/health
 ```
 
 **响应**:
 ```json
 {
-  "overall_score": 85.3,
   "status": "healthy",
   "details": {
-    "redis_health": 90,
-    "database_health": 85,
-    "message_success_rate": 92,
-    "queue_health": 88,
-    "account_health": 75,
-    "system_resource": 82
+    "redis": "connected",
+    "database": "normal",
+    "message_success_rate": "high",
+    "queue_status": "normal",
+    "account_status": "online",
+    "system_resource": "sufficient"
   },
   "recommendations": [
     "系统运行良好，无需额外优化"
@@ -391,7 +389,7 @@ Content-Type: application/json
 }
 ```
 
-#### 获取智能推荐（4维评分）
+#### 获取智能推荐
 
 ```http
 POST /api/v1/smart-mapping/recommend
@@ -409,7 +407,7 @@ Content-Type: application/json
   "recommendations": [
     {
       "target_channel": "gaming",
-      "score": 0.92,
+      "confidence": "high",
       "breakdown": {
         "exact_match": 0.0,
         "similarity": 0.85,
@@ -419,7 +417,7 @@ Content-Type: application/json
     },
     {
       "target_channel": "game-chat",
-      "score": 0.78,
+      "confidence": "medium",
       "breakdown": {
         "exact_match": 0.0,
         "similarity": 0.72,
