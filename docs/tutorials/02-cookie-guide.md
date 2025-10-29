@@ -16,7 +16,7 @@ Cookie是网站存储在您浏览器中的小型数据文件，用于记录登�
 
 ---
 
-## 方法一：使用Chrome扩展（最简单） ⭐⭐⭐⭐⭐
+## 方法一：使用Chrome扩展（最简单）
 
 这是最简单、最推荐的方法，只需3步即可完成！
 
@@ -291,10 +291,10 @@ Cookie是网站存储在您浏览器中的小型数据文件，用于记录登�
 ## 🎓 总结
 
 **推荐方法排序**：
-1. ⭐⭐⭐⭐⭐ Chrome扩展自动导出（最简单）
-2. ⭐⭐⭐⭐ 开发者工具Console导出
-3. ⭐⭐⭐ EditThisCookie扩展
-4. ⭐⭐ 手动复制Cookie
+1. Chrome扩展自动导出（最简单，推荐）
+2. 开发者工具Console导出
+3. EditThisCookie扩展
+4. 手动复制Cookie
 
 **下一步学习**：
 - [📗 如何配置Discord Webhook](02-discord-webhook.md)

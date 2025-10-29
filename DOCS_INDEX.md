@@ -21,9 +21,9 @@
 
 | 教程 | 适用平台 | 难度 |
 |------|---------|------|
-| [Discord配置](docs/tutorials/03-discord-webhook.md) | Discord | ⭐⭐ |
-| [Telegram配置](docs/tutorials/04-Telegram配置教程.md) | Telegram | ⭐⭐ |
-| [飞书配置](docs/tutorials/05-飞书配置教程.md) | 飞书 | ⭐⭐⭐ |
+| [Discord配置](docs/tutorials/03-discord-webhook.md) | Discord | 简单 |
+| [Telegram配置](docs/tutorials/04-Telegram配置教程.md) | Telegram | 简单 |
+| [飞书配置](docs/tutorials/05-飞书配置教程.md) | 飞书 | 中等 |
 
 ---
 
