@@ -1,27 +1,26 @@
 # KOOK消息转发系统 - API接口文档
 
-**版本**: v12.1.0 深度优化版  
-**最后更新**: 2025-10-28  
-**基础URL**: `http://localhost:15678`
+**版本**: v15.0.0 傻瓜式应用版（深度优化完成）  
+**最后更新**: 2025-10-29  
+**基础URL**: `http://localhost:9527`
 
 ---
 
 ## 📋 目录
 
 1. [认证](#认证)
-2. [v12.1.0新增API](#v121新增api)
+2. [🆕 v15.0.0新增API](#v1500新增api)
 3. [账号管理](#账号管理)
 4. [Bot配置](#bot配置)
 5. [频道映射](#频道映射)
-6. [AI映射学习](#ai映射学习)
-7. [消息去重](#消息去重)
-8. [WebSocket管理](#websocket管理)
-9. [消息日志](#消息日志)
-10. [系统控制](#系统控制)
-11. [环境检测](#环境检测)
-12. [数据库优化](#数据库优化)
-13. [图床服务](#图床服务)
-14. [系统托盘](#系统托盘)
+6. [🤖 AI智能映射（统一版）](#ai智能映射统一版)
+7. [🆘 用户友好错误处理](#用户友好错误处理)
+8. [📊 队列可视化监控](#队列可视化监控)
+9. [🏥 系统健康监控](#系统健康监控)
+10. [消息日志](#消息日志)
+11. [系统控制](#系统控制)
+12. [图床服务](#图床服务)
+13. [🍪 Cookie导入（增强版）](#cookie导入增强版)
 
 ---
 
@@ -55,7 +54,244 @@ Content-Type: application/json
 
 ---
 
-## v12.1.0新增API
+## v15.0.0新增API
+
+### 🤖 AI智能映射（统一版）
+
+#### 获取智能推荐
+
+```http
+POST /api/smart-mapping/recommend
+Content-Type: application/json
+
+{
+  "kook_channels": [...],  // 可选，不提供则自动获取
+  "target_channels": [...],  // 可选，不提供则从已配置Bot获取
+  "min_confidence": 0.5  // 最小置信度阈值
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "recommendations": [
+    {
+      "kook_channel_id": "ch_123",
+      "kook_channel_name": "公告",
+      "recommended_targets": [
+        {
+          "channel_name": "announcements",
+          "channel_id": "bot_1",
+          "platform": "discord",
+          "confidence": 0.95
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "kook_channels_count": 10,
+    "recommendations_count": 8,
+    "coverage_rate": 0.8
+  }
+}
+```
+
+#### 测试频道匹配度
+
+```http
+POST /api/smart-mapping/test-match
+Content-Type: application/json
+
+{
+  "source": "公告频道",
+  "target": "announcements"
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "match_details": {
+    "exact_match": true,
+    "similarity": "high",
+    "keyword": "matched"
+  },
+  "recommended": true
+}
+```
+
+#### 获取翻译词典
+
+```http
+GET /api/smart-mapping/translation-dict
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "chinese_to_english": {
+    "公告": ["announcement", "announcements", "notice"],
+    ...
+  },
+  "total_rules": 50
+}
+```
+
+---
+
+### 📊 队列可视化监控
+
+#### 获取队列统计
+
+```http
+GET /api/queue/stats
+```
+
+**响应**:
+```json
+{
+  "total_size": 28,
+  "pending": 23,
+  "processing": 5,
+  "failed": 2,
+  "completed_today": 1234,
+  "avg_processing_time": 1.2
+}
+```
+
+#### 获取队列消息列表
+
+```http
+GET /api/queue/messages?queue_type=pending&offset=0&limit=50
+```
+
+**响应**:
+```json
+[
+  {
+    "id": "msg_abc123",
+    "kook_message_id": "kook_msg_123",
+    "channel_name": "公告频道",
+    "target_platform": "discord",
+    "content_preview": "版本更新通知...",
+    "status": "pending",
+    "retry_count": 0,
+    "created_at": "2025-10-29T10:30:00Z",
+    "priority": 0
+  }
+]
+```
+
+#### 手动重试消息
+
+```http
+POST /api/queue/retry/{message_id}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "message": "消息已重新加入队列"
+}
+```
+
+#### 清空队列
+
+```http
+DELETE /api/queue/clear/{queue_type}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "deleted_count": 15
+}
+```
+
+---
+
+### 🏥 系统健康监控
+
+#### 获取系统健康状态
+
+```http
+GET /api/system/health
+```
+
+**响应**:
+```json
+{
+  "status": "healthy",
+  "details": {
+    "redis": "connected",
+    "database": "normal",
+    "message_success_rate": "high",
+    "queue_status": "normal",
+    "account_status": "online",
+    "system_resource": "sufficient"
+  },
+  "recommendations": [
+    "系统运行良好，无需额外优化"
+  ],
+  "timestamp": "2025-10-29T10:30:00Z"
+}
+```
+
+---
+
+### 🍪 Cookie导入（增强版）
+
+#### 自动导入Cookie（Chrome扩展）
+
+```http
+POST /api/cookie/import
+Content-Type: application/json
+
+{
+  "cookies": [...],  // Chrome扩展自动发送
+  "source": "chrome_extension",
+  "timestamp": 1698567890000,
+  "version": "3.0.0"
+}
+```
+
+**响应**:
+```json
+{
+  "success": true,
+  "account": {
+    "email": "user@example.com",
+    "status": "online",
+    "last_active": "2025-10-29T10:30:00Z"
+  }
+}
+```
+
+#### 检查Cookie导入状态
+
+```http
+GET /api/cookie/check-import-status
+```
+
+**响应**:
+```json
+{
+  "imported": true,
+  "account": {
+    "email": "user@example.com",
+    "status": "online"
+  }
+}
+```
+
+---
+
+## v12.1.0旧版API
 
 ### 消息去重API
 
@@ -153,7 +389,7 @@ Content-Type: application/json
 }
 ```
 
-#### 获取智能推荐（4维评分）
+#### 获取智能推荐
 
 ```http
 POST /api/v1/smart-mapping/recommend
@@ -171,7 +407,7 @@ Content-Type: application/json
   "recommendations": [
     {
       "target_channel": "gaming",
-      "score": 0.92,
+      "confidence": "high",
       "breakdown": {
         "exact_match": 0.0,
         "similarity": 0.85,
@@ -181,7 +417,7 @@ Content-Type: application/json
     },
     {
       "target_channel": "game-chat",
-      "score": 0.78,
+      "confidence": "medium",
       "breakdown": {
         "exact_match": 0.0,
         "similarity": 0.72,

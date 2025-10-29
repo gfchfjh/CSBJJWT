@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KOOK Cookie导出器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 400px;
+      min-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .header p {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f5f7fa;
+      margin-bottom: 15px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.online {
+      background: #67c23a;
+    }
+
+    .status-dot.offline {
+      background: #f56c6c;
+      animation: none;
+    }
+
+    .status-dot.checking {
+      background: #e6a23c;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .status-text {
+      flex: 1;
+      font-size: 14px;
+      color: #606266;
+    }
+
+    .export-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .export-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .export-btn:active {
+      transform: translateY(0);
+    }
+
+    .export-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .export-btn .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .method-selector {
+      margin-bottom: 15px;
+    }
+
+    .method-selector label {
+      display: block;
+      font-size: 13px;
+      color: #606266;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .method-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .method-btn {
+      padding: 10px;
+      border: 2px solid #dcdfe6;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 13px;
+      color: #606266;
+    }
+
+    .method-btn.active {
+      border-color: #667eea;
+      background: #ecf0fe;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .method-btn:hover {
+      border-color: #667eea;
+    }
+
+    .history-section {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .history-section h3 {
+      font-size: 14px;
+      color: #303133;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .clear-history-btn {
+      font-size: 12px;
+      color: #f56c6c;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px 8px;
+    }
+
+    .history-item {
+      padding: 10px;
+      border-left: 3px solid #67c23a;
+      background: #f5f7fa;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .history-item .time {
+      color: #909399;
+      margin-bottom: 4px;
+    }
+
+    .history-item .method {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: #67c23a;
+      color: white;
+      font-size: 11px;
+      margin-right: 6px;
+    }
+
+    .history-item .method.clipboard {
+      background: #e6a23c;
+    }
+
+    .empty-history {
+      text-align: center;
+      padding: 20px;
+      color: #909399;
+      font-size: 13px;
+    }
+
+    .tips {
+      font-size: 12px;
+      color: #909399;
+      line-height: 1.6;
+      padding: 12px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      border-left: 3px solid #409eff;
+    }
+
+    .tips strong {
+      color: #409eff;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .footer-links {
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    .footer-links a {
+      color: white;
+      text-decoration: none;
+      font-size: 12px;
+      opacity: 0.9;
+      margin: 0 10px;
+    }
+
+    .footer-links a:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍪 KOOK Cookie导出器</h1>
+      <p>v3.0.0 - 增强版</p>
+    </div>
+
+    <div class="card">
+      <!-- 系统状态 -->
+      <div class="status-indicator" id="systemStatus">
+        <div class="status-dot checking"></div>
+        <div class="status-text">正在检查系统状态...</div>
+      </div>
+
+      <!-- 导出方式选择 -->
+      <div class="method-selector">
+        <label>导出方式：</label>
+        <div class="method-buttons">
+          <div class="method-btn active" data-method="auto">
+            🚀 自动导入
+          </div>
+          <div class="method-btn" data-method="clipboard">
+            📋 复制到剪贴板
+          </div>
+        </div>
+      </div>
+
+      <!-- 导出按钮 -->
+      <button class="export-btn" id="exportBtn">
+        <span>🚀</span>
+        <span>一键导出Cookie</span>
+      </button>
+    </div>
+
+    <!-- 使用提示 -->
+    <div class="card tips">
+      <strong>💡 使用提示：</strong>
+      • 请先登录 www.kookapp.cn<br>
+      • 自动导入需要系统处于运行状态<br>
+      • 系统未运行时会自动降级到剪贴板
+    </div>
+
+    <!-- 导出历史 -->
+    <div class="card">
+      <div class="history-section">
+        <h3>
+          📜 导出历史
+          <button class="clear-history-btn" id="clearHistoryBtn">清空</button>
+        </h3>
+        <div id="historyList">
+          <div class="empty-history">暂无导出记录</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <a href="#" id="helpLink">📖 使用帮助</a>
+      <a href="#" id="feedbackLink">💬 反馈问题</a>
+    </div>
+  </div>
+
+  <script src="popup-enhanced.js"></script>
+</body>
+</html>
