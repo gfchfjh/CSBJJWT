@@ -9,7 +9,7 @@
 ## 📋 目录
 
 1. [安装与启动](#安装与启动)
-2. [v16.0.0 Electron版本](#v1600-electron版本)
+2. [Electron版本](#electron版本)
 3. [账号与Cookie](#账号与cookie)
 4. [Bot配置](#bot配置)
 5. [消息转发](#消息转发)
@@ -22,9 +22,9 @@
 
 ## 安装与启动
 
-### Q: v16.0.0有哪些版本可选？
+### Q: v17.0.0有哪些版本可选？
 
-**A**: v16.0.0提供**4个版本**：
+**A**: v17.0.0提供**4个版本**：
 
 1. **Electron Edition**
    - 真正的桌面应用
@@ -61,9 +61,9 @@ Electron版本真正实现了一键运行：
 
 ---
 
-## v16.0.0 Electron版本
+## Electron版本
 
-### Q: v16.0.0有哪些重大更新？
+### Q: Electron版本有哪些重大更新？
 
 **A**: **成功构建Electron桌面应用，需求完成度95%！**
 
@@ -88,8 +88,8 @@ Electron版本真正实现了一键运行：
 
 **Linux用户**：
 ```bash
-chmod +x KOOK消息转发系统-16.0.0.AppImage
-./KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-17.0.0.AppImage
+./KOOK消息转发系统-17.0.0.AppImage
 ```
 
 **Windows/macOS用户**：
@@ -132,7 +132,7 @@ npm run electron:build:mac    # macOS
 
 ### Q: 免责声明弹窗在哪里？
 
-**A**: **v16.0.0暂未实现**
+**A**: **暂未实现**
 
 - 原因：需求文档要求的审计日志功能待完善
 - 影响：5%完成度
