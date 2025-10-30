@@ -23,17 +23,17 @@ KOOK消息转发系统v2.0现已发布！我们提供**3个不同版本**以满�
 
 ### 📦 三个版本概览
 
-| 版本 | 大小 | 环境要求 | 启动方式 | 适用人群 |
-|------|------|----------|----------|----------|
-| **Production Edition** ⭐ | 27 MB | 无 | 双击启动 | 所有用户 |
-| **Runnable Edition** | 1.14 MB | Python+Node | 自动脚本 | 技术用户 |
-| **Demo Edition** | 1.13 MB | Python+Node | 手动命令 | 开发学习 |
+| 版本 | 大小 | 环境要求 | 启动方式 |
+|------|------|----------|----------|
+| **Production Edition** | 27 MB | 无 | 双击启动 |
+| **Runnable Edition** | 1.14 MB | Python+Node | 自动脚本 |
+| **Demo Edition** | 1.13 MB | Python+Node | 手动命令 |
 
 ---
 
 ## 🚀 快速开始
 
-### 🎯 推荐：Production Edition（一键安装版）
+### Production Edition（一键安装版）
 
 **特点**：
 - ❌ 无需Python环境
@@ -68,7 +68,7 @@ KOOK消息转发系统v2.0现已发布！我们提供**3个不同版本**以满�
 
 ## 📦 版本选择
 
-### 1️⃣ Production Edition - 一键安装版 ⭐ 强烈推荐
+### 1️⃣ Production Edition - 一键安装版
 
 ```
 文件: dist_production/KOOK-Forwarder-v2.0-Production.zip
@@ -301,7 +301,7 @@ Vue前端: 8,000 行
 ## 📖 技术文档
 
 ### 用户文档
-- [全部版本说明](./全部版本说明.txt) - 三个版本详细对比
+- [全部版本说明](./全部版本说明.txt) - 三个版本详细说明
 - [下载说明](./下载说明.txt) - 快速开始指南
 - [用户手册](./docs/USER_MANUAL.md) - 完整使用说明
 - [安装指南](./INSTALLATION_GUIDE.md) - 安装问题排查

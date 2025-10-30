@@ -12,7 +12,7 @@
 
 ### 🆕 三个版本发布
 
-#### Production Edition - 一键安装版 ⭐
+#### Production Edition - 一键安装版
 - **零依赖安装** - 无需Python、Node.js等任何环境
 - **独立可执行** - 内置Python 3.12运行时和所有依赖
 - **双击启动** - Windows双击start.bat，Linux/Mac运行./start.sh
@@ -156,7 +156,7 @@ CPU使用率:
 
 ### 📖 文档更新
 
-- ✅ **全部版本说明.txt** - 三个版本详细对比
+- ✅ **全部版本说明.txt** - 三个版本详细说明
 - ✅ **下载说明.txt** - 快速开始指南
 - ✅ **PRODUCTION_EDITION_REPORT.md** - Production版详细报告
 - ✅ **FULL_PACKAGE_INFO.md** - Runnable版详细说明
