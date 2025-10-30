@@ -9,6 +9,8 @@ from .api import accounts, bots, mappings, logs, system, websocket, backup, smar
 from .api import password_reset_enhanced, environment_autofix_enhanced, help_system
 # ✅ P0-1新增: 视频管理API
 from .api import video_api
+# ✅ 深度优化: 视频教程管理API（完整版）
+from .api import video_tutorials
 # ✅ P0-2新增: 邮件管理API
 from .api import email_api
 # ✅ P0-4新增: 文件安全API
@@ -245,6 +247,7 @@ app.include_router(password_reset_enhanced.router)  # 邮箱验证码重置 🆕
 app.include_router(environment_autofix_enhanced.router)  # 增强环境修复 🆕 P0-3优化
 app.include_router(help_system.router)  # 完整帮助系统 🆕 P1-4优化
 app.include_router(video_api.router)  # 视频管理API 🆕 P0-1优化
+app.include_router(video_tutorials.router)  # 视频教程管理API（完整版） 🆕 深度优化
 app.include_router(email_api.router)  # 邮件管理API 🆕 P0-2优化
 app.include_router(file_security_api.router)  # 文件安全API 🆕 P0-4优化
 app.include_router(cookie_import_enhanced.router)  # Cookie导入增强API 🆕 v6.0.0

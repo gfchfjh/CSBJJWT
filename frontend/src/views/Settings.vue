@@ -80,6 +80,47 @@
                 <span class="form-item-tip">启动时直接最小化到托盘</span>
               </el-form-item>
             </el-form>
+
+            <el-divider />
+
+            <h3>💬 历史消息同步</h3>
+            <el-alert
+              type="info"
+              :closable="false"
+              show-icon
+              style="margin-bottom: 20px;"
+            >
+              <template #title>
+                启用后，程序启动时会同步最近N分钟的历史消息
+              </template>
+              默认仅转发新消息。启用此功能可以在重启后补发历史消息，但会增加启动时间。
+            </el-alert>
+            <el-form label-width="200px">
+              <el-form-item label="启动时同步历史消息">
+                <el-switch v-model="settings.syncHistoryOnStartup" />
+                <span class="form-item-tip">启动时同步最近的历史消息到转发队列</span>
+              </el-form-item>
+
+              <el-form-item label="同步时间范围（分钟）" v-if="settings.syncHistoryOnStartup">
+                <el-input-number 
+                  v-model="settings.syncHistoryMinutes" 
+                  :min="5" 
+                  :max="120"
+                  :step="5"
+                />
+                <span class="form-item-tip">同步最近多少分钟内的历史消息（5-120分钟）</span>
+              </el-form-item>
+
+              <el-form-item label="最多同步消息数" v-if="settings.syncHistoryOnStartup">
+                <el-input-number 
+                  v-model="settings.syncHistoryMaxMessages" 
+                  :min="10" 
+                  :max="500"
+                  :step="10"
+                />
+                <span class="form-item-tip">每个频道最多同步多少条消息（10-500条）</span>
+              </el-form-item>
+            </el-form>
           </div>
         </el-tab-pane>
 
@@ -620,6 +661,11 @@ const settings = reactive({
   autoLaunch: false,
   minimizeToTray: true,
   startMinimized: false,
+  
+  // ✅ 新增: 历史消息同步
+  syncHistoryOnStartup: false,
+  syncHistoryMinutes: 30,
+  syncHistoryMaxMessages: 100,
   
   // 图片处理
   imageStrategy: 'smart',

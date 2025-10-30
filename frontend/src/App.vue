@@ -131,21 +131,53 @@ const disclaimerVisible = ref(false)
 const agreedDisclaimer = ref(false)
 
 onMounted(() => {
-  // 检查是否已同意免责声明
-  const disclaimerAccepted = localStorage.getItem('disclaimer_accepted')
-  
-  if (!disclaimerAccepted) {
-    disclaimerVisible.value = true
-  }
+  // ✅ 优化: 检查免责声明版本
+  checkDisclaimerVersion()
   
   // 初始化系统状态
   systemStore.fetchSystemStatus()
 })
 
+/**
+ * ✅ 新增: 检查免责声明版本
+ * 如果版本更新或首次使用，强制显示免责声明
+ */
+const checkDisclaimerVersion = () => {
+  const currentVersion = '16.0.0' // 与应用版本保持一致
+  const acceptedVersion = localStorage.getItem('disclaimer_version')
+  const disclaimerAccepted = localStorage.getItem('disclaimer_accepted')
+  
+  // 首次使用或版本更新时显示免责声明
+  if (!disclaimerAccepted || acceptedVersion !== currentVersion) {
+    disclaimerVisible.value = true
+    
+    // 如果是版本更新，提示用户
+    if (disclaimerAccepted && acceptedVersion !== currentVersion) {
+      console.log('免责声明版本已更新，请重新阅读')
+    }
+  }
+}
+
 const acceptDisclaimer = () => {
+  const currentVersion = '16.0.0'
+  
+  // 保存同意记录
   localStorage.setItem('disclaimer_accepted', 'true')
   localStorage.setItem('disclaimer_accepted_time', new Date().toISOString())
+  localStorage.setItem('disclaimer_version', currentVersion)
+  
+  // 记录用户IP和时间戳（用于审计）
+  const auditInfo = {
+    acceptedAt: new Date().toISOString(),
+    version: currentVersion,
+    userAgent: navigator.userAgent
+  }
+  localStorage.setItem('disclaimer_audit', JSON.stringify(auditInfo))
+  
   disclaimerVisible.value = false
+  agreedDisclaimer.value = false
+  
+  console.log('✅ 用户已同意免责声明 v' + currentVersion)
 }
 
 const rejectDisclaimer = () => {

@@ -74,13 +74,19 @@ const routes = [
       {
         path: '/mapping',
         name: 'Mapping',
-        component: MappingVisual,  // ✅ P0-4优化: 使用可视化映射编辑器
-        meta: { title: '频道映射（可视化）' }
+        component: () => import('../views/MappingUnified.vue'),  // ✅ 深度优化: 使用统一映射视图（表格+流程图）
+        meta: { title: '频道映射' }
+      },
+      {
+        path: '/mapping-visual',
+        name: 'MappingVisual',
+        component: MappingVisual,  // 保留流程图视图作为独立页面
+        meta: { title: '频道映射（流程图）' }
       },
       {
         path: '/mapping-table',
         name: 'MappingTable',
-        component: Mapping,  // 保留表格式映射作为备选
+        component: Mapping,  // 保留表格式映射作为独立页面
         meta: { title: '频道映射（表格）' }
       },
       {

@@ -24,6 +24,11 @@ class SettingsModel(BaseModel):
     minimizeToTray: bool = True
     startMinimized: bool = False
     
+    # ✅ 新增: 历史消息同步
+    syncHistoryOnStartup: bool = False
+    syncHistoryMinutes: int = 30
+    syncHistoryMaxMessages: int = 100
+    
     # 图片处理
     imageStrategy: str = "smart"
     imageStoragePath: str = ""
@@ -127,6 +132,11 @@ async def save_settings(settings: SettingsModel) -> Dict[str, Any]:
         # 应用某些设置
         if settings.logLevel:
             logger.setLevel(settings.logLevel)
+        
+        # ✅ 新增: 应用历史消息同步配置
+        config_settings.sync_history_on_startup = settings.syncHistoryOnStartup
+        config_settings.sync_history_minutes = settings.syncHistoryMinutes
+        config_settings.sync_history_max_messages = settings.syncHistoryMaxMessages
         
         return {"success": True, "message": "设置已保存"}
         

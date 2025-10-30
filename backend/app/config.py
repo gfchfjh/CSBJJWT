@@ -101,6 +101,11 @@ class Settings(BaseSettings):
     captcha_2captcha_api_key: Optional[str] = None
     captcha_auto_solve: bool = True  # 是否启用自动识别
     
+    # ✅ 新增: 历史消息同步配置
+    sync_history_on_startup: bool = False  # 启动时是否同步历史消息
+    sync_history_minutes: int = 30  # 同步最近N分钟的历史消息（默认30分钟）
+    sync_history_max_messages: int = 100  # 最多同步多少条历史消息
+    
     # 健康检查配置
     health_check_interval: int = 300  # 健康检查间隔（秒）
     health_check_enabled: bool = True  # 是否启用健康检查
