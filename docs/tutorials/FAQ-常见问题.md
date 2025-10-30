@@ -80,7 +80,7 @@ Electron版本真正实现了一键运行：
 - ⏳ 免责声明弹窗待完善（影响5%完成度）
 - ⏳ Windows/macOS安装包待构建
 
-详见：[需求完成度分析报告.md](../../需求完成度分析报告.md)
+详见：[CHANGELOG.md](../../CHANGELOG.md)
 
 ### Q: 如何运行Electron版本？
 
@@ -102,9 +102,7 @@ npm run electron:build:mac  # macOS
 
 ### Q: 如何自己构建Electron应用？
 
-**A**: 参考 [ELECTRON_BUILD_GUIDE.md](../../ELECTRON_BUILD_GUIDE.md)
-
-简化步骤：
+**A**: 简化步骤：
 ```bash
 # 1. 安装依赖
 cd /workspace/frontend

@@ -8,7 +8,7 @@
 
 ### 🎉 Electron桌面应用发布 - 95%需求实现
 
-这是一个重大版本，**成功构建Electron桌面应用**，总代码量达到**26,000+行**，需求完成度**95%**（详见需求完成度分析报告.md）。
+这是一个重大版本，**成功构建Electron桌面应用**，总代码量达到**26,000+行**，需求完成度**95%**。
 
 ### 🆕 重大新增功能
 
@@ -144,14 +144,8 @@
 
 ### 📁 文件变更 (v16.0.0)
 
-#### 新增文件
+#### 新增代码文件
 - `frontend/src/store/bots.js` - Bots状态管理模块
-- `需求完成度分析报告.md` - 95%详细分析
-- `ELECTRON_BUILD_SUCCESS.md` - 构建成功报告
-- `ELECTRON_BUILD_GUIDE.md` - 完整构建指南
-- `QUICK_START.md` - 快速开始指南
-- `BUILD_STATUS.md` - 构建状态说明
-- `MILESTONE_ELECTRON_BUILD.md` - 里程碑文档
 
 #### 修改文件
 - `VERSION` - 更新至16.0.0
@@ -161,6 +155,10 @@
 - `frontend/src/composables/useTheme.js` - 添加初始化函数
 - `frontend/src/views/Layout.vue` - 修复图标导入
 - `frontend/src/views/MappingUnified.vue` - 禁用流程图视图
+- `docs/开发指南.md` - 更新至v16.0.0
+- `docs/构建发布指南.md` - 添加Electron构建说明
+- `docs/架构设计.md` - 更新版本信息
+- `docs/tutorials/FAQ-常见问题.md` - 新增v16.0.0 FAQ
 
 #### 构建产物（不提交）
 - `frontend/node_modules/` - 474个前端依赖包
@@ -214,12 +212,11 @@
   - 标注已知问题
   - 更新技术指标
 
-- ✅ **新增文档**（5份）
-  - 需求完成度分析报告.md - 详细对照检查
-  - ELECTRON_BUILD_SUCCESS.md - 构建报告
-  - ELECTRON_BUILD_GUIDE.md - 构建教程
-  - QUICK_START.md - 快速上手
-  - MILESTONE_ELECTRON_BUILD.md - 里程碑记录
+- ✅ **技术文档更新**（4份）
+  - docs/开发指南.md - v16.0.0核心特性
+  - docs/构建发布指南.md - Electron构建流程
+  - docs/架构设计.md - 更新版本号
+  - docs/tutorials/FAQ-常见问题.md - 新增8个FAQ
 
 ### ⚠️ 已知问题
 

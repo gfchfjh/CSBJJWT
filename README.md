@@ -554,8 +554,6 @@ Vue前端: 8,000 行
    └── 流程图视图: ⏳ (VueFlow集成待修复)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-详见: 需求完成度分析报告.md
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
@@ -631,7 +629,7 @@ Vue前端: 8,000 行
 
 **重大更新**：
 - 🎊 成功构建Electron桌面应用
-- ✅ 需求完成度95%（详见分析报告）
+- ✅ 需求完成度95%
 - ✅ 总代码量26,000+行
 - ✅ Electron Edition：125MB AppImage（Linux）
 - ✅ Production Web：27MB零依赖Web应用
@@ -644,17 +642,12 @@ Vue前端: 8,000 行
 - ⏳ 流程图视图待修复（VueFlow集成）
 - ⏳ 免责声明待完善（审计日志）
 
-**新增文档**：
-- 📄 需求完成度分析报告.md - 95%详细分析
-- 📄 ELECTRON_BUILD_SUCCESS.md - 构建成功报告
-- 📄 ELECTRON_BUILD_GUIDE.md - 完整构建指南
-- 📄 QUICK_START.md - 快速开始指南
-- 📄 MILESTONE_ELECTRON_BUILD.md - 里程碑文档
-
 **升级建议**：
 - 推荐使用Electron版获得最佳桌面体验
 - 或继续使用Production Web版（功能完整）
 - Runnable/Demo版本适合开发和学习
+
+详见：[CHANGELOG.md](./CHANGELOG.md)
 
 查看完整更新日志: [CHANGELOG.md](./CHANGELOG.md)
 
