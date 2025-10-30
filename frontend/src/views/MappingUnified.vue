@@ -53,7 +53,12 @@
       
       <!-- 流程图视图 -->
       <transition name="fade">
-        <MappingVisualFlow v-if="currentView === 'flow'" />
+        <!-- MappingVisualFlow v-if="currentView === 'flow'" / -->
+        <div v-if="currentView === 'flow'" class="coming-soon">
+          <el-empty description="流程图视图功能即将推出">
+            <el-button type="primary" @click="currentView = 'table'">返回表格视图</el-button>
+          </el-empty>
+        </div>
       </transition>
     </div>
   </div>
@@ -63,7 +68,7 @@
 import { ref, onMounted } from 'vue'
 import { Connection, QuestionFilled } from '@element-plus/icons-vue'
 import MappingTableView from './MappingTableView.vue'
-import MappingVisualFlow from './MappingVisualFlow.vue'
+// import MappingVisualFlow from './MappingVisualFlow.vue'
 
 // 当前视图
 const currentView = ref('table')  // 默认使用表格视图（更符合需求文档）
