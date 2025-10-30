@@ -122,6 +122,14 @@ export function useTheme() {
   }
 }
 
+/**
+ * 初始化主题（仅在应用启动时调用一次）
+ */
+export function initThemeOnce() {
+  // 应用初始主题
+  applyTheme(activeTheme.value)
+}
+
 // 主题颜色配置
 export const themeColors = {
   light: {

@@ -218,3 +218,12 @@ export function useGlobalErrorHandler() {
   }
   return globalErrorHandler
 }
+
+// 导出便捷函数供拦截器等使用
+export async function showFriendlyError(error, options = {}) {
+  const handler = useGlobalErrorHandler()
+  return await handler.handleError(error, options)
+}
+
+// 导出全局错误处理器实例
+export { globalErrorHandler }
