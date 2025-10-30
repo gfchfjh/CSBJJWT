@@ -1,19 +1,19 @@
 # ❓ KOOK消息转发系统 - 常见问题FAQ
 
-**版本**: v15.0.0 傻瓜式应用版（深度优化完成）  
-**最后更新**: 2025-10-29  
-**新增**: v15.0.0优化相关FAQ | AI智能映射 | 用户友好错误处理 | 内置帮助系统
+**版本**: v16.0.0 Electron桌面应用版  
+**最后更新**: 2025-10-30  
+**新增**: v16.0.0 Electron相关FAQ | 构建问题 | AppImage使用 | 已知问题说明
 
 ---
 
 ## 📋 目录
 
 1. [安装与启动](#安装与启动)
-2. [账号与Cookie](#账号与cookie)
-3. [v15.0.0新特性](#v121新特性)
+2. [v16.0.0 Electron版本](#v1600-electron版本)
+3. [账号与Cookie](#账号与cookie)
 4. [Bot配置](#bot配置)
 5. [消息转发](#消息转发)
-6. [AI智能映射](#ai智能映射)
+6. [已知问题](#已知问题)
 7. [性能与优化](#性能与优化)
 8. [安全与隐私](#安全与隐私)
 9. [故障排查](#故障排查)
@@ -22,12 +22,35 @@
 
 ## 安装与启动
 
-### Q: v15.0.0需要安装哪些依赖？
+### Q: v16.0.0有哪些版本可选？
+
+**A**: v16.0.0提供**4个版本**：
+
+1. **Electron Edition（推荐）⭐**
+   - 真正的桌面应用
+   - 系统托盘集成
+   - 开机自启动
+   - 125MB AppImage（Linux）
+   - 可构建Windows/macOS版本
+
+2. **Production Web Edition**
+   - 27MB零依赖Web应用
+   - 脚本启动+浏览器访问
+   - 功能完整
+
+3. **Runnable Edition**
+   - 需要Python+Node环境
+   - 适合开发
+
+4. **Demo Edition**
+   - 演示版本
+
+### Q: Electron版本需要安装哪些依赖？
 
 **A**: **无需安装任何依赖！** 🎉
 
-v15.0.0真正实现了一键安装：
-- ✅ 无需安装Python 3.8+
+Electron版本真正实现了一键运行：
+- ✅ 无需安装Python
 - ✅ 无需安装Node.js
 - ✅ 无需安装Redis
 - ✅ 无需安装Chromium
@@ -38,9 +61,99 @@ v15.0.0真正实现了一键安装：
 
 ---
 
-## v15.0.0新特性
+## v16.0.0 Electron版本
 
-### Q: v15.0.0相比v15.0.0有哪些提升？
+### Q: v16.0.0有哪些重大更新？
+
+**A**: **成功构建Electron桌面应用，需求完成度95%！**
+
+#### 主要更新
+- ✅ **Electron桌面应用** - Linux AppImage已构建（125MB）
+- ✅ **系统托盘集成** - 实时统计、智能通知
+- ✅ **4步配置向导** - 简化配置流程
+- ✅ **表格视图映射** - 批量操作、高级筛选
+- ✅ **视频教程中心** - 10个精选教程
+- ✅ **修复6个代码问题** - 提升稳定性
+
+#### 已知问题
+- ⏳ 流程图视图暂时禁用（VueFlow集成待修复）
+- ⏳ 免责声明弹窗待完善（影响5%完成度）
+- ⏳ Windows/macOS安装包待构建
+
+详见：[需求完成度分析报告.md](../../需求完成度分析报告.md)
+
+### Q: 如何运行Electron版本？
+
+**A**: **超简单！**
+
+**Linux用户**：
+```bash
+chmod +x KOOK消息转发系统-16.0.0.AppImage
+./KOOK消息转发系统-16.0.0.AppImage
+```
+
+**Windows/macOS用户**：
+暂时可使用Production Web版本，或在对应平台上构建：
+```bash
+cd frontend
+npm run electron:build:win  # Windows
+npm run electron:build:mac  # macOS
+```
+
+### Q: 如何自己构建Electron应用？
+
+**A**: 参考 [ELECTRON_BUILD_GUIDE.md](../../ELECTRON_BUILD_GUIDE.md)
+
+简化步骤：
+```bash
+# 1. 安装依赖
+cd /workspace/frontend
+npm install --legacy-peer-deps
+
+# 2. 构建前端
+npm run build
+
+# 3. 打包Electron
+npm run electron:build:linux  # Linux
+npm run electron:build:win    # Windows  
+npm run electron:build:mac    # macOS
+```
+
+---
+
+## 已知问题
+
+### Q: 为什么流程图视图不可用？
+
+**A**: **VueFlow在Vite构建时存在兼容性问题**
+
+- 状态：临时禁用
+- 影响：中等（表格视图功能完整可替代）
+- 计划：v16.1.0修复
+- 替代方案：使用表格视图进行映射管理
+
+### Q: 免责声明弹窗在哪里？
+
+**A**: **v16.0.0暂未实现**
+
+- 原因：需求文档要求的审计日志功能待完善
+- 影响：5%完成度
+- 计划：v16.1.0补充
+- 当前状态：不影响核心转发功能
+
+### Q: Windows/macOS版本什么时候发布？
+
+**A**: **可以自己构建！**
+
+- Linux版本已成功构建
+- 使用相同的构建脚本在Windows/macOS上构建即可
+- 或等待未来版本发布
+
+---
+
+## v15.0.0新特性（归档）
+
+### Q: v15.0.0相比之前版本有哪些提升？
 
 **A**: **13项深度优化，彻底升级为傻瓜式应用！**
 
