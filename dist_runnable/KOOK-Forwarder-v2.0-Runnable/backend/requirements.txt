@@ -1,0 +1,39 @@
+# FastAPI and dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Async HTTP
+aiohttp>=3.9.0
+aiofiles>=23.2.1
+
+# Database
+aiosqlite>=0.19.0
+
+# Redis
+redis>=5.0.1
+aioredis>=2.0.1
+
+# Playwright (browser automation)
+playwright>=1.40.0
+
+# Image processing
+Pillow>=10.1.0
+
+# Crypto
+cryptography>=41.0.7
+bcrypt>=4.1.2
+
+# Utils
+python-dotenv>=1.0.0
+orjson>=3.9.10  # High-performance JSON
+
+# ✅ P0-2新增: 邮件支持
+aiosmtplib>=3.0.1  # Async SMTP client
+email-validator>=2.1.0  # Email validation
+
+# Optional: Advanced features
+# 2captcha-python>=1.2.0  # Captcha solving (optional)
+# schedule>=1.2.0  # Task scheduling (optional)

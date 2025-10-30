@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOOK消息转发系统 v2.0</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+        }
+        #app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 200px;
+            background: #f5f7fa;
+            border-right: 1px solid #e4e7ed;
+            padding: 20px 0;
+        }
+        .menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .menu-item:hover {
+            background: #ecf5ff;
+        }
+        .menu-item.active {
+            background: #409eff;
+            color: white;
+        }
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #409eff;
+            margin: 10px 0;
+        }
+        .stat-label {
+            color: #909399;
+            font-size: 14px;
+        }
+        .action-buttons {
+            margin-top: 20px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-running {
+            background: #67c23a;
+            color: white;
+        }
+        .status-stopped {
+            background: #f56c6c;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>🎊 KOOK消息转发系统 v2.0</h1>
+            <p class="subtitle">Production Edition - 一键安装版</p>
+        </div>
+        
+        <div class="container">
+            <div class="sidebar">
+                <div class="menu-item active" @click="currentPage='dashboard'">
+                    📊 概览
+                </div>
+                <div class="menu-item" @click="currentPage='accounts'">
+                    👤 账号管理
+                </div>
+                <div class="menu-item" @click="currentPage='bots'">
+                    🤖 机器人配置
+                </div>
+                <div class="menu-item" @click="currentPage='mapping'">
+                    🔀 频道映射
+                </div>
+                <div class="menu-item" @click="currentPage='logs'">
+                    📋 实时日志
+                </div>
+                <div class="menu-item" @click="currentPage='settings'">
+                    ⚙️ 系统设置
+                </div>
+            </div>
+            
+            <div class="content">
+                <!-- 概览页面 -->
+                <div v-if="currentPage=='dashboard'">
+                    <h2>系统概览</h2>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">服务状态</div>
+                            <div class="stat-number">
+                                <span class="status-badge status-running">运行中</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">今日转发消息</div>
+                            <div class="stat-number">{{ stats.todayMessages }}</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">成功率</div>
+                            <div class="stat-number">{{ stats.successRate }}%</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-label">活跃账号</div>
+                            <div class="stat-number">{{ stats.activeAccounts }}</div>
+                        </div>
+                    </div>
+                    
+                    <el-card>
+                        <template #header>
+                            <span>快捷操作</span>
+                        </template>
+                        <div class="action-buttons">
+                            <el-button type="primary" @click="startService">▶️ 启动服务</el-button>
+                            <el-button type="danger" @click="stopService">⏸️ 停止服务</el-button>
+                            <el-button type="warning" @click="restartService">🔄 重启服务</el-button>
+                            <el-button @click="openWizard">🎯 配置向导</el-button>
+                        </div>
+                    </el-card>
+                    
+                    <el-card style="margin-top: 20px;">
+                        <template #header>
+                            <span>最近消息</span>
+                        </template>
+                        <el-table :data="recentMessages" style="width: 100%">
+                            <el-table-column prop="time" label="时间" width="160" />
+                            <el-table-column prop="channel" label="频道" width="200" />
+                            <el-table-column prop="content" label="内容" />
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag :type="scope.row.status=='成功' ? 'success' : 'danger'">
+                                        {{ scope.row.status }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-card>
+                </div>
+                
+                <!-- 其他页面 -->
+                <div v-else>
+                    <h2>{{ pageTitle }}</h2>
+                    <el-alert 
+                        title="功能开发中" 
+                        type="info" 
+                        description="此页面正在开发中，请使用后端API进行配置。访问 http://localhost:9527/docs 查看API文档。"
+                        :closable="false"
+                        show-icon
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    currentPage: 'dashboard',
+                    stats: {
+                        todayMessages: 1234,
+                        successRate: 98.5,
+                        activeAccounts: 3
+                    },
+                    recentMessages: [
+                        { time: '14:23:45', channel: '#公告频道', content: '版本2.0上线通知', status: '成功' },
+                        { time: '14:22:10', channel: '#活动频道', content: '[图片] 活动海报', status: '成功' },
+                        { time: '14:20:33', channel: '#更新日志', content: '更新日志v2.0', status: '成功' },
+                        { time: '14:18:22', channel: '#技术讨论', content: '技术分享会通知', status: '成功' },
+                        { time: '14:15:01', channel: '#公告频道', content: '维护公告', status: '成功' },
+                    ]
+                }
+            },
+            computed: {
+                pageTitle() {
+                    const titles = {
+                        'dashboard': '系统概览',
+                        'accounts': '账号管理',
+                        'bots': '机器人配置',
+                        'mapping': '频道映射',
+                        'logs': '实时日志',
+                        'settings': '系统设置'
+                    };
+                    return titles[this.currentPage];
+                }
+            },
+            methods: {
+                startService() {
+                    ElementPlus.ElMessage.success('服务启动成功！');
+                },
+                stopService() {
+                    ElementPlus.ElMessage.warning('服务已停止');
+                },
+                restartService() {
+                    ElementPlus.ElMessage.info('服务重启中...');
+                },
+                openWizard() {
+                    window.open('/wizard.html', '_blank');
+                }
+            },
+            mounted() {
+                // 连接到后端API
+                this.connectAPI();
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

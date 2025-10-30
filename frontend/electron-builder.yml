@@ -1,38 +1,30 @@
-appId: com.kookforwarder.app
-productName: KOOK消息转发系统
-copyright: Copyright © 2025 KOOK Forwarder Team
-directories:
-  output: dist-electron
-  buildResources: ../build
+# Electron Builder配置
+# ✅ P2-1: Electron打包配置
 
-# 包含的文件
+appId: com.kook.forwarder
+productName: KOOK消息转发系统
+copyright: Copyright © 2025
+
+# 目录配置
+directories:
+  buildResources: ../build
+  output: dist
+
+# 文件包含
 files:
   - dist/**/*
   - electron/**/*
+  - node_modules/**/*
   - package.json
-  - "!node_modules/**/*"
-  - "!src/**/*"
-  - "!public/**/*"
 
-# 额外资源（运行时需要）
+# 额外资源
 extraResources:
-  - from: ../build/icon.png
-    to: resources/icon.png
-  - from: electron/resources
-    to: resources
-    filter:
-      - "**/*"
-  # 嵌入式Redis
+  - from: ../backend/dist
+    to: backend
   - from: ../redis
-    to: resources/redis
-    filter:
-      - redis-server*
-      - redis.conf
-  # 后端可执行文件
-  - from: ../dist
-    to: resources/backend
-    filter:
-      - kook-forwarder-backend*
+    to: redis
+  - from: ../build/icon.png
+    to: icon.png
 
 # Windows配置
 win:
@@ -40,23 +32,23 @@ win:
     - target: nsis
       arch:
         - x64
+        - ia32
   icon: ../build/icon.ico
-  artifactName: ${productName}-${version}-Windows-${arch}.${ext}
-  
-# NSIS安装程序配置
+  artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+# NSIS安装器配置
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  perMachine: false
   allowElevation: true
   installerIcon: ../build/icon.ico
   uninstallerIcon: ../build/icon.ico
   installerHeaderIcon: ../build/icon.ico
-  createDesktopShortcut: always
+  createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: KOOK消息转发系统
   license: ../LICENSE
-  include: ../build/installer.nsh
+  language: 2052  # 中文
 
 # macOS配置
 mac:
@@ -67,13 +59,12 @@ mac:
         - arm64
   icon: ../build/icon.icns
   category: public.app-category.utilities
-  artifactName: ${productName}-${version}-macOS-${arch}.${ext}
-  hardenedRuntime: true
-  gatekeeperAssess: false
   entitlements: ../build/entitlements.mac.plist
   entitlementsInherit: ../build/entitlements.mac.plist
+  hardenedRuntime: true
+  gatekeeperAssess: false
 
-# macOS DMG配置
+# DMG配置
 dmg:
   contents:
     - x: 130
@@ -85,6 +76,9 @@ dmg:
   window:
     width: 540
     height: 380
+  backgroundColor: '#ffffff'
+  icon: ../build/icon.icns
+  iconSize: 80
 
 # Linux配置
 linux:
@@ -92,18 +86,36 @@ linux:
     - target: AppImage
       arch:
         - x64
-  icon: ../build/icon.png
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+  icon: ../build/icons
   category: Utility
-  artifactName: ${productName}-${version}-Linux-${arch}.${ext}
-  executableName: kook-forwarder
-  desktop:
-    Name: KOOK消息转发系统
-    Comment: KOOK消息转发到Discord/Telegram/飞书
-    Categories: Utility;Network;
+  synopsis: KOOK消息转发系统
+  description: 自动转发KOOK消息到Discord、Telegram、飞书等平台
+  vendor: KOOK Forwarder Team
+  maintainer: support@kook-forwarder.com
 
-# 发布配置（禁用自动发布）
-publish: null
+# AppImage配置
+appImage:
+  license: ../LICENSE
 
-# 压缩选项
+# 发布配置
+publish:
+  provider: github
+  owner: kook-forwarder
+  repo: kook-forwarder
+  private: false
+  releaseType: release
+
+# 压缩配置
 compression: maximum
-npmRebuild: false
+
+# 自动更新
+electronUpdater:
+  autoUpdater:
+    enabled: true
+    provider: github

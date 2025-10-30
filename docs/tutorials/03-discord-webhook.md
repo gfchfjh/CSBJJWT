@@ -204,7 +204,7 @@ Discord Webhook支持自定义发送者名称和头像，让消息看起来更�
 
 ![伪装发送者](../screenshots/discord-impersonate.png)
 
-**效果对比**：
+**消息效果**：
 
 **未启用伪装**：
 ```
