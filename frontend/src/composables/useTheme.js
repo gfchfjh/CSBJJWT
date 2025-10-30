@@ -1,113 +1,151 @@
 /**
- * 主题管理Composable
+ * 主题切换系统
+ * ✅ P1-6: 亮色/暗色主题切换
  */
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 
 // 主题类型
-export const THEME_LIGHT = 'light'
-export const THEME_DARK = 'dark'
-export const THEME_AUTO = 'auto'
+export const ThemeType = {
+  LIGHT: 'light',
+  DARK: 'dark',
+  AUTO: 'auto'
+}
 
-// 当前主题（响应式）
-const currentTheme = ref(THEME_LIGHT)
-const isDark = ref(false)
+// 当前主题
+const currentTheme = ref(localStorage.getItem('theme') || ThemeType.AUTO)
+
+// 系统主题
+const systemTheme = ref(
+  window.matchMedia('(prefers-color-scheme: dark)').matches 
+    ? ThemeType.DARK 
+    : ThemeType.LIGHT
+)
+
+// 实际使用的主题
+const activeTheme = ref(getActiveTheme())
 
 /**
- * 使用主题
- * @returns {Object} 主题相关的状态和方法
+ * 获取实际使用的主题
+ */
+function getActiveTheme() {
+  if (currentTheme.value === ThemeType.AUTO) {
+    return systemTheme.value
+  }
+  return currentTheme.value
+}
+
+/**
+ * 应用主题
+ */
+function applyTheme(theme) {
+  // 移除所有主题类
+  document.documentElement.classList.remove('light-theme', 'dark-theme')
+  
+  // 添加对应主题类
+  if (theme === ThemeType.DARK) {
+    document.documentElement.classList.add('dark-theme')
+  } else {
+    document.documentElement.classList.add('light-theme')
+  }
+  
+  // 设置Element Plus主题
+  if (theme === ThemeType.DARK) {
+    document.documentElement.setAttribute('data-theme', 'dark')
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light')
+  }
+  
+  activeTheme.value = theme
+}
+
+/**
+ * 主题切换组合式函数
  */
 export function useTheme() {
   /**
-   * 应用主题
-   * @param {string} theme - 主题类型
+   * 设置主题
    */
-  const applyTheme = (theme) => {
-    let actualTheme = theme
-    
-    // 如果是自动模式，检测系统主题
-    if (theme === THEME_AUTO) {
-      actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? THEME_DARK
-        : THEME_LIGHT
+  function setTheme(theme) {
+    if (!Object.values(ThemeType).includes(theme)) {
+      console.error('Invalid theme type:', theme)
+      return
     }
     
-    // 更新状态
-    isDark.value = actualTheme === THEME_DARK
+    currentTheme.value = theme
+    localStorage.setItem('theme', theme)
     
-    // 应用到HTML
-    if (isDark.value) {
-      document.documentElement.classList.add('dark')
-      document.documentElement.setAttribute('data-theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      document.documentElement.setAttribute('data-theme', 'light')
-    }
+    // 更新实际主题
+    const newActiveTheme = getActiveTheme()
+    applyTheme(newActiveTheme)
   }
   
   /**
    * 切换主题
-   * @param {string} theme - 主题类型
    */
-  const setTheme = (theme) => {
-    currentTheme.value = theme
-    applyTheme(theme)
-    
-    // 保存到本地存储
-    localStorage.setItem('app_theme', theme)
-  }
-  
-  /**
-   * 切换深色/浅色
-   */
-  const toggleTheme = () => {
-    const newTheme = currentTheme.value === THEME_DARK ? THEME_LIGHT : THEME_DARK
-    setTheme(newTheme)
-  }
-  
-  /**
-   * 初始化主题
-   */
-  const initTheme = () => {
-    // 从本地存储读取
-    const savedTheme = localStorage.getItem('app_theme') || THEME_LIGHT
-    currentTheme.value = savedTheme
-    applyTheme(savedTheme)
-    
-    // 监听系统主题变化（自动模式）
-    if (savedTheme === THEME_AUTO) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      mediaQuery.addEventListener('change', (e) => {
-        if (currentTheme.value === THEME_AUTO) {
-          applyTheme(THEME_AUTO)
-        }
-      })
+  function toggleTheme() {
+    if (activeTheme.value === ThemeType.LIGHT) {
+      setTheme(ThemeType.DARK)
+    } else {
+      setTheme(ThemeType.LIGHT)
     }
   }
   
-  // 监听主题变化
-  watch(currentTheme, (newTheme) => {
-    applyTheme(newTheme)
+  /**
+   * 监听系统主题变化
+   */
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  mediaQuery.addEventListener('change', (e) => {
+    systemTheme.value = e.matches ? ThemeType.DARK : ThemeType.LIGHT
+    
+    // 如果当前是自动模式，更新主题
+    if (currentTheme.value === ThemeType.AUTO) {
+      applyTheme(systemTheme.value)
+    }
   })
+  
+  // 监听currentTheme变化
+  watch(currentTheme, () => {
+    const newActiveTheme = getActiveTheme()
+    applyTheme(newActiveTheme)
+  })
+  
+  // 初始应用主题
+  applyTheme(activeTheme.value)
   
   return {
     currentTheme,
-    isDark,
+    activeTheme,
+    systemTheme,
     setTheme,
     toggleTheme,
-    initTheme,
-    THEME_LIGHT,
-    THEME_DARK,
-    THEME_AUTO
+    ThemeType
   }
 }
 
-// 在应用启动时初始化
-let initialized = false
-
-export function initThemeOnce() {
-  if (!initialized) {
-    const { initTheme } = useTheme()
-    initTheme()
-    initialized = true
+// 主题颜色配置
+export const themeColors = {
+  light: {
+    primary: '#409EFF',
+    success: '#67C23A',
+    warning: '#E6A23C',
+    danger: '#F56C6C',
+    info: '#909399',
+    background: '#FFFFFF',
+    backgroundSecondary: '#F5F7FA',
+    text: '#303133',
+    textSecondary: '#606266',
+    border: '#DCDFE6'
+  },
+  dark: {
+    primary: '#409EFF',
+    success: '#67C23A',
+    warning: '#E6A23C',
+    danger: '#F56C6C',
+    info: '#909399',
+    background: '#1F1F1F',
+    backgroundSecondary: '#2A2A2A',
+    text: '#E5E5E5',
+    textSecondary: '#A8A8A8',
+    border: '#4C4C4C'
   }
 }
