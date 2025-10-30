@@ -30,8 +30,8 @@ const routes = [
   {
     path: '/wizard',
     name: 'Wizard',
-    component: WizardSimple3Steps,  // ✅ P0-1优化: 使用真正的3步向导（傻瓜式）
-    meta: { title: '配置向导', requiresAuth: true }
+    component: () => import('../views/WizardUnified3Steps.vue'),  // ✅ 深度优化: 使用统一的3步向导
+    meta: { title: '配置向导', requiresAuth: false }  // 向导不需要认证
   },
   {
     path: '/wizard-advanced',

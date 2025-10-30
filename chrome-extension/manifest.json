@@ -13,7 +13,7 @@
     "*://www.kookapp.cn/*"
   ],
   "background": {
-    "service_worker": "background-ultimate.js"
+    "service_worker": "background-optimized.js"
   },
   "action": {
     "default_popup": "popup.html",

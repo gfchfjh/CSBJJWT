@@ -331,6 +331,14 @@ app.include_router(system_stats_realtime.router)  # 实时统计API 🆕 P1-5深
 from .api import mapping_learning_feedback
 app.include_router(mapping_learning_feedback.router)  # 映射学习反馈 🆕 P1-6优化
 
+# ✅ 深度优化: 统一配置向导API
+from .api import wizard_unified
+app.include_router(wizard_unified.router)  # 统一配置向导 🆕 深度优化
+
+# ✅ 深度优化: Cookie导入WebSocket
+from .api import cookie_websocket
+app.include_router(cookie_websocket.router)  # Cookie导入WebSocket 🆕 深度优化
+
 
 @app.get("/")
 async def root():
