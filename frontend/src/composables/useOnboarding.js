@@ -1,231 +1,405 @@
 /**
- * ✅ P1-5优化：新手引导 Composable
- * 使用 driver.js 实现分步高亮引导
+ * 新手引导系统 - Composable
+ * ✅ P0-11: 使用driver.js实现交互式引导
  */
+import { ref, computed } from 'vue'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 
-import { driver } from "driver.js"
-import "driver.js/dist/driver.css"
+// 引导进度状态
+const onboardingState = ref({
+  completed: false,
+  currentStep: 0,
+  skipped: false,
+  timestamp: null
+})
 
-export function useOnboarding() {
-  /**
-   * 启动新手引导
-   */
-  const startOnboarding = () => {
-    const driverObj = driver({
-      showProgress: true,
-      showButtons: ['next', 'previous', 'close'],
-      steps: [
-        {
-          element: '.nav-item-home',
-          popover: {
-            title: '📊 欢迎来到主页！',
-            description: '这里显示今日转发统计、成功率和实时状态。您可以一眼看到系统运行情况。',
-            side: "right",
-            align: 'start'
-          }
-        },
-        {
-          element: '.service-control-card',
-          popover: {
-            title: '🎮 服务控制中心',
-            description: '在这里启动、停止或重启转发服务。启动后，系统会自动监听KOOK消息并转发。',
-            side: "bottom"
-          }
-        },
-        {
-          element: '.nav-item-accounts',
-          popover: {
-            title: '👤 KOOK账号管理',
-            description: '首先需要添加KOOK账号。您可以使用账号密码登录，或导入Cookie（推荐）。',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-bots',
-          popover: {
-            title: '🤖 机器人配置',
-            description: '添加Discord、Telegram或飞书机器人，作为消息转发的目标平台。',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-mapping',
-          popover: {
-            title: '🔀 频道映射配置',
-            description: '设置KOOK频道到目标平台的映射关系。支持可视化拖拽和智能匹配！',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-filter',
-          popover: {
-            title: '🔧 过滤规则',
-            description: '设置关键词过滤、用户黑白名单等规则，精确控制哪些消息需要转发。',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-logs',
-          popover: {
-            title: '📋 实时日志',
-            description: '查看所有转发记录、成功率和失败原因。支持搜索和筛选。',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-settings',
-          popover: {
-            title: '⚙️ 系统设置',
-            description: '调整图片处理策略、日志级别、通知方式等高级设置。',
-            side: "right"
-          }
-        },
-        {
-          popover: {
-            title: '🎉 引导完成！',
-            description: '您已了解主要功能模块。现在可以开始配置：\n\n1. 添加KOOK账号\n2. 配置转发机器人\n3. 设置频道映射\n4. 启动转发服务\n\n祝您使用愉快！'
-          }
-        }
-      ],
-      nextBtnText: '下一步 →',
-      prevBtnText: '← 上一步',
-      doneBtnText: '完成',
-      progressText: '{{current}} / {{total}}',
-      onDestroyStarted: () => {
-        // 引导结束时，标记已完成
-        localStorage.setItem('onboarding_completed', 'true')
-        driverObj.destroy()
-      }
-    })
+// 从localStorage加载状态
+const STORAGE_KEY = 'kook_forwarder_onboarding_state'
 
-    driverObj.drive()
+function loadOnboardingState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      onboardingState.value = JSON.parse(saved)
+    }
+  } catch (error) {
+    console.error('加载引导状态失败:', error)
   }
+}
 
+function saveOnboardingState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(onboardingState.value))
+  } catch (error) {
+    console.error('保存引导状态失败:', error)
+  }
+}
+
+// 初始化
+loadOnboardingState()
+
+/**
+ * 新手引导Hook
+ */
+export function useOnboarding() {
+  const driverObj = ref(null)
+  
+  // 是否需要显示引导
+  const needsOnboarding = computed(() => {
+    return !onboardingState.value.completed && !onboardingState.value.skipped
+  })
+  
   /**
-   * 快速配置引导（仅核心步骤）
+   * 启动完整引导流程
    */
-  const startQuickOnboarding = () => {
-    const driverObj = driver({
-      showProgress: true,
-      steps: [
-        {
-          popover: {
-            title: '⚡ 快速开始',
-            description: '接下来3步，完成基础配置：'
-          }
-        },
-        {
-          element: '.nav-item-accounts',
-          popover: {
-            title: '步骤1：添加KOOK账号',
-            description: '点击这里，添加您的第一个KOOK账号',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-bots',
-          popover: {
-            title: '步骤2：配置转发机器人',
-            description: '选择Discord、Telegram或飞书，配置机器人',
-            side: "right"
-          }
-        },
-        {
-          element: '.nav-item-mapping',
-          popover: {
-            title: '步骤3：设置频道映射',
-            description: '建立KOOK频道到目标平台的映射关系',
-            side: "right"
-          }
-        },
-        {
-          popover: {
-            title: '✅ 配置完成！',
-            description: '配置完成后，返回主页启动服务即可开始转发消息'
-          }
+  function startFullTour() {
+    const steps = [
+      // 欢迎步骤
+      {
+        element: '#app',
+        popover: {
+          title: '👋 欢迎使用KOOK消息转发系统',
+          description: '让我们用2分钟时间了解系统的核心功能。您可以随时按ESC键跳过引导。',
+          side: 'left',
+          align: 'start'
         }
-      ],
+      },
+      
+      // 配置向导
+      {
+        element: '#wizard-container',
+        popover: {
+          title: '🎯 配置向导',
+          description: '首次使用？点击这里启动3步配置向导，快速完成基础设置。',
+          side: 'bottom',
+          align: 'start'
+        }
+      },
+      
+      // 账号管理
+      {
+        element: '#accounts-menu',
+        popover: {
+          title: '👤 账号管理',
+          description: '在这里添加和管理KOOK账号。支持Cookie导入和密码登录两种方式。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // Bot配置
+      {
+        element: '#bots-menu',
+        popover: {
+          title: '🤖 Bot配置',
+          description: '配置Discord、Telegram、飞书的Bot。我们提供详细的图文教程。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // 频道映射
+      {
+        element: '#mapping-menu',
+        popover: {
+          title: '🔀 频道映射',
+          description: '这是核心功能！使用可视化编辑器建立KOOK频道和目标平台的映射关系。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // 过滤规则
+      {
+        element: '#filter-menu',
+        popover: {
+          title: '🔧 过滤规则',
+          description: '设置关键词过滤、用户黑白名单等，精确控制转发内容。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // 实时监控
+      {
+        element: '#logs-menu',
+        popover: {
+          title: '📋 实时监控',
+          description: '查看转发日志、统计信息和系统状态。支持实时刷新。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // 系统设置
+      {
+        element: '#settings-menu',
+        popover: {
+          title: '⚙️ 系统设置',
+          description: '调整图片处理策略、日志保留时长等高级设置。',
+          side: 'right',
+          align: 'start'
+        }
+      },
+      
+      // 启动按钮
+      {
+        element: '#start-service-btn',
+        popover: {
+          title: '🚀 启动服务',
+          description: '完成配置后，点击这个按钮启动消息转发服务。',
+          side: 'bottom',
+          align: 'center'
+        }
+      },
+      
+      // 完成
+      {
+        element: '#app',
+        popover: {
+          title: '🎉 引导完成！',
+          description: '您已经了解了所有核心功能。现在可以开始配置您的转发系统了。需要帮助？点击右上角的帮助按钮查看详细文档。',
+          side: 'left',
+          align: 'start'
+        }
+      }
+    ]
+    
+    driverObj.value = driver({
+      showProgress: true,
+      progressText: '第 {{current}} 步，共 {{total}} 步',
       nextBtnText: '下一步',
       prevBtnText: '上一步',
-      doneBtnText: '开始配置',
-      onDestroyed: () => {
-        // 引导结束后，跳转到账号管理页
-        window.location.href = '#/accounts'
+      doneBtnText: '完成',
+      closeBtnText: '关闭',
+      showButtons: ['next', 'previous', 'close'],
+      steps,
+      onDestroyStarted: () => {
+        // 引导被关闭
+        if (driverObj.value.getActiveIndex() === steps.length - 1) {
+          // 完成引导
+          markOnboardingCompleted()
+        } else {
+          // 中途退出
+          saveCurrentProgress()
+        }
+      },
+      onNextClick: (element, step, options) => {
+        // 更新进度
+        onboardingState.value.currentStep = options.state.activeIndex + 1
+        saveOnboardingState()
+        
+        driverObj.value.moveNext()
+      },
+      onPrevClick: () => {
+        onboardingState.value.currentStep = Math.max(0, onboardingState.value.currentStep - 1)
+        saveOnboardingState()
+        
+        driverObj.value.movePrevious()
       }
     })
-
-    driverObj.drive()
+    
+    driverObj.value.drive()
   }
-
+  
   /**
-   * 功能演示引导
+   * 启动特定模块的引导
    */
-  const startFeatureDemo = (feature) => {
-    const demos = {
-      'smart-mapping': {
-        steps: [
-          {
-            element: '.smart-mapping-button',
-            popover: {
-              title: '🧙 智能映射',
-              description: '一键自动匹配同名或相似的KOOK频道和目标频道',
-              side: "bottom"
-            }
-          },
-          {
-            element: '.mapping-confidence',
-            popover: {
-              title: '📊 置信度评分',
-              description: '系统会给出每个映射的置信度评分，帮助您判断匹配准确度',
-              side: "top"
-            }
+  function startModuleTour(moduleName) {
+    const moduleSteps = {
+      // 账号管理引导
+      accounts: [
+        {
+          element: '#add-account-btn',
+          popover: {
+            title: '添加KOOK账号',
+            description: '点击这里添加新的KOOK账号',
+            side: 'bottom'
           }
-        ]
-      },
-      'visual-mapping': {
-        steps: [
-          {
-            element: '.source-panel',
-            popover: {
-              title: '📥 拖拽源频道',
-              description: '从左侧KOOK频道列表中拖拽频道',
-              side: "right"
-            }
-          },
-          {
-            element: '.target-panel',
-            popover: {
-              title: '📤 放置到目标',
-              description: '将频道拖放到右侧的Bot卡片中，即可建立映射',
-              side: "left"
-            }
+        },
+        {
+          element: '#account-list',
+          popover: {
+            title: '账号列表',
+            description: '已添加的账号会显示在这里，包括在线状态和最后活跃时间',
+            side: 'right'
           }
-        ]
+        }
+      ],
+      
+      // 频道映射引导
+      mapping: [
+        {
+          element: '#mapping-canvas',
+          popover: {
+            title: '可视化编辑器',
+            description: '在这个画布上拖拽节点来建立映射关系',
+            side: 'bottom'
+          }
+        },
+        {
+          element: '#smart-mapping-btn',
+          popover: {
+            title: '智能映射',
+            description: '点击这里自动匹配相似的频道名称',
+            side: 'left'
+          }
+        },
+        {
+          element: '#save-mapping-btn',
+          popover: {
+            title: '保存映射',
+            description: '完成编辑后记得保存',
+            side: 'left'
+          }
+        }
+      ],
+      
+      // Bot配置引导
+      bots: [
+        {
+          element: '#add-bot-btn',
+          popover: {
+            title: '添加Bot',
+            description: '支持Discord、Telegram、飞书三种平台',
+            side: 'bottom'
+          }
+        },
+        {
+          element: '#bot-tutorial-btn',
+          popover: {
+            title: '查看教程',
+            description: '不知道如何创建Bot？点击查看详细教程',
+            side: 'left'
+          }
+        }
+      ]
+    }
+    
+    const steps = moduleSteps[moduleName]
+    
+    if (!steps) {
+      console.warn(`未找到模块引导: ${moduleName}`)
+      return
+    }
+    
+    driverObj.value = driver({
+      showProgress: true,
+      progressText: '第 {{current}} 步，共 {{total}} 步',
+      nextBtnText: '下一步',
+      prevBtnText: '上一步',
+      doneBtnText: '完成',
+      closeBtnText: '关闭',
+      steps
+    })
+    
+    driverObj.value.drive()
+  }
+  
+  /**
+   * 高亮单个元素
+   */
+  function highlightElement(selector, options = {}) {
+    const defaultOptions = {
+      element: selector,
+      popover: {
+        title: options.title || '提示',
+        description: options.description || '',
+        side: options.side || 'bottom',
+        align: options.align || 'start'
       }
     }
-
-    const demoSteps = demos[feature]
-    if (!demoSteps) return
-
-    const driverObj = driver({
-      showProgress: true,
-      steps: demoSteps.steps
+    
+    driverObj.value = driver({
+      showProgress: false,
+      showButtons: ['close'],
+      closeBtnText: '知道了',
+      steps: [defaultOptions]
     })
-
-    driverObj.drive()
+    
+    driverObj.value.drive()
   }
-
+  
   /**
-   * 检查是否需要显示引导
+   * 标记引导完成
    */
-  const shouldShowOnboarding = () => {
-    return !localStorage.getItem('onboarding_completed')
+  function markOnboardingCompleted() {
+    onboardingState.value.completed = true
+    onboardingState.value.timestamp = Date.now()
+    saveOnboardingState()
   }
-
+  
+  /**
+   * 跳过引导
+   */
+  function skipOnboarding() {
+    onboardingState.value.skipped = true
+    onboardingState.value.timestamp = Date.now()
+    saveOnboardingState()
+    
+    if (driverObj.value) {
+      driverObj.value.destroy()
+    }
+  }
+  
+  /**
+   * 重置引导状态
+   */
+  function resetOnboarding() {
+    onboardingState.value = {
+      completed: false,
+      currentStep: 0,
+      skipped: false,
+      timestamp: null
+    }
+    saveOnboardingState()
+  }
+  
+  /**
+   * 保存当前进度
+   */
+  function saveCurrentProgress() {
+    saveOnboardingState()
+  }
+  
+  /**
+   * 从当前进度继续
+   */
+  function continueFromProgress() {
+    if (driverObj.value && onboardingState.value.currentStep > 0) {
+      driverObj.value.drive(onboardingState.value.currentStep)
+    } else {
+      startFullTour()
+    }
+  }
+  
   return {
-    startOnboarding,
-    startQuickOnboarding,
-    startFeatureDemo,
-    shouldShowOnboarding
+    // 状态
+    needsOnboarding,
+    onboardingState,
+    
+    // 方法
+    startFullTour,
+    startModuleTour,
+    highlightElement,
+    markOnboardingCompleted,
+    skipOnboarding,
+    resetOnboarding,
+    continueFromProgress
+  }
+}
+
+/**
+ * 自动触发引导
+ */
+export function autoStartOnboarding() {
+  const { needsOnboarding, startFullTour } = useOnboarding()
+  
+  if (needsOnboarding.value) {
+    // 延迟1秒启动，给页面渲染时间
+    setTimeout(() => {
+      startFullTour()
+    }, 1000)
   }
 }
