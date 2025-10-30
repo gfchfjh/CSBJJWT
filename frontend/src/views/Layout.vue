@@ -126,7 +126,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   HomeFilled,
   User,
-  Robot,
+  Tools,
   Connection,
   Document,
   Setting,

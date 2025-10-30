@@ -4,32 +4,102 @@
 
 ---
 
+## [17.0.0] - 2025-10-30
+
+### 📚 文档优化发布
+
+本次版本专注于文档质量提升，删除冗余内容，提高专业性。
+
+#### 🗑️ 删除临时文档（7个，共67.8K）
+
+**已删除**：
+- `BUILD_STATUS.md` (4.4K) - 临时构建状态说明
+- `DOCUMENTATION_UPDATE_v16.0.0.md` (7.6K) - 临时文档更新报告
+- `ELECTRON_BUILD_GUIDE.md` (6.2K) - Electron构建指南（已整合到构建发布指南）
+- `ELECTRON_BUILD_SUCCESS.md` (5.0K) - 临时构建成功报告
+- `MILESTONE_ELECTRON_BUILD.md` (12K) - 里程碑文档（临时性）
+- `QUICK_START.md` (3.2K) - 快速开始（内容已在README中）
+- `需求完成度分析报告.md` (29K) - 临时分析报告
+
+**清理效果**：
+- 文档数量减少85.7%（根目录9个→2个）
+- 删除2,745行冗余内容
+- 清理所有文档引用，无死链接
+
+#### 🎯 删除主观评分和性能对比（30+处）
+
+**清理内容**：
+1. **星级评分** - 删除所有⭐评分标记
+2. **百分比数据** - 移除"成功率98%+"、"准确率100%"等具体数值
+3. **性能对比** - 移除"大幅提升"、"更快速"等主观描述
+4. **主观评价** - 移除"最佳体验"、"优秀"等评价
+
+**修改文档（6个）**：
+- `README.md` - 删除推荐⭐、版本表格状态列、主观评价
+- `CHANGELOG.md` - 统一技术描述
+- `docs/tutorials/FAQ-常见问题.md` - 移除30+处评分和对比
+- `docs/tutorials/chrome-extension-installation.md` - 客观化描述
+- `docs/用户手册.md` - 移除百分比数据
+- `docs/USER_MANUAL.md` - 客观化通知描述
+
+**清理原则**：
+- ✅ 保持客观性 - 删除主观评价
+- ✅ 避免对比 - 删除性能对比数据
+- ✅ 专业表达 - 使用客观技术描述
+- ✅ 保留功能 - 技术指标保留（QPS等）
+
+#### 📝 文档结构优化
+
+**保留核心文档**：
+- 根目录：`README.md`、`CHANGELOG.md`
+- 技术文档：`docs/` 下13个文档完整保留
+- 教程文档：`docs/tutorials/` 下7个教程完整保留
+
+**文档质量提升**：
+- 准确性：版本号统一，技术指标真实可验证
+- 完整性：覆盖所有主要功能，内容全面
+- 一致性：术语统一，描述一致，格式规范
+- 可读性：结构清晰，排版美观，易于查找
+
+#### 🔧 文件变更
+
+**删除文件（7个）**：
+- 7个临时性Markdown文档
+
+**修改文件（13个）**：
+- `VERSION` - 16.0.0 → 17.0.0
+- `README.md` - 版本号更新，添加v17.0.0更新日志
+- `CHANGELOG.md` - 添加v17.0.0详细记录
+- 6个文档 - 删除评分和对比语句
+- 4个技术文档 - 清理引用
+
+---
+
 ## [16.0.0] - 2025-10-30
 
-### 🎉 深度优化 - 100%需求实现
+### 🎉 Electron桌面应用发布 - 95%需求实现
 
-这是一个深度优化版本，**100%完成了所有待完成项**，总代码量达到**26,000+行**，用户体验得到全面提升。
+这是一个重大版本，**成功构建Electron桌面应用**，总代码量达到**26,000+行**，需求完成度**95%**。
 
 ### 🆕 重大新增功能
 
 #### 🖥️ Electron桌面应用 (P0-1, P0-2)
 - ✅ **真正的桌面应用** - 使用Electron，不再是Web应用
 - ✅ **系统托盘集成** - 最小化到托盘，实时统计显示
-- ✅ **智能通知** - 失败率超过20%自动提醒
+- ✅ **智能通知** - 失败率异常自动提醒
 - ✅ **嵌入式服务** - Redis和Python后端完全内置
 - ✅ **跨平台支持** - Windows/macOS/Linux原生体验
 - ✅ **启动优化** - Redis → Backend → Window → Tray顺序启动
 
-#### 📊 双视图映射管理 (P1-1)
+#### 📊 映射管理 (P1-1)
 - ✅ **表格视图** - 批量操作、高级筛选、快速管理
   - 支持批量启用/禁用/删除
   - 服务器、平台、状态筛选
   - 关键词搜索
   - 分页和排序
-- ✅ **流程图视图** - 可视化拖拽、直观展示
-  - 拖拽式节点布局
-  - 自动布局和缩放
-  - 小地图导航
+- ⏳ **流程图视图** - 暂时禁用（VueFlow集成待修复）
+  - 由于VueFlow在构建时的兼容性问题，临时禁用
+  - 表格视图功能完整，可替代使用
 - ✅ **统一管理页面** - 一键切换，记住用户偏好
 
 #### 📜 智能历史消息同步 (P0-3)
@@ -60,7 +130,7 @@
 - ✅ **观看记录** - 自动跟踪学习进度
 - ✅ **观看统计** - 观看次数、完成度统计
 - ✅ **分类筛选** - 入门/配置/高级快速查找
-- ✅ **学习成本降低** - 70%的用户反馈更易上手
+- ✅ **学习成本降低** - 用户反馈更易上手
 
 #### 📋 4步配置向导 (P0-4)
 - ✅ **符合需求文档** - 严格按照4步流程实现
@@ -72,18 +142,21 @@
 - ✅ **实时验证** - 每步验证，避免配置错误
 - ✅ **跳过支持** - 已有配置可跳过
 
-#### 📄 免责声明版本管理 (P0-5)
-- ✅ **版本管理** - 跟踪免责声明版本
-- ✅ **首次强制显示** - 首次使用必须同意
-- ✅ **版本更新重显** - 版本更新时重新显示
-- ✅ **审计日志** - 记录同意时间和User Agent
-- ✅ **本地存储** - localStorage持久化
+#### 📄 免责声明（待完善）
+- ⏳ **免责声明弹窗** - 规划中
+- ⏳ **版本管理** - 待实现
+- ⏳ **审计日志** - 记录同意时间和User Agent（待实现）
+- ⏳ **本地存储** - localStorage持久化（待实现）
+  
+**影响**: 功能完成度影响约5%
 
-#### 🚀 一键自动化构建 (P1-3)
-- ✅ **Python构建脚本** - 全自动化构建流程
-- ✅ **跨平台打包** - Windows/macOS/Linux一键生成
-- ✅ **集成打包** - PyInstaller + Vite + Electron Builder
-- ✅ **平台启动脚本** - build-electron.bat/sh
+#### 🚀 Electron构建成功
+- ✅ **自动化构建脚本** - build_electron_app.py
+- ✅ **Linux AppImage** - 125MB，双击即用
+- ✅ **依赖安装** - 474个前端包，自动安装
+- ✅ **前端构建** - 2093个模块成功编译
+- ✅ **Electron打包** - electron-builder 24.13.3
+- ⏳ **Windows/macOS** - 可使用相同脚本构建
 
 #### 📚 Chrome扩展安装教程 (P1-2)
 - ✅ **详细步骤** - 图文并茂的安装指南
@@ -140,49 +213,105 @@
 | **总计** | **10** | **10** | **✅ 100%** |
 
 
-### 📁 文件变更
+### 📁 文件变更 (v16.0.0)
 
-#### 新增文件 (8个)
-- `frontend/src/views/WizardComplete4Steps.vue`
-- `frontend/src/views/MappingTableView.vue`
-- `frontend/src/views/MappingUnified.vue`
-- `backend/app/api/video_tutorials.py`
-- `docs/tutorials/chrome-extension-installation.md`
-- `scripts/build_electron_app.py`
-- `build-electron.bat`
-- `build-electron.sh`
+#### 新增代码文件
+- `frontend/src/store/bots.js` - Bots状态管理模块
 
-#### 修改文件 (8个)
-- `frontend/electron/main.js` - Electron主进程优化
-- `backend/app/config.py` - 历史消息同步配置
-- `backend/app/api/settings.py` - 设置API更新
-- `backend/app/kook/scraper_optimized.py` - 历史消息同步实现
-- `frontend/src/views/Settings.vue` - 设置UI增强
-- `frontend/src/App.vue` - 免责声明逻辑完善
-- `frontend/src/router/index.js` - 路由配置更新
-- `backend/app/main.py` - API路由注册
+#### 修改文件
+- `VERSION` - 更新至16.0.0
+- `README.md` - 深度更新版本信息和Electron内容
+- `CHANGELOG.md` - 添加v16.0.0详细记录
+- `frontend/src/composables/useErrorHandler.js` - 添加导出函数
+- `frontend/src/composables/useTheme.js` - 添加初始化函数
+- `frontend/src/views/Layout.vue` - 修复图标导入
+- `frontend/src/views/MappingUnified.vue` - 禁用流程图视图
+- `docs/开发指南.md` - 更新至v16.0.0
+- `docs/构建发布指南.md` - 添加Electron构建说明
+- `docs/架构设计.md` - 更新版本信息
+- `docs/tutorials/FAQ-常见问题.md` - 新增v16.0.0 FAQ
 
-### 🐛 Bug修复
+#### 构建产物（不提交）
+- `frontend/node_modules/` - 474个前端依赖包
+- `frontend/dist/` - 前端构建产物
+- `frontend/dist-electron/KOOK消息转发系统-16.0.0.AppImage` - 125MB桌面应用
 
-- 修复Electron主进程启动顺序问题
-- 修复系统托盘在某些平台的显示问题
-- 修复历史消息同步的去重逻辑
-- 修复映射表格的排序和筛选bug
-- 修复视频播放器的进度保存问题
+### 🐛 Bug修复与代码改进
+
+#### 构建问题修复（关键）
+1. **VueFlow依赖问题** ✅
+   - 问题：@vueflow/core等包缺失导致构建失败
+   - 解决：安装 @vue-flow/core, @vue-flow/background, @vue-flow/controls, @vue-flow/minimap
+   - 临时方案：禁用流程图视图组件
+
+2. **Store模块缺失** ✅
+   - 问题：Home.vue导入不存在的store/bots
+   - 解决：创建 frontend/src/store/bots.js
+
+3. **useErrorHandler导出不匹配** ✅
+   - 问题：interceptors.js导入showFriendlyError但未导出
+   - 解决：添加showFriendlyError和globalErrorHandler导出函数
+
+4. **useTheme导出不匹配** ✅
+   - 问题：main.js导入initThemeOnce但未导出
+   - 解决：添加initThemeOnce初始化函数
+
+5. **Element Plus图标问题** ✅
+   - 问题：Robot图标不存在
+   - 解决：替换为Tools图标
+
+6. **其他导入问题** ✅
+   - 修复多个组件的导入路径和导出声明
+
+#### 其他修复
+- 修复Electron主进程启动顺序
+- 修复系统托盘在某些平台的显示
+- 优化历史消息同步的去重逻辑
 
 ### 📖 文档更新
 
-- ✅ **README.md** - 更新至v16.0.0，添加新功能介绍
+- ✅ **README.md** - 深度更新至v16.0.0
+  - 更新版本号和完成度（95%）
+  - 添加Electron Edition版本介绍
+  - 更新快速开始指南
+  - 更新版本选择说明
+  - 调整完成度统计为实际情况
+  
 - ✅ **CHANGELOG.md** - 完整的v16.0.0变更记录
-- ✅ **chrome-extension-installation.md** - Chrome扩展详细教程
-- ✅ **最终深度优化完成报告.md** - 完整的优化总结报告
+  - 添加Electron构建详情
+  - 记录6个代码修复
+  - 标注已知问题
+  - 更新技术指标
+
+- ✅ **技术文档更新**（4份）
+  - docs/开发指南.md - v16.0.0核心特性
+  - docs/构建发布指南.md - Electron构建流程
+  - docs/架构设计.md - 更新版本号
+  - docs/tutorials/FAQ-常见问题.md - 新增8个FAQ
+
+### ⚠️ 已知问题
+
+1. **流程图视图暂时禁用**
+   - 原因：VueFlow在Vite构建时的兼容性问题
+   - 影响：中等（表格视图功能完整可替代）
+   - 计划：v16.1.0修复
+
+2. **免责声明弹窗缺失**
+   - 原因：未实现需求文档要求的强制免责声明
+   - 影响：5%完成度
+   - 计划：v16.1.0补充
+
+3. **Windows/macOS安装包未构建**
+   - 原因：当前在Linux环境
+   - 影响：低（可使用相同脚本在对应平台构建）
+   - 计划：在Windows/macOS系统上构建
 
 ### 🔄 Breaking Changes
 
-- 版本号从2.0.0跳到16.0.0（深度优化更新）
-- Electron应用需要重新下载安装
-- 配置文件格式兼容，可直接迁移
-- 新增配置项需要在设置页面配置
+- 版本号更新至16.0.0
+- Electron应用为新增版本，不影响现有版本
+- 配置文件格式完全兼容
+- 流程图视图暂时不可用（使用表格视图替代）
 
 ### 🎯 下一步计划
 
@@ -300,16 +429,16 @@
 
 优先队列测试:
   ✅ 处理速度: 10,000+ QPS
-  ✅ 优先级准确率: 100%
+  ✅ 优先级处理正常
 
 速率限制测试:
-  ✅ Token Bucket: 准确率 100%
-  ✅ Sliding Window: 准确率 100%
-  ✅ Leaky Bucket: 准确率 100%
+  ✅ Token Bucket: 正常工作
+  ✅ Sliding Window: 正常工作
+  ✅ Leaky Bucket: 正常工作
 
 并发处理测试:
   ✅ 100个并发任务: 平均延迟 12.8ms
-  ✅ 成功率: 100%
+  ✅ 全部成功完成
 ```
 
 #### 资源占用
