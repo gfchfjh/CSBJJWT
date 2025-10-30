@@ -65,18 +65,18 @@ KOOK消息转发系统提供**3个不同版本**以满足各类用户需求：
 
 ### 📦 三个版本概览
 
-| 版本 | 大小 | 环境要求 | 启动方式 | 状态 |
-|------|------|----------|----------|------|
-| **Electron Edition** | 125 MB | 无 | 双击启动 | ✅ 最新 |
-| **Production Web** | 27 MB | 无 | 脚本启动 | ✅ 可用 |
-| **Runnable Edition** | 1.14 MB | Python+Node | 自动脚本 | ✅ 可用 |
-| **Demo Edition** | 1.13 MB | Python+Node | 手动命令 | ✅ 可用 |
+| 版本 | 大小 | 环境要求 | 启动方式 |
+|------|------|----------|----------|
+| **Electron Edition** | 125 MB | 无 | 双击启动 |
+| **Production Web** | 27 MB | 无 | 脚本启动 |
+| **Runnable Edition** | 1.14 MB | Python+Node | 自动脚本 |
+| **Demo Edition** | 1.13 MB | Python+Node | 手动命令 |
 
 ---
 
 ## 🚀 快速开始
 
-### Electron Edition（桌面应用 - 推荐）⭐
+### Electron Edition（桌面应用）
 
 **特点**：
 - ❌ 无需Python环境
@@ -127,7 +127,7 @@ cd frontend && npm run electron:build:mac  # macOS
 
 ## 📦 版本选择
 
-### 1️⃣ Electron Edition - 桌面应用版（推荐）⭐
+### 1️⃣ Electron Edition - 桌面应用版
 
 ```
 文件: frontend/dist-electron/KOOK消息转发系统-16.0.0.AppImage
@@ -136,10 +136,9 @@ cd frontend && npm run electron:build:mac  # macOS
 ```
 
 **适合**：
-- ✅ 所有用户（最佳体验）
+- ✅ 需要桌面应用体验
 - ✅ 长期使用
 - ✅ 需要系统集成
-- ✅ 桌面应用体验
 
 **特点**：
 - 真正的桌面应用
@@ -350,7 +349,7 @@ npm run electron:build:mac  # macOS .dmg
 优先队列处理            10,000+ QPS           ✅ 优秀
 并发任务处理            100+ 同时             ✅ 优秀
 平均延迟                < 15ms                ✅ 优秀
-成功率                  98%+                  ✅ 优秀
+成功率                  高                    ✅ 可靠
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
