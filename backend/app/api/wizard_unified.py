@@ -94,7 +94,7 @@ async def complete_wizard(data: WizardCompleteModel):
         for channel in data.channels:
             try:
                 # 检查是否已存在映射
-                existing = db.get_connection() as conn:
+                with db.get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("""
                         SELECT id FROM channel_mappings 
@@ -104,7 +104,7 @@ async def complete_wizard(data: WizardCompleteModel):
                 
                 if not result:
                     # 创建基础映射（暂时不指定目标，等用户配置Bot后再设置）
-                    db.get_connection() as conn:
+                    with db.get_connection() as conn:
                         cursor = conn.cursor()
                         cursor.execute("""
                             INSERT INTO channel_mappings 

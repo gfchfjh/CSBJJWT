@@ -412,7 +412,7 @@ async def get_fix_suggestions(check_item: str) -> Dict[str, Any]:
         "chromium": {
             "auto_fixable": True,
             "steps": [
-                "点击下方"一键修复"按钮",
+                "点击下方\"一键修复\"按钮",
                 "等待Chromium自动下载安装（约5分钟）",
                 "安装完成后刷新页面"
             ],
@@ -425,7 +425,7 @@ async def get_fix_suggestions(check_item: str) -> Dict[str, Any]:
         "redis": {
             "auto_fixable": True,
             "steps": [
-                "点击下方"一键修复"按钮",
+                "点击下方\"一键修复\"按钮",
                 "系统将自动启动内置Redis服务",
                 "如果启动失败，请查看日志"
             ],
@@ -438,7 +438,7 @@ async def get_fix_suggestions(check_item: str) -> Dict[str, Any]:
         "python_deps": {
             "auto_fixable": True,
             "steps": [
-                "点击下方"一键修复"按钮",
+                "点击下方\"一键修复\"按钮",
                 "系统将自动安装所有Python依赖",
                 "安装完成后重启应用"
             ]
@@ -446,7 +446,7 @@ async def get_fix_suggestions(check_item: str) -> Dict[str, Any]:
         "permissions": {
             "auto_fixable": True,
             "steps": [
-                "点击下方"一键修复"按钮",
+                "点击下方\"一键修复\"按钮",
                 "系统将自动修复文件权限"
             ],
             "manual_steps": [
@@ -456,7 +456,7 @@ async def get_fix_suggestions(check_item: str) -> Dict[str, Any]:
         "data_dirs": {
             "auto_fixable": True,
             "steps": [
-                "点击下方"一键修复"按钮",
+                "点击下方\"一键修复\"按钮",
                 "系统将自动创建所有必要目录"
             ]
         },

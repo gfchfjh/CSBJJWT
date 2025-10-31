@@ -303,25 +303,3 @@ async def _get_target_channels(bot_ids: List[int]) -> List[Dict]:
     except Exception as e:
         logger.error(f"获取目标频道失败: {str(e)}")
         return []
-        {
-            'id': 'discord_ch_2',
-            'name': 'events',
-            'bot_id': bot_ids[0] if bot_ids else 1,
-            'bot_name': 'Discord Bot',
-            'platform': 'discord'
-        },
-        {
-            'id': 'telegram_ch_1',
-            'name': '公告群',
-            'bot_id': bot_ids[1] if len(bot_ids) > 1 else 2,
-            'bot_name': 'Telegram Bot',
-            'platform': 'telegram'
-        },
-        {
-            'id': 'telegram_ch_2',
-            'name': '技术讨论群',
-            'bot_id': bot_ids[1] if len(bot_ids) > 1 else 2,
-            'bot_name': 'Telegram Bot',
-            'platform': 'telegram'
-        }
-    ]
