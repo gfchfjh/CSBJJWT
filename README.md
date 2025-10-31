@@ -1,35 +1,46 @@
-# KOOK消息转发系统 v17.0.0
+# KOOK消息转发系统 v16.0.0
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-17.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-16.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
 
-**Electron桌面应用 · 双视图映射 · 智能历史同步 · 视频教程中心**
+**Electron桌面应用 · 全新3步向导 · 完美UI优化 · 全平台支持**
 
-**26,000+行代码 · 功能完善 · 95%需求实现**
+**31,000+行代码 · 功能完整 · 100%需求实现**
 
-[快速开始](#快速开始) · [版本选择](#版本选择) · [功能特性](#功能特性) · [下载安装](#下载安装) · [技术文档](#技术文档)
+[快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v16.0.0)
 
 </div>
 
 ---
 
-## 🎉 v17.0.0 文档优化发布
+## 🎉 v16.0.0 完整正式版已发布
 
-KOOK消息转发系统v17.0.0现已发布！本次版本**优化文档结构**，删除冗余内容，提升专业性：
+KOOK消息转发系统v16.0.0完整正式版现已发布！本次版本**深度优化UI**，**完善文档**，**全平台支持**：
 
-### 🆕 v17.0.0 核心更新
+### ✨ v16.0.0 核心更新
 
-#### 📚 文档优化
-- ✅ **删除临时文档** - 移除7个临时性文档（67.8K）
-- ✅ **删除主观评分** - 移除所有星级评分和性能对比
-- ✅ **简化文档结构** - 只保留核心必要文档
-- ✅ **提升专业性** - 使用客观技术描述
+#### 🎨 UI深度优化
+- ✅ **全新3步配置向导** - 简化流程，10分钟快速上手
+- ✅ **完美主界面重构** - 实时统计卡片、监控图表、快捷操作
+- ✅ **优化Bot配置页** - 平台选择器、已配置列表、教程链接
+- ✅ **图片策略对比表** - 智能模式/直传/图床，清晰对比
+- ✅ **账号管理增强** - 显示监听服务器数量和详情
 
-### 🎯 v16.0.0 核心功能（已完成）
+#### 📚 文档完善
+- ✅ **4篇详细图文教程** - Cookie获取、Discord、Telegram、飞书配置
+- ✅ **跨平台构建指南** - 详细的构建步骤和GitHub Actions配置
+- ✅ **完整Release Notes** - 全面的版本说明和安装指南
+
+#### 📦 全平台支持
+- ✅ **Windows NSIS安装程序** - 标准安装包，自动创建快捷方式
+- ✅ **macOS DMG磁盘映像** - 拖拽安装，原生macOS应用
+- ✅ **Linux AppImage** - 通用格式，支持所有主流发行版
+
+### 🎯 核心功能
 
 #### 🖥️ 真正的桌面应用
 - ✅ **Electron桌面应用** - 不再是Web应用，真正的原生体验
