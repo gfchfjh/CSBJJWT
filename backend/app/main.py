@@ -342,6 +342,18 @@ app.include_router(wizard_unified.router)  # 统一配置向导 🆕 深度优�
 from .api import cookie_websocket
 app.include_router(cookie_websocket.router)  # Cookie导入WebSocket 🆕 深度优化
 
+# ✅ P0深度优化: 审计日志API
+from .api import audit_logs
+app.include_router(audit_logs.router)  # 审计日志系统 🆕 P0深度优化
+
+# ✅ P0深度优化: 邮件告警API
+from .api import email_config
+app.include_router(email_config.router)  # 邮件告警系统 🆕 P0深度优化
+
+# ✅ P1深度优化: 插件管理API
+from .api import plugins_manager
+app.include_router(plugins_manager.router)  # 插件管理系统 🆕 P1深度优化
+
 
 @app.get("/")
 async def root():

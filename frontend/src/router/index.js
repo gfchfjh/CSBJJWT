@@ -125,6 +125,12 @@ const routes = [
         name: 'Help',
         component: Help,
         meta: { title: '帮助中心' }
+      },
+      {
+        path: '/audit-logs',
+        name: 'AuditLogs',
+        component: () => import('../views/AuditLogs.vue'),
+        meta: { title: '审计日志' }
       }
     ]
   }
