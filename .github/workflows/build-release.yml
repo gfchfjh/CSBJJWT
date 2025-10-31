@@ -40,8 +40,11 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
-      - name: Build Windows
-        run: python build_all_platforms.py --platform windows
+      - name: Build Windows Installer
+        run: |
+          cd frontend
+          npm run build
+          npm run electron:build:win
 
       - name: List build artifacts
         run: |
@@ -85,8 +88,11 @@ jobs:
           cd backend
           pip3 install -r requirements.txt
 
-      - name: Build macOS
-        run: python3 build_all_platforms.py --platform mac
+      - name: Build macOS DMG
+        run: |
+          cd frontend
+          npm run build
+          npm run electron:build:mac
 
       - name: List build artifacts
         run: |
@@ -132,8 +138,11 @@ jobs:
           cd backend
           pip install -r requirements.txt
 
-      - name: Build Linux
-        run: python3 build_all_platforms.py --platform linux
+      - name: Build Linux AppImage
+        run: |
+          cd frontend
+          npm run build
+          npm run electron:build:linux
 
       - name: List build artifacts
         run: |
