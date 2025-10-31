@@ -128,34 +128,84 @@
         <el-tab-pane label="🖼️ 图片处理" name="image">
           <div class="settings-section">
             <h3>图片处理策略</h3>
+            
+            <!-- 策略选择 -->
             <el-form label-width="150px">
-              <el-form-item label="处理策略">
-                <el-radio-group v-model="settings.imageStrategy">
-                  <el-radio label="smart">
-                    <div>
-                      <strong>智能模式（推荐）</strong>
-                      <p class="radio-desc">优先直传到目标平台，失败时自动切换到图床</p>
+              <el-form-item label="图片策略">
+                <el-radio-group v-model="settings.imageStrategy" size="large">
+                  <el-radio value="smart">
+                    <div class="radio-option">
+                      <strong>● 智能模式（优先直传，失败用图床）← 推荐</strong>
                     </div>
                   </el-radio>
-                  <el-radio label="direct">
-                    <div>
-                      <strong>仅直传</strong>
-                      <p class="radio-desc">图片直接上传到目标平台，不使用图床</p>
+                  <el-radio value="direct">
+                    <div class="radio-option">
+                      <strong>○ 仅直传到目标平台</strong>
                     </div>
                   </el-radio>
-                  <el-radio label="imgbed">
-                    <div>
-                      <strong>仅图床</strong>
-                      <p class="radio-desc">所有图片先上传到内置图床，再发送链接</p>
+                  <el-radio value="imgbed">
+                    <div class="radio-option">
+                      <strong>○ 仅使用内置图床</strong>
                     </div>
                   </el-radio>
                 </el-radio-group>
               </el-form-item>
+            </el-form>
 
-              <el-divider />
+            <!-- 策略对比表 -->
+            <el-card shadow="hover" style="margin: 20px 0; background: #f9fafb;">
+              <template #header>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <el-icon color="#409EFF"><InfoFilled /></el-icon>
+                  <strong>策略对比与推荐</strong>
+                </div>
+              </template>
+              
+              <el-table
+                :data="strategyComparison"
+                stripe
+                border
+                style="width: 100%"
+                :header-cell-style="{ background: '#f5f7fa', fontWeight: 'bold' }"
+              >
+                <el-table-column prop="strategy" label="策略" width="150" align="center">
+                  <template #default="{ row }">
+                    <el-tag :type="row.isRecommended ? 'success' : 'info'" size="large">
+                      {{ row.strategy }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="pros" label="✅ 优点" min-width="200">
+                  <template #default="{ row }">
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                      <li v-for="(pro, index) in row.pros" :key="index" style="margin: 5px 0;">
+                        {{ pro }}
+                      </li>
+                    </ul>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="cons" label="⚠️ 缺点" min-width="200">
+                  <template #default="{ row }">
+                    <ul style="margin: 5px 0; padding-left: 20px;">
+                      <li v-for="(con, index) in row.cons" :key="index" style="margin: 5px 0;">
+                        {{ con }}
+                      </li>
+                    </ul>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="recommend" label="💡 推荐场景" min-width="200">
+                  <template #default="{ row }">
+                    <div style="color: #606266;">{{ row.recommend }}</div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-card>
 
-              <h3>图床配置</h3>
+            <el-divider />
 
+            <h3>图床配置</h3>
+            
+            <el-form label-width="150px">
               <el-form-item label="存储路径">
                 <el-input v-model="settings.imageStoragePath" readonly>
                   <template #append>
@@ -646,6 +696,55 @@ import api from '@/api'
 
 const activeTab = ref('service')
 const saving = ref(false)
+
+// ✅ P0-4优化: 图片策略对比数据
+const strategyComparison = ref([
+  {
+    strategy: '智能模式',
+    isRecommended: true,
+    pros: [
+      '最佳平衡：结合直传和图床的优点',
+      '自动降级：直传失败时自动使用图床',
+      '稳定性高：双重保障确保消息不丢失',
+      '无需维护：用户无感知自动切换'
+    ],
+    cons: [
+      '无明显缺点'
+    ],
+    recommend: '所有用户（强烈推荐）'
+  },
+  {
+    strategy: '仅直传',
+    isRecommended: false,
+    pros: [
+      '速度最快：直接上传到目标平台',
+      '无需图床：不占用本地磁盘空间',
+      '链接永久：图片随平台账号永久保存'
+    ],
+    cons: [
+      '稳定性差：上传失败则无法转发',
+      '平台限制：受目标平台上传限制影响',
+      '大图失败：超大图片可能上传失败'
+    ],
+    recommend: '网络稳定、目标平台可靠、对磁盘空间敏感的用户'
+  },
+  {
+    strategy: '仅图床',
+    isRecommended: false,
+    pros: [
+      '稳定性极高：图片先保存本地再转发',
+      '可追溯：所有图片本地存档',
+      '多次转发：同一图片可多次使用',
+      '自主可控：不依赖目标平台'
+    ],
+    cons: [
+      '占用磁盘：需要较大本地存储空间',
+      '维护成本：需定期清理旧图片',
+      '链接时效：Token过期后链接失效'
+    ],
+    recommend: '对稳定性要求极高、磁盘空间充足的用户'
+  }
+])
 
 // 服务状态
 const serviceStatus = reactive({

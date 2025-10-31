@@ -1,283 +1,334 @@
 """
-安全审计日志模块
-用于记录关键操作和安全事件
+审计日志系统 - P0优化
+记录所有关键用户操作，用于安全审计和问题追踪
 """
 import json
 from datetime import datetime
-from pathlib import Path
 from typing import Optional, Dict, Any
+from ..database import db
 from .logger import logger
-from ..config import settings
 
 
 class AuditLogger:
-    """安全审计日志记录器"""
+    """审计日志记录器"""
+    
+    # 操作类型定义
+    ACTION_LOGIN = "login"
+    ACTION_LOGOUT = "logout"
+    ACTION_ADD_ACCOUNT = "add_account"
+    ACTION_DELETE_ACCOUNT = "delete_account"
+    ACTION_UPDATE_ACCOUNT = "update_account"
+    ACTION_ADD_BOT = "add_bot"
+    ACTION_DELETE_BOT = "delete_bot"
+    ACTION_UPDATE_BOT = "update_bot"
+    ACTION_ADD_MAPPING = "add_mapping"
+    ACTION_DELETE_MAPPING = "delete_mapping"
+    ACTION_UPDATE_MAPPING = "update_mapping"
+    ACTION_START_SERVICE = "start_service"
+    ACTION_STOP_SERVICE = "stop_service"
+    ACTION_RESTART_SERVICE = "restart_service"
+    ACTION_UPDATE_SETTINGS = "update_settings"
+    ACTION_EXPORT_CONFIG = "export_config"
+    ACTION_IMPORT_CONFIG = "import_config"
+    ACTION_BACKUP_DATABASE = "backup_database"
+    ACTION_RESTORE_DATABASE = "restore_database"
+    ACTION_CLEAR_LOGS = "clear_logs"
+    ACTION_UPDATE_FILTER = "update_filter"
+    ACTION_INSTALL_PLUGIN = "install_plugin"
+    ACTION_UNINSTALL_PLUGIN = "uninstall_plugin"
+    
+    # 严重级别
+    LEVEL_INFO = "info"
+    LEVEL_WARNING = "warning"
+    LEVEL_ERROR = "error"
+    LEVEL_CRITICAL = "critical"
     
     def __init__(self):
-        self.audit_log_dir = settings.log_dir / "audit"
-        self.audit_log_dir.mkdir(parents=True, exist_ok=True)
-        
-    def _get_audit_file(self) -> Path:
-        """获取当前审计日志文件路径"""
-        date_str = datetime.now().strftime("%Y-%m")
-        return self.audit_log_dir / f"audit_{date_str}.log"
+        self._ensure_table_exists()
     
-    def _write_audit(self, event_type: str, event_data: Dict[str, Any]):
-        """写入审计日志"""
+    def _ensure_table_exists(self):
+        """确保审计日志表存在"""
         try:
-            audit_entry = {
-                "timestamp": datetime.now().isoformat(),
-                "event_type": event_type,
-                "data": event_data
-            }
-            
-            # 写入审计日志文件（JSON格式，每行一条）
-            with open(self._get_audit_file(), 'a', encoding='utf-8') as f:
-                f.write(json.dumps(audit_entry, ensure_ascii=False) + '\n')
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS audit_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        user_id TEXT,
+                        username TEXT,
+                        action TEXT NOT NULL,
+                        resource_type TEXT,
+                        resource_id TEXT,
+                        details TEXT,
+                        ip_address TEXT,
+                        user_agent TEXT,
+                        level TEXT DEFAULT 'info',
+                        success INTEGER DEFAULT 1,
+                        error_message TEXT
+                    )
+                """)
+                
+                # 添加索引
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp 
+                    ON audit_logs(timestamp DESC)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_audit_logs_action 
+                    ON audit_logs(action)
+                """)
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_audit_logs_user 
+                    ON audit_logs(user_id, timestamp DESC)
+                """)
+                
+                logger.info("审计日志表初始化成功")
                 
         except Exception as e:
-            logger.error(f"写入审计日志失败: {str(e)}")
+            logger.error(f"审计日志表初始化失败: {str(e)}")
     
-    def log_login(self, account_id: int, email: str, 
-                   method: str, success: bool, 
-                   ip: Optional[str] = None):
+    def log(
+        self,
+        action: str,
+        user_id: Optional[str] = None,
+        username: Optional[str] = None,
+        resource_type: Optional[str] = None,
+        resource_id: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        level: str = LEVEL_INFO,
+        success: bool = True,
+        error_message: Optional[str] = None
+    ) -> bool:
         """
-        记录登录事件
+        记录审计日志
         
         Args:
-            account_id: 账号ID
-            email: 邮箱
-            method: 登录方式（cookie/password）
-            success: 是否成功
-            ip: IP地址
-        """
-        self._write_audit("LOGIN", {
-            "account_id": account_id,
-            "email": email,
-            "method": method,
-            "success": success,
-            "ip": ip,
-            "severity": "INFO" if success else "WARNING"
-        })
-        
-        log_msg = f"登录{'成功' if success else '失败'}: {email} (ID:{account_id}) 方式:{method}"
-        if ip:
-            log_msg += f" IP:{ip}"
-            
-        if success:
-            logger.info(log_msg)
-        else:
-            logger.warning(log_msg)
-    
-    def log_logout(self, account_id: int, email: str):
-        """
-        记录登出事件
-        
-        Args:
-            account_id: 账号ID
-            email: 邮箱
-        """
-        self._write_audit("LOGOUT", {
-            "account_id": account_id,
-            "email": email,
-            "severity": "INFO"
-        })
-        logger.info(f"登出: {email} (ID:{account_id})")
-    
-    def log_config_change(self, user_id: Optional[int], 
-                         config_type: str, 
-                         old_value: Any, 
-                         new_value: Any,
-                         description: str = ""):
-        """
-        记录配置变更
-        
-        Args:
+            action: 操作类型（使用预定义的ACTION_*常量）
             user_id: 用户ID
-            config_type: 配置类型
-            old_value: 旧值
-            new_value: 新值
-            description: 描述
-        """
-        self._write_audit("CONFIG_CHANGE", {
-            "user_id": user_id,
-            "config_type": config_type,
-            "old_value": str(old_value)[:100],  # 限制长度
-            "new_value": str(new_value)[:100],
-            "description": description,
-            "severity": "INFO"
-        })
-        logger.info(f"配置变更: {config_type} - {description}")
-    
-    def log_data_access(self, user_id: Optional[int], 
-                       resource_type: str, 
-                       resource_id: str,
-                       action: str):
-        """
-        记录数据访问
-        
-        Args:
-            user_id: 用户ID
-            resource_type: 资源类型（account/bot/mapping等）
+            username: 用户名
+            resource_type: 资源类型（如account, bot, mapping等）
             resource_id: 资源ID
-            action: 操作（read/create/update/delete）
+            details: 详细信息（JSON格式）
+            ip_address: IP地址
+            user_agent: 用户代理
+            level: 严重级别（info/warning/error/critical）
+            success: 操作是否成功
+            error_message: 错误信息
+            
+        Returns:
+            是否记录成功
         """
-        self._write_audit("DATA_ACCESS", {
-            "user_id": user_id,
-            "resource_type": resource_type,
-            "resource_id": resource_id,
-            "action": action,
-            "severity": "DEBUG" if action == "read" else "INFO"
-        })
-        
-        if action != "read":  # 读操作不记录到常规日志，避免过多
-            logger.info(f"数据操作: {action} {resource_type}:{resource_id}")
+        try:
+            details_json = json.dumps(details, ensure_ascii=False) if details else None
+            
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO audit_logs (
+                        user_id, username, action, resource_type, resource_id,
+                        details, ip_address, user_agent, level, success, error_message
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    user_id, username, action, resource_type, resource_id,
+                    details_json, ip_address, user_agent, level, 
+                    1 if success else 0, error_message
+                ))
+            
+            # 同时写入系统日志
+            log_msg = f"[审计] {username or user_id or 'Unknown'} - {action}"
+            if resource_type:
+                log_msg += f" - {resource_type}:{resource_id}"
+            if not success:
+                log_msg += f" - FAILED: {error_message}"
+            
+            if level == self.LEVEL_ERROR or level == self.LEVEL_CRITICAL:
+                logger.error(log_msg)
+            elif level == self.LEVEL_WARNING:
+                logger.warning(log_msg)
+            else:
+                logger.info(log_msg)
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"记录审计日志失败: {str(e)}")
+            return False
     
-    def log_security_event(self, event: str, 
-                          severity: str, 
-                          details: Dict[str, Any]):
+    def get_logs(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        user_id: Optional[str] = None,
+        action: Optional[str] = None,
+        level: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        success_only: Optional[bool] = None
+    ) -> list:
         """
-        记录安全事件
+        查询审计日志
         
         Args:
-            event: 事件名称
-            severity: 严重程度（INFO/WARNING/ERROR/CRITICAL）
-            details: 详细信息
-        """
-        self._write_audit("SECURITY_EVENT", {
-            "event": event,
-            "severity": severity,
-            "details": details
-        })
-        
-        log_func = {
-            "INFO": logger.info,
-            "WARNING": logger.warning,
-            "ERROR": logger.error,
-            "CRITICAL": logger.critical
-        }.get(severity, logger.info)
-        
-        log_func(f"安全事件 [{severity}]: {event} - {json.dumps(details, ensure_ascii=False)}")
-    
-    def log_api_access(self, endpoint: str, 
-                      method: str, 
-                      status_code: int,
-                      ip: Optional[str] = None,
-                      user_agent: Optional[str] = None,
-                      duration_ms: Optional[int] = None):
-        """
-        记录API访问
-        
-        Args:
-            endpoint: API端点
-            method: HTTP方法
-            status_code: 状态码
-            ip: IP地址
-            user_agent: User-Agent
-            duration_ms: 响应时间（毫秒）
-        """
-        self._write_audit("API_ACCESS", {
-            "endpoint": endpoint,
-            "method": method,
-            "status_code": status_code,
-            "ip": ip,
-            "user_agent": user_agent,
-            "duration_ms": duration_ms,
-            "severity": "WARNING" if status_code >= 400 else "DEBUG"
-        })
-        
-        # 仅记录异常状态码到常规日志
-        if status_code >= 400:
-            logger.warning(f"API异常: {method} {endpoint} -> {status_code} ({duration_ms}ms)")
-    
-    def log_message_forward(self, message_id: str,
-                           source_channel: str,
-                           target_platform: str,
-                           target_channel: str,
-                           success: bool,
-                           error: Optional[str] = None):
-        """
-        记录消息转发（关键操作）
-        
-        Args:
-            message_id: 消息ID
-            source_channel: 源频道
-            target_platform: 目标平台
-            target_channel: 目标频道
-            success: 是否成功
-            error: 错误信息
-        """
-        self._write_audit("MESSAGE_FORWARD", {
-            "message_id": message_id,
-            "source_channel": source_channel,
-            "target_platform": target_platform,
-            "target_channel": target_channel,
-            "success": success,
-            "error": error,
-            "severity": "INFO" if success else "ERROR"
-        })
-        
-        if not success:
-            logger.error(f"消息转发失败: {message_id} -> {target_platform}:{target_channel} - {error}")
-    
-    def log_file_operation(self, operation: str, 
-                          file_path: str, 
-                          success: bool,
-                          error: Optional[str] = None):
-        """
-        记录文件操作
-        
-        Args:
-            operation: 操作类型（read/write/delete）
-            file_path: 文件路径
-            success: 是否成功
-            error: 错误信息
-        """
-        self._write_audit("FILE_OPERATION", {
-            "operation": operation,
-            "file_path": file_path,
-            "success": success,
-            "error": error,
-            "severity": "WARNING" if not success else "DEBUG"
-        })
-        
-        if not success:
-            logger.warning(f"文件操作失败: {operation} {file_path} - {error}")
-    
-    def get_recent_audits(self, event_type: Optional[str] = None, 
-                         limit: int = 100) -> list:
-        """
-        获取最近的审计日志
-        
-        Args:
-            event_type: 事件类型过滤
             limit: 返回数量限制
+            offset: 偏移量
+            user_id: 用户ID筛选
+            action: 操作类型筛选
+            level: 严重级别筛选
+            start_date: 开始日期
+            end_date: 结束日期
+            success_only: 仅显示成功/失败的操作
             
         Returns:
             审计日志列表
         """
         try:
-            audit_file = self._get_audit_file()
-            if not audit_file.exists():
-                return []
+            query = "SELECT * FROM audit_logs WHERE 1=1"
+            params = []
             
-            audits = []
-            with open(audit_file, 'r', encoding='utf-8') as f:
-                for line in f:
+            if user_id:
+                query += " AND user_id = ?"
+                params.append(user_id)
+            
+            if action:
+                query += " AND action = ?"
+                params.append(action)
+            
+            if level:
+                query += " AND level = ?"
+                params.append(level)
+            
+            if start_date:
+                query += " AND timestamp >= ?"
+                params.append(start_date)
+            
+            if end_date:
+                query += " AND timestamp <= ?"
+                params.append(end_date)
+            
+            if success_only is not None:
+                query += " AND success = ?"
+                params.append(1 if success_only else 0)
+            
+            query += " ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
+            
+            result = db.execute(query, tuple(params))
+            logs = [dict(row) for row in result.fetchall()]
+            
+            # 解析JSON details
+            for log in logs:
+                if log.get('details'):
                     try:
-                        audit = json.loads(line.strip())
-                        if event_type is None or audit.get('event_type') == event_type:
-                            audits.append(audit)
-                    except json.JSONDecodeError:
-                        continue
+                        log['details'] = json.loads(log['details'])
+                    except:
+                        pass
             
-            # 返回最新的N条（倒序）
-            return audits[-limit:][::-1]
+            return logs
             
         except Exception as e:
-            logger.error(f"读取审计日志失败: {str(e)}")
+            logger.error(f"查询审计日志失败: {str(e)}")
             return []
+    
+    def get_statistics(
+        self,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        获取审计日志统计信息
+        
+        Args:
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            统计信息
+        """
+        try:
+            query_base = "SELECT COUNT(*) as count FROM audit_logs WHERE 1=1"
+            params = []
+            
+            if start_date:
+                query_base += " AND timestamp >= ?"
+                params.append(start_date)
+            
+            if end_date:
+                query_base += " AND timestamp <= ?"
+                params.append(end_date)
+            
+            # 总数统计
+            result = db.execute(query_base, tuple(params))
+            total_count = result.fetchone()['count']
+            
+            # 按操作类型统计
+            query_action = query_base.replace("COUNT(*)", "action, COUNT(*)")
+            query_action += " GROUP BY action ORDER BY COUNT(*) DESC LIMIT 10"
+            result = db.execute(query_action, tuple(params))
+            action_stats = [dict(row) for row in result.fetchall()]
+            
+            # 按级别统计
+            query_level = query_base.replace("COUNT(*)", "level, COUNT(*)")
+            query_level += " GROUP BY level"
+            result = db.execute(query_level, tuple(params))
+            level_stats = [dict(row) for row in result.fetchall()]
+            
+            # 成功/失败统计
+            query_success = query_base + " AND success = 1"
+            result = db.execute(query_success, tuple(params))
+            success_count = result.fetchone()['count']
+            
+            query_failed = query_base + " AND success = 0"
+            result = db.execute(query_failed, tuple(params))
+            failed_count = result.fetchone()['count']
+            
+            # 按用户统计
+            query_user = query_base.replace("COUNT(*)", "username, COUNT(*)")
+            query_user += " AND username IS NOT NULL GROUP BY username ORDER BY COUNT(*) DESC LIMIT 10"
+            result = db.execute(query_user, tuple(params))
+            user_stats = [dict(row) for row in result.fetchall()]
+            
+            return {
+                "total_count": total_count,
+                "success_count": success_count,
+                "failed_count": failed_count,
+                "action_stats": action_stats,
+                "level_stats": level_stats,
+                "user_stats": user_stats
+            }
+            
+        except Exception as e:
+            logger.error(f"获取审计日志统计失败: {str(e)}")
+            return {}
+    
+    def clean_old_logs(self, days: int = 90) -> int:
+        """
+        清理旧的审计日志
+        
+        Args:
+            days: 保留天数
+            
+        Returns:
+            清理的记录数
+        """
+        try:
+            with db.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM audit_logs 
+                    WHERE timestamp < datetime('now', '-' || ? || ' days')
+                """, (days,))
+                deleted_count = cursor.rowcount
+            
+            logger.info(f"清理了 {deleted_count} 条审计日志（{days}天前）")
+            return deleted_count
+            
+        except Exception as e:
+            logger.error(f"清理审计日志失败: {str(e)}")
+            return 0
 
 
-# 创建全局审计日志实例
+# 全局审计日志实例
 audit_logger = AuditLogger()

@@ -29,6 +29,26 @@
                   <span>{{ account.email }}</span>
                 </div>
                 
+                <!-- ✅ P1-6优化: 监听服务器数量显示 -->
+                <div class="info-item">
+                  <label>📡 监听服务器：</label>
+                  <span>
+                    <el-tag type="info" size="small">
+                      {{ account.monitored_servers || 0 }} 个
+                    </el-tag>
+                    <el-button
+                      v-if="account.monitored_servers > 0"
+                      link
+                      type="primary"
+                      size="small"
+                      @click="viewServerDetails(account.id)"
+                      style="margin-left: 5px;"
+                    >
+                      查看详情
+                    </el-button>
+                  </span>
+                </div>
+                
                 <div class="info-item">
                   <label>🕐 最后活跃：</label>
                   <span :title="formatDate(account.last_active, 'datetime')">
@@ -588,6 +608,40 @@ const stopAccount = async (accountId) => {
     handleApiError(error, {
       title: '停止账号失败'
     })
+  }
+}
+
+// ✅ P1-6优化: 查看服务器详情
+const viewServerDetails = async (accountId) => {
+  try {
+    const response = await axios.get(`/api/accounts/${accountId}/servers`)
+    
+    if (response.data.success) {
+      const servers = response.data.servers || []
+      const serverNames = servers.map(s => s.name).join('、')
+      
+      ElMessageBox.alert(
+        `<div style="max-height: 400px; overflow-y: auto;">
+          <p><strong>监听的服务器列表：</strong></p>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            ${servers.map(s => `
+              <li style="margin: 5px 0;">
+                <strong>${s.name}</strong> 
+                (${s.channels?.length || 0} 个频道)
+              </li>
+            `).join('')}
+          </ul>
+        </div>`,
+        '服务器详情',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '知道了'
+        }
+      )
+    }
+  } catch (error) {
+    console.error('获取服务器详情失败:', error)
+    ElMessage.error('获取服务器详情失败')
   }
 }
 
