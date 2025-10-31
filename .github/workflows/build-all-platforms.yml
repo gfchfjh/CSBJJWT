@@ -159,7 +159,7 @@ jobs:
           body: |
             ## 🎉 KOOK消息转发系统 ${{ steps.version.outputs.VERSION }}
             
-            ### v17.0.0 深度优化版
+            ### v18.0.0 深度优化版
             
             #### ✨ 主要更新
             

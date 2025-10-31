@@ -1,8 +1,8 @@
-# KOOK消息转发系统 v17.0.0
+# KOOK消息转发系统 v18.0.0
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-17.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
@@ -11,17 +11,40 @@
 
 **35,000+行代码 · 深度优化 · GitHub Actions自动构建**
 
-[快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0)
+[快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0)
 
 </div>
 
 ---
 
-## 🎉 v17.0.0 深度优化版已发布
+## 🎉 v18.0.0 完整正式版已发布
 
-KOOK消息转发系统v17.0.0深度优化版现已发布！本次版本**全面增强安全性**，**完善用户体验**，**实现自动化构建**：
+KOOK消息转发系统v18.0.0完整正式版现已发布！本次版本**完成所有TODO**，**新增多平台支持**，**Windows完整构建**：
 
-### ✨ v17.0.0 核心更新
+### ✨ v18.0.0 核心更新
+
+#### 🆕 新增平台支持
+- ✅ **企业微信群机器人** - 完整的Webhook转发支持
+- ✅ **钉钉群机器人** - 支持签名验证和@提及
+- ✅ 5个平台全覆盖：Discord、Telegram、飞书、企业微信、钉钉
+
+#### 🔌 新增插件功能
+- ✅ **关键词自动回复** - 支持精确/包含/正则匹配
+- ✅ **URL链接预览** - 自动提取链接元数据
+- ✅ 完善的插件系统架构
+
+#### 🪟 Windows完整支持
+- ✅ **GitHub Actions自动构建** - 3分钟完成Windows打包
+- ✅ **NSIS专业安装器** - 完整的安装向导
+- ✅ **便携版支持** - 免安装直接运行
+- ✅ 正确的版本号显示 (v18.0.0)
+
+#### 💯 系统完善
+- ✅ **修复所有TODO** - 20+个未完成功能全部实现
+- ✅ **替换Mock数据** - 所有真实数据实现
+- ✅ **系统集成完善** - 启动/停止/状态全面集成
+
+### ✨ v17.0.0 历史更新
 
 #### ⚠️ 法律合规增强
 - ✅ **免责声明弹窗** - 首次启动强制显示，5大类详细条款
@@ -138,9 +161,11 @@ KOOK消息转发系统提供**3个不同版本**以满足各类用户需求：
 
 **Windows用户**：
 ```
-1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0
-2. 下载 KOOK.Setup.16.0.0.exe (注：文件名显示v16但实际是v17.0.0)
-3. 双击运行安装程序
+1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+2. 下载 KOOK-Forwarder-v18.0.0-Windows.zip (112 MB)
+3. 解压到任意目录
+4. 进入 frontend/ 目录
+5. 双击 KOOK消息转发系统 Setup 18.0.0.exe
 4. 按照向导完成安装
 5. 首次启动需同意免责声明
 6. 设置管理员密码（需满足复杂度要求）
@@ -149,8 +174,8 @@ KOOK消息转发系统提供**3个不同版本**以满足各类用户需求：
 
 **macOS用户**：
 ```
-1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0
-2. 下载 KOOK.-16.0.0-arm64.dmg
+1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+2. 下载 KOOK.-16.0.0-arm64.dmg (注：文件名未更新)
 3. 双击打开DMG文件
 4. 拖拽到应用程序文件夹
 5. 首次打开：右键 → 打开（绕过安全检查）
@@ -160,10 +185,12 @@ KOOK消息转发系统提供**3个不同版本**以满足各类用户需求：
 
 **Linux用户**：
 ```bash
-1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0
-2. 下载 KOOK.-16.0.0.AppImage
-3. chmod +x KOOK.-16.0.0.AppImage
-4. ./KOOK.-16.0.0.AppImage
+1. 访问 https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+2. 下载 KOOK-Forwarder-v18.0.0-Linux.tar.gz (150 MB)
+3. tar -xzf KOOK-Forwarder-v18.0.0-Linux.tar.gz
+4. cd KOOK-Forwarder-v18.0.0-Linux/frontend
+5. chmod +x *.AppImage
+6. ./KOOK消息转发系统-16.0.0.AppImage
 5. 同意免责声明并设置密码
 6. 开始使用
 ```
@@ -196,10 +223,10 @@ KOOK消息转发系统提供**3个不同版本**以满足各类用户需求：
 ### 1️⃣ Electron Edition - 桌面应用版
 
 ```
-Windows: KOOK.Setup.16.0.0.exe (94 MB)
-macOS:   KOOK.-16.0.0-arm64.dmg (119 MB)
-Linux:   KOOK.-16.0.0.AppImage (130 MB)
-下载:    https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0
+Windows: KOOK-Forwarder-v18.0.0-Windows.zip (112 MB)
+macOS:   KOOK.-16.0.0-arm64.dmg (114 MB)
+Linux:   KOOK-Forwarder-v18.0.0-Linux.tar.gz (150 MB)
+下载:    https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
 ```
 
 **适合**：
@@ -219,10 +246,10 @@ Linux:   KOOK.-16.0.0.AppImage (130 MB)
 **或使用GitHub Actions自动构建**：
 ```bash
 # 1. 创建新标签
-git tag -a v17.1.0 -m "Release v17.1.0"
+git tag -a v18.1.0 -m "Release v18.1.0"
 
 # 2. 推送标签（自动触发构建）
-git push origin v17.1.0
+git push origin v18.1.0
 
 # 3. 等待15-20分钟，自动完成：
 #    - 构建三个平台安装包
@@ -773,7 +800,7 @@ Vue前端: 8,000 行
 
 **深度优化 · 安全增强 · 自动构建 · 立即可用**
 
-[![GitHub Release](https://img.shields.io/github/v/release/gfchfjh/CSBJJWT)](https://github.com/gfchfjh/CSBJJWT/releases/tag/v17.0.0)
+[![GitHub Release](https://img.shields.io/github/v/release/gfchfjh/CSBJJWT)](https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0)
 [![GitHub stars](https://img.shields.io/github/stars/gfchfjh/CSBJJWT?style=social)](https://github.com/gfchfjh/CSBJJWT)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 

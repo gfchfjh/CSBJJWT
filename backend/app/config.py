@@ -77,6 +77,10 @@ class Settings(BaseSettings):
     telegram_rate_limit_period: int = 1
     feishu_rate_limit_calls: int = 20
     feishu_rate_limit_period: int = 1
+    wechatwork_rate_limit_calls: int = 20
+    wechatwork_rate_limit_period: int = 60
+    dingtalk_rate_limit_calls: int = 20
+    dingtalk_rate_limit_period: int = 60
     
     # 消息重试配置
     message_retry_max: int = 3

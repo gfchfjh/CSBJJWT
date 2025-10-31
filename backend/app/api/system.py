@@ -32,8 +32,22 @@ async def start_service() -> Dict[str, Any]:
                 "message": "服务已在运行中"
             }
         
-        # TODO: 实际启动逻辑（启动所有Scraper）
-        # 这里需要与 scraper_manager 集成
+        # 启动所有Scraper
+        try:
+            from ..kook.scraper import scraper_manager
+            from ..queue.worker import message_worker
+            
+            # 启动scraper manager
+            await scraper_manager.start_all()
+            
+            # 启动消息处理worker
+            await message_worker.start()
+            
+            logger.info("✅ Scraper和Worker已启动")
+            
+        except Exception as e:
+            logger.error(f"启动服务失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"启动失败: {str(e)}")
         
         service_status["running"] = True
         service_status["start_time"] = time.time()
@@ -63,7 +77,22 @@ async def stop_service() -> Dict[str, Any]:
                 "message": "服务未运行"
             }
         
-        # TODO: 实际停止逻辑（停止所有Scraper）
+        # 停止所有Scraper
+        try:
+            from ..kook.scraper import scraper_manager
+            from ..queue.worker import message_worker
+            
+            # 停止scraper manager
+            await scraper_manager.stop_all()
+            
+            # 停止消息处理worker
+            await message_worker.stop()
+            
+            logger.info("✅ Scraper和Worker已停止")
+            
+        except Exception as e:
+            logger.error(f"停止服务失败: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"停止失败: {str(e)}")
         
         service_status["running"] = False
         service_status["start_time"] = None
@@ -127,7 +156,7 @@ async def get_service_status() -> Dict[str, Any]:
             "active_accounts": service_status["active_accounts"],
             "configured_bots": service_status["configured_bots"],
             "active_mappings": service_status["active_mappings"],
-            "queue_size": 0,  # TODO: 从Redis获取
+            "queue_size": await _get_queue_size(),  # 从Redis获取队列大小
             "cpu_percent": cpu_percent,
             "memory_percent": memory.percent,
             "memory_used": memory.used,
@@ -137,6 +166,15 @@ async def get_service_status() -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"❌ 获取状态失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def _get_queue_size() -> int:
+    """获取Redis队列大小"""
+    try:
+        from ..queue.redis_client import redis_queue
+        return await redis_queue.get_queue_length()
+    except:
+        return 0
 
 
 @router.get("/health")

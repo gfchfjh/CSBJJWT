@@ -881,7 +881,7 @@ A: 不会，过滤在内存中进行，几乎零延迟。
 FAQS = [
     {
         "id": "faq_offline",
-        "question": "为什么KOOK账号一直显示"离线"？",
+        "question": "为什么KOOK账号一直显示\"离线\"？",
         "answer": """
 ### 可能原因
 
