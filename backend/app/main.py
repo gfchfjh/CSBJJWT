@@ -220,6 +220,14 @@ app.include_router(auth.router)  # 认证相关（无需Token）
 app.include_router(auth_master_password.router)  # 主密码认证 🆕 P0-8优化
 app.include_router(password_reset.router)  # 密码重置（无需Token）
 app.include_router(first_run.router)  # 首次运行检测 🆕 P0-2优化
+
+# ✅ v17.0.0深度优化: 免责声明API
+from .api import disclaimer
+app.include_router(disclaimer.router)  # 免责声明系统 🆕 v17.0.0深度优化
+
+# ✅ v17.0.0深度优化: 密码强度验证API
+from .api import password_strength
+app.include_router(password_strength.router)  # 密码强度验证 🆕 v17.0.0深度优化
 app.include_router(accounts.router)
 app.include_router(bots.router)
 app.include_router(mappings.router)

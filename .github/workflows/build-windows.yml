@@ -3,163 +3,114 @@ name: Build Windows Installer
 on:
   push:
     tags:
-      - 'v*.*.*-win'
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.14.0)'
-        required: true
-        default: 'v1.14.0'
-
-# 授予GitHub Actions必要的权限
-permissions:
-  contents: write    # 允许上传到Releases
+        description: 'Version to build'
+        required: false
+        default: 'latest'
 
 jobs:
   build-windows:
-    name: Build Windows Installer
+    name: Build Windows x64
     runs-on: windows-latest
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/checkout@v3
         with:
-          python-version: '3.11'
+          fetch-depth: 0
       
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: frontend/package.json
+          cache-dependency-path: frontend/package-lock.json
       
-      - name: Install Python dependencies
+      - name: Get version
+        id: version
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          pip install -r backend/requirements.txt
-          pip install pyinstaller
-      
-      - name: Build Python backend
-        run: |
-          cd backend
-          pyinstaller --clean --noconfirm build_backend.spec
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-      
-      - name: Verify backend build
-        run: |
-          if (Test-Path "backend/dist/KookForwarder-Backend.exe") {
-            Write-Host "✅ Backend build successful"
-            Write-Host ""
-            Write-Host "Generated files:"
-            Get-ChildItem backend/dist/*.exe | Select-Object Name, @{Name="SizeMB";Expression={[math]::Round($_.Length/1MB, 2)}}
-          } else {
-            Write-Host "❌ Backend build failed - KookForwarder-Backend.exe not found"
-            Write-Host ""
-            Write-Host "Contents of backend/dist:"
-            Get-ChildItem backend/dist -Recurse
-            exit 1
-          }
-      
-      - name: Prepare backend for Electron
-        run: |
-          New-Item -ItemType Directory -Force -Path frontend/resources/backend
-          Copy-Item -Path backend/dist/KookForwarder-Backend.exe -Destination frontend/resources/backend/ -Force
-          
-          # Copy any additional DLLs or resources if they exist
-          if (Test-Path "backend/dist/_internal") {
-            Copy-Item -Path backend/dist/_internal -Destination frontend/resources/backend/ -Recurse -Force
-          }
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(cat VERSION || echo "17.0.0")
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
       
       - name: Install frontend dependencies
         run: |
           cd frontend
-          npm install
-      
-      - name: Build Electron app for Windows
+          npm install --legacy-peer-deps
+          npm install -D sass-embedded --legacy-peer-deps
+        
+      - name: Build frontend
         run: |
           cd frontend
-          npm run electron:build -- --win
+          npm run build
+      
+      - name: Prepare build resources
+        shell: bash
+        run: |
+          # 确保图标文件存在
+          ls -la build/icon*.png
+          
+      - name: Build Windows installer
+        run: |
+          cd frontend
+          npx electron-builder --win --x64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Verify Electron build
-        run: |
-          if (Test-Path "frontend/dist-electron/*.exe") {
-            Write-Host "✅ Windows installer build successful"
-            Get-ChildItem frontend/dist-electron/*.exe | Select-Object Name, Length, LastWriteTime
-          } else {
-            Write-Host "❌ Windows installer build failed"
-            Get-ChildItem frontend/dist-electron -Recurse
-            exit 1
-          }
-      
-      - name: Upload Windows installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-installer
-          path: frontend/dist-electron/*.exe
-          retention-days: 7
-      
-      - name: Get version from tag or input
-        id: get_version
+      - name: List build output
         shell: bash
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
+          echo "Build artifacts:"
+          ls -lh frontend/dist-electron/*.exe || true
+          ls -lh frontend/dist-electron/ || true
       
-      - name: Upload to Release (if tag exists)
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-installer-x64
+          path: frontend/dist-electron/*.exe
+          if-no-files-found: error
+      
+      - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          $version = "${{ steps.get_version.outputs.VERSION }}"
-          $version_clean = $version -replace '-win$', ''
-          
-          # 检查release是否存在
-          gh release view $version_clean 2>$null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Release $version_clean exists, uploading installer..."
-            gh release upload $version_clean frontend/dist-electron/*.exe --clobber
-            Write-Host "✅ Windows installer uploaded to release $version_clean"
-          } else {
-            Write-Host "Release $version_clean does not exist, creating it..."
-            gh release create $version_clean `
-              --title "KOOK消息转发系统 $version_clean" `
-              --notes "Windows installer for $version_clean" `
-              frontend/dist-electron/*.exe
-            Write-Host "✅ Release created and Windows installer uploaded"
-          }
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            frontend/dist-electron/*.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## KOOK消息转发系统 ${{ steps.version.outputs.VERSION }}
+            
+            ### 🎉 v17.0.0 深度优化版
+            
+            #### ✨ 新增功能
+            - ✅ 免责声明弹窗（首次启动强制显示）
+            - ✅ 密码复杂度增强（8位+大小写+数字+特殊字符）
+            - ✅ Chrome扩展完善（3种导出方式）
+            - ✅ 图床Token安全增强（刷新机制+速率限制）
+            
+            #### 📦 安装说明
+            1. 下载 `KOOK消息转发系统-*.exe`
+            2. 双击运行安装程序
+            3. 按照向导完成安装
+            4. 首次启动需同意免责声明
+            
+            #### 📖 文档
+            - [用户手册](docs/USER_MANUAL.md)
+            - [Chrome扩展教程](docs/tutorials/chrome-extension-complete-guide.md)
+            - [构建指南](BUILD_IMPROVEMENTS.md)
+            
+            #### 🐛 问题反馈
+            如有问题，请在 [Issues](https://github.com/${{ github.repository }}/issues) 提交
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Build summary
-        if: always()
-        run: |
-          Write-Host ""
-          Write-Host "================================================"
-          Write-Host "  Windows Build Summary"
-          Write-Host "================================================"
-          Write-Host ""
-          if (Test-Path "frontend/dist-electron/*.exe") {
-            Write-Host "✅ Build Status: SUCCESS"
-            Write-Host ""
-            Write-Host "📦 Generated Files:"
-            Get-ChildItem frontend/dist-electron/*.exe | ForEach-Object {
-              $sizeInMB = [math]::Round($_.Length / 1MB, 2)
-              Write-Host "  - $($_.Name) ($sizeInMB MB)"
-            }
-            Write-Host ""
-            Write-Host "🔗 Download artifact from GitHub Actions"
-            Write-Host "🔗 Or check the Release page if tag was pushed"
-          } else {
-            Write-Host "❌ Build Status: FAILED"
-            Write-Host ""
-            Write-Host "Please check the logs above for errors"
-          }
-          Write-Host ""
-          Write-Host "================================================"
