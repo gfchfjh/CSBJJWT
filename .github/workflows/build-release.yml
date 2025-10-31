@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build and Release All Platforms
 
 on:
   push:
@@ -7,236 +7,235 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ==================== Windows ====================
   build-windows:
     name: Build Windows Installer
     runs-on: windows-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install Python dependencies
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install --legacy-peer-deps
+
+      - name: Install Backend Dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
+
+      - name: Build Windows
+        run: python build_all_platforms.py --platform windows
+
+      - name: List build artifacts
         run: |
-          cd frontend
-          npm ci
-      
-      - name: Build Python backend
-        run: |
-          cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Electron installer
-        run: |
-          cd frontend
-          npm run electron:build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload Windows artifact
+          dir frontend\dist-electron\*.exe
+        shell: cmd
+
+      - name: Upload Windows Installer
         uses: actions/upload-artifact@v3
         with:
           name: windows-installer
           path: frontend/dist-electron/*.exe
-  
-  # ==================== macOS ====================
+          retention-days: 7
+
   build-macos:
-    name: Build macOS Installer
+    name: Build macOS DMG
     runs-on: macos-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install Python dependencies
+
+      - name: Install PyInstaller
+        run: pip3 install pyinstaller
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install --legacy-peer-deps
+
+      - name: Install Backend Dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
+          pip3 install -r requirements.txt
+
+      - name: Build macOS
+        run: python3 build_all_platforms.py --platform mac
+
+      - name: List build artifacts
         run: |
-          cd frontend
-          npm ci
-      
-      - name: Prepare Redis
-        run: |
-          brew install redis
-          mkdir -p redis
-          cp $(which redis-server) redis/redis-server-mac
-      
-      - name: Build Python backend
-        run: |
-          cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Electron installer
-        run: |
-          cd frontend
-          npm run electron:build:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 如需代码签名，添加以下环境变量
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      
-      - name: Upload macOS artifact
+          ls -lh frontend/dist-electron/*.dmg || echo "DMG not found, checking all files:"
+          ls -lh frontend/dist-electron/
+
+      - name: Upload macOS DMG
         uses: actions/upload-artifact@v3
         with:
           name: macos-installer
-          path: frontend/dist-electron/*.dmg
-  
-  # ==================== Linux ====================
+          path: |
+            frontend/dist-electron/*.dmg
+            frontend/dist-electron/mac/*.app
+          retention-days: 7
+
   build-linux:
-    name: Build Linux Installer
+    name: Build Linux AppImage
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-      
-      - name: Install system dependencies
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Install Frontend Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libgtk-3-dev libnotify-dev libnss3 libxss1 libxtst6
-      
-      - name: Install Python dependencies
+          cd frontend
+          npm install --legacy-peer-deps
+
+      - name: Install Backend Dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          pip install pyinstaller
-      
-      - name: Install Node dependencies
+
+      - name: Build Linux
+        run: python3 build_all_platforms.py --platform linux
+
+      - name: List build artifacts
         run: |
-          cd frontend
-          npm ci
-      
-      - name: Build Redis
-        run: |
-          wget https://download.redis.io/releases/redis-7.0.15.tar.gz
-          tar -xzf redis-7.0.15.tar.gz
-          cd redis-7.0.15
-          make -j$(nproc)
-          mkdir -p ../redis
-          cp src/redis-server ../redis/redis-server-linux
-          cd ..
-          rm -rf redis-7.0.15 redis-7.0.15.tar.gz
-      
-      - name: Build Python backend
-        run: |
-          cd backend
-          pyinstaller --clean build_backend_enhanced.spec
-      
-      - name: Build Vue frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build Electron installer
-        run: |
-          cd frontend
-          npm run electron:build:linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload Linux artifacts
+          ls -lh frontend/dist-electron/*.AppImage
+
+      - name: Upload Linux AppImage
         uses: actions/upload-artifact@v3
         with:
-          name: linux-installers
-          path: |
-            frontend/dist-electron/*.AppImage
-            frontend/dist-electron/*.deb
-            frontend/dist-electron/*.rpm
-  
-  # ==================== Release ====================
+          name: linux-installer
+          path: frontend/dist-electron/*.AppImage
+          retention-days: 7
+
   create-release:
-    name: Create GitHub Release
+    name: Create Release
     needs: [build-windows, build-macos, build-linux]
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v3
+
       - name: Download all artifacts
         uses: actions/download-artifact@v3
-      
-      - name: List artifacts
+
+      - name: List downloaded artifacts
         run: |
-          ls -R
-      
+          echo "=== All downloaded artifacts ==="
+          find . -type f -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.app"
+
+      - name: Calculate checksums
+        run: |
+          echo "=== Generating MD5 checksums ==="
+          find . -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" \) -exec md5sum {} \; > checksums.txt
+          cat checksums.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            windows-installer/*.exe
-            macos-installer/*.dmg
-            linux-installers/*.AppImage
-            linux-installers/*.deb
-            linux-installers/*.rpm
-          body_path: RELEASE_NOTES_v6.0.0.md
+            windows-installer/*
+            macos-installer/*
+            linux-installer/*
+            checksums.txt
+          body: |
+            # KOOK消息转发系统 ${{ github.ref_name }}
+            
+            ## 📦 安装包下载
+            
+            ### Windows
+            - **KOOK消息转发系统 Setup.exe** - NSIS安装程序
+            
+            ### macOS
+            - **KOOK消息转发系统.dmg** - DMG磁盘映像
+            
+            ### Linux
+            - **KOOK消息转发系统.AppImage** - AppImage通用格式
+            
+            ## ✅ 完整版本说明
+            
+            这是一个完整的正式发布版本，包含所有平台的安装包。
+            
+            ### 新特性
+            - ✅ 全新3步配置向导
+            - ✅ 完美UI界面优化
+            - ✅ 详细图文教程文档
+            - ✅ 图片处理策略优化
+            - ✅ 系统性能提升
+            
+            ### 系统要求
+            - **Windows**: Windows 10 (1809+) / Windows 11
+            - **macOS**: macOS 10.15 Catalina或更高
+            - **Linux**: Ubuntu 18.04+ / Debian 10+ / Fedora 30+ / Arch Linux
+            
+            ### 安装方法
+            
+            **Windows**: 
+            1. 下载 Setup.exe
+            2. 双击运行安装程序
+            3. 按照向导完成安装
+            
+            **macOS**:
+            1. 下载 .dmg 文件
+            2. 双击打开DMG
+            3. 拖拽到Applications文件夹
+            
+            **Linux**:
+            1. 下载 .AppImage 文件
+            2. 添加可执行权限: `chmod +x *.AppImage`
+            3. 双击运行
+            
+            ## 📚 文档
+            
+            - [用户手册](docs/USER_MANUAL.md)
+            - [Cookie获取教程](docs/tutorials/如何获取KOOK_Cookie.md)
+            - [Discord配置教程](docs/tutorials/如何创建Discord_Webhook.md)
+            - [Telegram配置教程](docs/tutorials/如何创建Telegram_Bot.md)
+            - [飞书配置教程](docs/tutorials/如何配置飞书自建应用.md)
+            
+            ## 🔒 文件校验
+            
+            请使用MD5校验和验证下载文件的完整性（见checksums.txt）
+            
+            ---
+            
+            **完整更新日志**: [CHANGELOG.md](CHANGELOG.md)
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Notify success
-        run: |
-          echo "✅ Release created successfully!"
-          echo "Download URL: https://github.com/${{ github.repository }}/releases/latest"
