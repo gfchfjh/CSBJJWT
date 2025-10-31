@@ -82,7 +82,7 @@
         <!-- 第4条：法律责任 -->
         <div class="disclaimer-section">
           <div class="section-icon">
-            <el-icon :size="24" color="#909399"><Scale /></el-icon>
+            <el-icon :size="24" color="#909399"><Document /></el-icon>
           </div>
           <div class="section-content">
             <h3>4. 法律责任与免责条款</h3>
@@ -173,7 +173,6 @@ import {
   Warning,
   Lock,
   Document,
-  Scale,
   Check
 } from '@element-plus/icons-vue'
 

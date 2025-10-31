@@ -1,0 +1,53 @@
+# Electron Builder简化配置（仅前端）
+# 用于快速构建前端版安装包
+
+appId: com.kook.forwarder
+productName: KOOK消息转发系统
+copyright: Copyright © 2025
+
+# 目录配置
+directories:
+  buildResources: ../build
+  output: dist-electron
+
+# 文件包含
+files:
+  - dist/**/*
+  - electron/**/*
+  - node_modules/**/*
+  - package.json
+
+# 额外资源（简化版，不包含后端和Redis）
+extraResources:
+  - from: ../build/icon.png
+    to: icon.png
+
+# Windows配置
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: ../build/icon-512.png
+  artifactName: ${productName}-v17.0.0-Frontend-Portable-${os}-${arch}.${ext}
+
+# NSIS安装器配置
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  allowElevation: true
+  installerIcon: ../build/icon-512.png
+  uninstallerIcon: ../build/icon-512.png
+  installerHeaderIcon: ../build/icon-512.png
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: KOOK消息转发系统
+  license: ../LICENSE
+  language: 2052  # 中文
+  warningsAsErrors: false
+
+# 压缩配置
+compression: maximum
+
+# 禁用发布
+publish: null
