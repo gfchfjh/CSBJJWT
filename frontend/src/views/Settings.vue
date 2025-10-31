@@ -203,8 +203,9 @@
 
             <el-divider />
 
-              <h3>图床配置</h3>
-
+            <h3>图床配置</h3>
+            
+            <el-form label-width="150px">
               <el-form-item label="存储路径">
                 <el-input v-model="settings.imageStoragePath" readonly>
                   <template #append>

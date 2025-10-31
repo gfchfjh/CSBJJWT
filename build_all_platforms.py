@@ -51,8 +51,22 @@ class PlatformBuilder:
         dependencies = {
             'node': 'Node.js未安装，请安装 https://nodejs.org/',
             'npm': 'npm未安装',
-            'python': 'Python未安装，请安装Python 3.11+',
         }
+        
+        # 检查Python（支持python或python3）
+        python_installed = False
+        for py_cmd in ['python', 'python3']:
+            try:
+                subprocess.run([py_cmd, '--version'], capture_output=True, check=True)
+                print(f"  ✅ {py_cmd} 已安装")
+                python_installed = True
+                break
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                continue
+        
+        if not python_installed:
+            print(f"  ❌ Python未安装，请安装Python 3.11+")
+            return False
         
         for cmd, error_msg in dependencies.items():
             try:
@@ -67,7 +81,7 @@ class PlatformBuilder:
     def install_frontend_deps(self):
         """安装前端依赖"""
         print("\n📦 安装前端依赖...")
-        return self.run_command("npm install", cwd=self.frontend_dir)
+        return self.run_command("npm install --legacy-peer-deps", cwd=self.frontend_dir, shell=True)
     
     def install_backend_deps(self):
         """安装后端依赖"""
