@@ -1,287 +1,377 @@
-# Windows安装包构建指南
+# Windows构建指南 - KOOK消息转发系统 v18.0.0
 
-**状态**: 前端代码已构建完成 ✅  
-**限制**: Linux环境无法直接构建Windows安装包（需要Wine）  
-**解决方案**: 在Windows环境下完成最后的打包步骤  
+**两种构建方式**: GitHub Actions自动构建 (推荐) | 本地手动构建
 
 ---
 
-## 当前构建状态
+## 🚀 方式1: GitHub Actions自动构建 (推荐)
 
-### ✅ 已完成
-- [x] 前端代码构建 (`npm run build`)
-- [x] 所有依赖安装
-- [x] 配置文件准备
-- [x] 图标文件准备
+### 优点
+- ✅ 全自动，无需Windows环境
+- ✅ 构建环境标准化
+- ✅ 自动发布到GitHub Release
+- ✅ 包含完整的校验和
 
-### ⏸️ 待在Windows环境完成
-- [ ] electron-builder打包
-- [ ] NSIS安装程序生成
-- [ ] 代码签名（可选）
+### 使用步骤
+
+#### 选项A: 通过标签触发（推荐）
+```bash
+# 1. 已经创建了v18.0.0标签
+# GitHub Actions会自动检测并构建
+
+# 2. 查看构建进度
+# 访问: https://github.com/gfchfjh/CSBJJWT/actions
+```
+
+#### 选项B: 手动触发
+```bash
+# 1. 访问 GitHub Actions 页面
+https://github.com/gfchfjh/CSBJJWT/actions/workflows/build-windows.yml
+
+# 2. 点击 "Run workflow" 按钮
+# 3. 输入版本号: v18.0.0
+# 4. 点击 "Run workflow"
+```
+
+### 查看构建结果
+
+```bash
+# 方式1: 通过GitHub CLI
+gh run list --workflow=build-windows.yml --limit 5
+
+# 方式2: 访问网页
+https://github.com/gfchfjh/CSBJJWT/actions
+
+# 方式3: 查看Release
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+```
+
+### 构建产物
+
+自动构建完成后，将生成以下文件并上传到Release:
+
+```
+KOOK-Forwarder-v18.0.0-Windows.zip  [约200 MB]
+├── frontend/
+│   ├── KOOK消息转发系统 Setup.exe  [NSIS安装包]
+│   └── win-unpacked/  [便携版]
+├── backend/
+│   └── kook-forwarder-backend/  [Python后端]
+├── docs/
+├── README.md
+└── 安装说明.txt
+
+KOOK-Forwarder-v18.0.0-Windows.zip.md5  [MD5校验]
+KOOK-Forwarder-v18.0.0-Windows.zip.sha256  [SHA256校验]
+```
 
 ---
 
-## 方案一：在Windows上完成构建（推荐）
+## 🖥️ 方式2: 本地手动构建
 
-### 前置要求
-- Windows 10/11（x64）
-- Node.js 18+ 
-- Git
+### 前提条件
 
-### 步骤
+#### 必需软件
+1. **Windows 10/11** (64位)
+2. **Python 3.11+**
+   - 下载: https://www.python.org/downloads/
+   - 安装时勾选 "Add Python to PATH"
+3. **Node.js 20+**
+   - 下载: https://nodejs.org/
+   - 包含npm
+4. **Git**
+   - 下载: https://git-scm.com/download/win
 
-#### 1. 克隆代码
+#### 可选软件
+- Visual Studio Build Tools (用于编译原生模块)
+- Windows SDK
+
+### 构建步骤
+
+#### 步骤1: 克隆仓库
 ```bash
 git clone https://github.com/gfchfjh/CSBJJWT.git
 cd CSBJJWT
+git checkout v18.0.0
 ```
 
-#### 2. 安装前端依赖
+#### 步骤2: 运行构建脚本
+
+**方式A: 使用批处理脚本 (推荐)**
+```cmd
+# 双击运行或在命令提示符中执行
+build-windows.bat
+```
+
+**方式B: 使用Python脚本**
 ```bash
+python build_all_platforms.py --platform windows
+```
+
+**方式C: 手动构建**
+```bash
+# 1. 安装前端依赖
 cd frontend
 npm install --legacy-peer-deps
-npm install -D sass-embedded --legacy-peer-deps
-```
 
-#### 3. 构建前端
-```bash
+# 2. 构建前端
 npm run build
-```
 
-#### 4. 构建Windows安装包
-```bash
-# 方式A: 使用完整配置（包含后端和Redis）
+# 3. 打包Electron
 npm run electron:build:win
 
-# 方式B: 使用简化配置（仅前端）
-npx electron-builder --config electron-builder-simple.yml --win --x64
+# 4. 安装后端依赖
+cd ../backend
+pip install -r requirements.txt
+pip install pyinstaller
+
+# 5. 打包后端
+pyinstaller ../build/pyinstaller.spec
+
+# 6. 完成！
+cd ..
 ```
 
-#### 5. 查看输出
-```bash
-# 安装包位置
-dir dist-electron\*KOOK*.exe
-```
+### 构建产物位置
 
----
-
-## 方案二：在Linux上使用Wine
-
-### 安装Wine
-```bash
-# Ubuntu/Debian
-sudo dpkg --add-architecture i386
-sudo apt update
-sudo apt install wine wine32 wine64
-
-# 验证
-wine --version
-```
-
-### 构建
-```bash
-cd /workspace/frontend
-npx electron-builder --config electron-builder-simple.yml --win --x64
-```
-
----
-
-## 方案三：使用GitHub Actions自动构建
-
-### 创建工作流
-```yaml
-# .github/workflows/build-windows.yml
-name: Build Windows
-
-on:
-  push:
-    tags:
-      - 'v*'
-  workflow_dispatch:
-
-jobs:
-  build-windows:
-    runs-on: windows-latest
-    
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-      
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm install --legacy-peer-deps
-          npm install -D sass-embedded --legacy-peer-deps
-      
-      - name: Build frontend
-        run: |
-          cd frontend
-          npm run build
-      
-      - name: Build installer
-        run: |
-          cd frontend
-          npx electron-builder --win --x64
-        env:
-          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: windows-installer
-          path: frontend/dist-electron/*.exe
-```
-
-### 触发构建
-```bash
-# 创建tag触发
-git tag -a v17.0.0 -m "Release v17.0.0"
-git push origin v17.0.0
-
-# 或在GitHub网页上手动触发
-```
-
----
-
-## 输出文件说明
-
-### 成功构建后会生成
 ```
 frontend/dist-electron/
-├── KOOK消息转发系统-v17.0.0-Frontend-win-x64.exe  # NSIS安装程序
-├── win-unpacked/                                    # 未打包的应用
-│   ├── KOOK消息转发系统.exe                        # 主程序
-│   ├── resources/                                   # 资源文件
-│   └── ...
-└── builder-effective-config.yaml                    # 有效配置
-```
+├── KOOK消息转发系统 Setup v16.0.0.exe  [安装包, ~120 MB]
+└── win-unpacked/  [便携版目录]
+    └── KOOK消息转发系统.exe
 
-### 文件大小预期
-- **安装程序**: 约100-120MB
-- **解压后**: 约150-180MB
+backend/dist/
+└── kook-forwarder-backend/  [后端服务, ~80 MB]
+    └── kook-forwarder-backend.exe
+
+dist/  [最终发布包]
+└── KOOK-Forwarder-v18.0.0-Windows/
+    └── [完整打包]
+```
 
 ---
 
-## 当前构建产物
+## 📦 安装包说明
 
-### 可用文件（已在Linux上生成）
+### 1. NSIS安装包 (.exe)
 ```
-/workspace/frontend/dist/              # 前端构建产物（已完成）
-├── index.html
-├── assets/
-│   ├── index-*.js     (2.4MB gzip后800KB)
-│   ├── index-*.css    (382KB gzip后54KB)
-│   └── ...
-└── ...
-
-/workspace/build/                       # 资源文件（已准备）
-├── icon-512.png                       # 应用图标
-├── icon.png
-├── LICENSE
-└── ...
+文件: KOOK消息转发系统 Setup v16.0.0.exe
+大小: ~120 MB
+特点:
+  - 完整的安装向导
+  - 自动创建桌面快捷方式
+  - 自动创建开始菜单项
+  - 支持卸载
+  - 推荐给普通用户
 ```
 
-### 可以直接复制到Windows环境使用
+**使用方法**:
+1. 双击运行安装包
+2. 按照向导提示完成安装
+3. 从桌面或开始菜单启动
+
+### 2. 便携版 (win-unpacked)
+```
+目录: win-unpacked/
+大小: ~120 MB (解压后)
+特点:
+  - 免安装
+  - 可放在U盘
+  - 可多实例运行
+  - 推荐给高级用户
+```
+
+**使用方法**:
+1. 解压 win-unpacked 目录
+2. 直接运行 KOOK消息转发系统.exe
+3. 无需安装
+
+### 3. 完整发布包 (.zip)
+```
+文件: KOOK-Forwarder-v18.0.0-Windows.zip
+大小: ~200 MB
+包含:
+  - Electron前端 (安装包 + 便携版)
+  - Python后端
+  - 完整文档
+  - 安装说明
+```
+
+---
+
+## 🔧 常见问题
+
+### Q1: 构建失败 - Python未找到
+**解决**:
 ```bash
-# 打包dist目录和配置文件
-cd /workspace
-tar -czf frontend-build-ready.tar.gz \
-  frontend/dist \
-  frontend/electron \
-  frontend/package.json \
-  frontend/electron-builder*.yml \
-  build/
+# 确保Python在PATH中
+python --version
 
-# 在Windows上解压后直接打包
-tar -xzf frontend-build-ready.tar.gz
-cd frontend
-npm install electron-builder --save-dev
-npx electron-builder --win
+# 如果失败，重新安装Python并勾选"Add to PATH"
 ```
 
----
-
-## 常见问题
-
-### Q1: 提示缺少图标？
-A: 确保 `/build/icon-512.png` 存在且尺寸正确
-
-### Q2: 打包失败提示权限错误？
-A: 以管理员身份运行PowerShell/CMD
-
-### Q3: 安装包太大？
-A: 参考 `BUILD_IMPROVEMENTS.md` 中的优化建议
-
-### Q4: 需要代码签名吗？
-A: 不必须，但签名后用户体验更好（无"未知发布者"警告）
-
----
-
-## 代码签名（可选）
-
-### 获取证书
-1. 从CA购买代码签名证书（如DigiCert、Sectigo）
-2. 导出为PFX格式
-3. 保存到安全位置
-
-### 配置签名
-```yaml
-# electron-builder.yml
-win:
-  certificateFile: path/to/certificate.pfx
-  certificatePassword: ${CERT_PASSWORD}
-  signDlls: true
-```
-
-### 签名命令
+### Q2: 构建失败 - Node.js未找到
+**解决**:
 ```bash
-# 设置密码环境变量
-set CERT_PASSWORD=your_password
+# 确保Node.js在PATH中
+node --version
+npm --version
 
-# 构建并签名
-npx electron-builder --win --x64
+# 如果失败，重新安装Node.js
+```
+
+### Q3: npm install 失败
+**解决**:
+```bash
+# 清理缓存
+npm cache clean --force
+
+# 删除node_modules
+rm -rf node_modules package-lock.json
+
+# 重新安装
+npm install --legacy-peer-deps
+```
+
+### Q4: PyInstaller打包失败
+**解决**:
+```bash
+# 确保安装了最新版PyInstaller
+pip install --upgrade pyinstaller
+
+# 如果还失败，安装pywin32
+pip install pywin32
+```
+
+### Q5: electron-builder失败
+**解决**:
+```bash
+# 安装Windows Build Tools
+npm install --global windows-build-tools
+
+# 或安装Visual Studio Build Tools
+# 下载: https://visualstudio.microsoft.com/downloads/
+```
+
+### Q6: 缺少DLL文件
+**解决**:
+```bash
+# 安装Visual C++ Redistributable
+# 下载: https://aka.ms/vs/17/release/vc_redist.x64.exe
 ```
 
 ---
 
-## 测试清单
+## ✅ 验证构建
 
-### 安装测试
-- [ ] 双击exe可以安装
-- [ ] 安装到自定义目录
-- [ ] 创建桌面快捷方式
-- [ ] 创建开始菜单项
+### 检查安装包
+```bash
+# 1. 验证文件存在
+dir frontend\dist-electron\*.exe
+dir backend\dist\kook-forwarder-backend\*.exe
 
-### 功能测试
-- [ ] 应用可以正常启动
-- [ ] 所有页面可以访问
-- [ ] 前端功能正常
-- [ ] 没有控制台错误
+# 2. 验证文件大小
+# 前端安装包: ~120 MB
+# 后端可执行文件: ~80 MB
 
-### 卸载测试
-- [ ] 可以正常卸载
-- [ ] 询问是否保留数据
-- [ ] 清理桌面快捷方式
+# 3. 测试运行
+cd frontend\dist-electron\win-unpacked
+"KOOK消息转发系统.exe"
+```
 
----
+### 检查后端
+```bash
+# 测试后端
+cd backend\dist\kook-forwarder-backend
+kook-forwarder-backend.exe
 
-## 下一步
-
-1. **立即**: 将代码同步到Windows环境
-2. **10分钟**: 在Windows上完成构建
-3. **测试**: 安装并验证功能
-4. **发布**: 上传到GitHub Releases
+# 应该看到FastAPI启动信息
+```
 
 ---
 
-**当前状态总结**:
-- ✅ 前端代码已完整构建
-- ✅ 所有资源文件已准备
-- ⏸️ 需要在Windows环境或使用GitHub Actions完成最后打包
-- 📦 预计Windows安装包大小：100-120MB
+## 📊 构建时间估算
 
-**建议**: 使用GitHub Actions自动构建，最方便且无需本地环境。
+| 步骤 | 时间 |
+|------|------|
+| 安装前端依赖 | ~2分钟 |
+| 安装后端依赖 | ~1分钟 |
+| 构建前端 | ~10秒 |
+| 打包Electron | ~2分钟 |
+| 打包后端 | ~20秒 |
+| 创建ZIP | ~30秒 |
+| **总计** | **~6分钟** |
+
+---
+
+## 🚀 GitHub Actions构建监控
+
+### 实时查看构建日志
+```bash
+# 使用GitHub CLI
+gh run watch
+
+# 或访问网页
+https://github.com/gfchfjh/CSBJJWT/actions
+```
+
+### 构建状态
+```bash
+# 查看最新构建
+gh run list --workflow=build-windows.yml --limit 1
+
+# 查看构建详情
+gh run view [RUN_ID]
+
+# 下载构建产物
+gh run download [RUN_ID]
+```
+
+---
+
+## 📝 发布到GitHub Release
+
+### 自动发布（GitHub Actions）
+如果通过标签触发构建，会自动上传到对应的Release:
+```
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+```
+
+### 手动发布
+```bash
+# 使用GitHub CLI
+gh release upload v18.0.0 \
+  dist/KOOK-Forwarder-v18.0.0-Windows.zip \
+  dist/KOOK-Forwarder-v18.0.0-Windows.zip.md5 \
+  dist/KOOK-Forwarder-v18.0.0-Windows.zip.sha256
+
+# 或通过网页上传
+https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+```
+
+---
+
+## 🎯 下一步
+
+### 构建完成后
+1. ✅ 测试安装包
+2. ✅ 验证MD5/SHA256
+3. ✅ 上传到GitHub Release
+4. ✅ 更新README下载链接
+5. ✅ 发布公告
+
+### 用户下载
+```
+Windows完整版下载:
+https://github.com/gfchfjh/CSBJJWT/releases/download/v18.0.0/KOOK-Forwarder-v18.0.0-Windows.zip
+
+大小: ~200 MB
+MD5校验: 见.md5文件
+SHA256校验: 见.sha256文件
+```
+
+---
+
+**© 2025 KOOK Forwarder Team**  
+**版本**: v18.0.0  
+**更新日期**: 2025-10-31
