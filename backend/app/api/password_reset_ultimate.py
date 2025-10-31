@@ -58,8 +58,19 @@ async def send_reset_code(request: SendResetCodeRequest) -> Dict:
     try:
         email = request.email
         
-        # 检查该邮箱是否已注册
-        # TODO: 实际应该检查system_config表中的admin_email
+        # 检查该邮箱是否已注册为管理员邮箱
+        admin_email = db.get_config('admin_email')
+        if not admin_email:
+            raise HTTPException(
+                status_code=400,
+                detail="系统未配置管理员邮箱，请先在设置中配置"
+            )
+        
+        if email != admin_email:
+            raise HTTPException(
+                status_code=400,
+                detail="该邮箱未注册"
+            )
         
         # 生成6位验证码
         code = ''.join(random.choices(string.digits, k=6))

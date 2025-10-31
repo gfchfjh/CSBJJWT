@@ -269,8 +269,18 @@ class WorkerP0Enhancements:
                     content
                 )
             elif platform == 'feishu':
-                # TODO: 实现飞书发送
-                return False
+                # 飞书发送实现
+                app_id = config.get('app_id')
+                app_secret = config.get('app_secret')
+                chat_id = config.get('chat_id')
+                
+                from ..forwarders.feishu import feishu_forwarder
+                return await feishu_forwarder.send_message(
+                    app_id=app_id,
+                    app_secret=app_secret,
+                    chat_id=chat_id,
+                    content=f"{sender_name}: {content}"
+                )
             else:
                 return False
         except Exception as e:
@@ -303,8 +313,19 @@ class WorkerP0Enhancements:
                     caption=f"📎 文件来自 {sender_name}"
                 )
             elif platform == 'feishu':
-                # TODO: 实现飞书文件发送
-                return False
+                # 飞书文件发送实现
+                app_id = config.get('app_id')
+                app_secret = config.get('app_secret')
+                chat_id = config.get('chat_id')
+                
+                from ..forwarders.feishu import feishu_forwarder
+                return await feishu_forwarder.send_file(
+                    app_id=app_id,
+                    app_secret=app_secret,
+                    chat_id=chat_id,
+                    file_path=str(file_path),
+                    file_name=file_data.get('filename', 'attachment')
+                )
             else:
                 return False
         except Exception as e:

@@ -16,6 +16,8 @@ from ..processors.file_security import file_security_checker  # ✅ P0新增：�
 from ..forwarders.discord import discord_forwarder
 from ..forwarders.telegram import telegram_forwarder
 from ..forwarders.feishu import feishu_forwarder
+from ..forwarders.wechatwork import wechatwork_forwarder
+from ..forwarders.dingtalk import dingtalk_forwarder
 from .redis_client import redis_queue
 
 
@@ -789,6 +791,107 @@ class MessageWorker:
                         except Exception as e:
                             logger.error(f"发送附件异常: {str(e)}")
                 
+            elif platform == 'wechatwork':
+                # 企业微信转发
+                webhook_url = bot_config['config'].get('webhook_url')
+                
+                # 格式化内容
+                formatted_content = f"{sender_name}: {content}"
+                
+                # 提取@提及的手机号（如果有）
+                mentioned_mobiles = []
+                if message.get('mention_all'):
+                    # @所有人在企业微信中需要手机号列表或使用@all标记
+                    pass  # 企业微信不支持@all在text中，需使用mentioned_mobile_list
+                
+                # 发送消息
+                if processed_images:
+                    # 企业微信发送图片（使用图文消息）
+                    for img_info in processed_images:
+                        image_url = img_info.get('original') or img_info.get('local')
+                        
+                        success = await wechatwork_forwarder.send_image(
+                            webhook_url=webhook_url,
+                            image_url=image_url,
+                            caption=formatted_content
+                        )
+                        
+                        if not success and img_info.get('local'):
+                            # 尝试本地图床URL
+                            await wechatwork_forwarder.send_image(
+                                webhook_url=webhook_url,
+                                image_url=img_info['local'],
+                                caption=formatted_content
+                            )
+                else:
+                    # 纯文本消息
+                    success = await wechatwork_forwarder.send_message(
+                        webhook_url=webhook_url,
+                        content=formatted_content,
+                        mentioned_mobile_list=mentioned_mobiles if mentioned_mobiles else None
+                    )
+                
+                # 附件处理
+                if processed_attachments and success:
+                    for att in processed_attachments:
+                        # 企业微信发送文件链接
+                        await wechatwork_forwarder.send_file(
+                            webhook_url=webhook_url,
+                            file_url=f"http://localhost:{settings.image_server_port}/files/{att['filename']}",
+                            filename=att['filename']
+                        )
+            
+            elif platform == 'dingtalk':
+                # 钉钉转发
+                webhook_url = bot_config['config'].get('webhook_url')
+                secret = bot_config['config'].get('secret')
+                
+                # 格式化内容
+                formatted_content = f"{sender_name}: {content}"
+                
+                # 提取@提及
+                at_mobiles = []
+                at_all = message.get('mention_all', False)
+                
+                # 发送消息
+                if processed_images:
+                    # 钉钉不直接支持图片，使用Markdown格式嵌入图片链接
+                    for img_info in processed_images:
+                        image_url = img_info.get('original') or img_info.get('local')
+                        
+                        markdown_text = f"**{sender_name}**\n\n{content}\n\n![图片]({image_url})"
+                        
+                        success = await dingtalk_forwarder.send_markdown(
+                            webhook_url=webhook_url,
+                            title="KOOK消息",
+                            text=markdown_text,
+                            secret=secret,
+                            at_mobiles=at_mobiles,
+                            at_all=at_all
+                        )
+                else:
+                    # 纯文本消息
+                    success = await dingtalk_forwarder.send_message(
+                        webhook_url=webhook_url,
+                        content=formatted_content,
+                        secret=secret,
+                        at_mobiles=at_mobiles,
+                        at_all=at_all
+                    )
+                
+                # 附件处理
+                if processed_attachments and success:
+                    for att in processed_attachments:
+                        # 钉钉发送文件链接
+                        file_url = f"http://localhost:{settings.image_server_port}/files/{att['filename']}"
+                        await dingtalk_forwarder.send_link(
+                            webhook_url=webhook_url,
+                            title=f"📎 {att['filename']}",
+                            text=f"{sender_name} 发送了文件",
+                            message_url=file_url,
+                            secret=secret
+                        )
+            
             else:
                 logger.error(f"不支持的平台: {platform}")
                 return

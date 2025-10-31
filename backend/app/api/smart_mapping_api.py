@@ -201,52 +201,108 @@ async def _get_kook_channels(account_id: int) -> List[Dict]:
     """
     获取KOOK频道列表
     
-    TODO: 实际应该从scraper获取
+    从数据库的channel_mappings表获取已配置的KOOK频道，
+    如果没有数据，则尝试从server_discovery API获取
     """
-    # 模拟数据（实际应该从数据库或scraper获取）
-    return [
-        {
-            'id': 'kook_ch_1',
-            'name': '公告频道',
-            'server_name': '游戏公告服务器',
-            'server_id': 'server_1'
-        },
-        {
-            'id': 'kook_ch_2',
-            'name': '活动频道',
-            'server_name': '游戏公告服务器',
-            'server_id': 'server_1'
-        },
-        {
-            'id': 'kook_ch_3',
-            'name': '更新日志',
-            'server_name': '游戏公告服务器',
-            'server_id': 'server_1'
-        },
-        {
-            'id': 'kook_ch_4',
-            'name': '技术讨论',
-            'server_name': '技术交流服务器',
-            'server_id': 'server_2'
-        }
-    ]
+    try:
+        # 首先尝试从数据库获取已映射的频道
+        mappings = db.get_channel_mappings()
+        
+        if mappings:
+            # 去重并格式化
+            channels = []
+            seen = set()
+            
+            for mapping in mappings:
+                channel_id = mapping['kook_channel_id']
+                if channel_id not in seen:
+                    seen.add(channel_id)
+                    channels.append({
+                        'id': channel_id,
+                        'name': mapping['kook_channel_name'],
+                        'server_name': mapping.get('kook_server_name', '未知服务器'),
+                        'server_id': mapping['kook_server_id']
+                    })
+            
+            if channels:
+                logger.info(f"从数据库获取到 {len(channels)} 个KOOK频道")
+                return channels
+        
+        # 如果数据库没有数据，尝试从server_discovery获取
+        from ..kook.server_fetcher import get_cached_servers
+        cached = get_cached_servers(account_id)
+        
+        if cached and 'servers' in cached:
+            channels = []
+            for server in cached['servers']:
+                server_id = server.get('id')
+                server_name = server.get('name')
+                for channel in server.get('channels', []):
+                    channels.append({
+                        'id': channel['id'],
+                        'name': channel['name'],
+                        'server_name': server_name,
+                        'server_id': server_id
+                    })
+            
+            if channels:
+                logger.info(f"从缓存获取到 {len(channels)} 个KOOK频道")
+                return channels
+        
+        # 如果都没有，返回空列表（而不是mock数据）
+        logger.warning("未找到KOOK频道数据，请先配置账号并获取服务器列表")
+        return []
+        
+    except Exception as e:
+        logger.error(f"获取KOOK频道失败: {str(e)}")
+        return []
 
 
 async def _get_target_channels(bot_ids: List[int]) -> List[Dict]:
     """
     获取目标平台频道列表
     
-    TODO: 实际应该从配置的Bot获取
+    从已映射的配置中获取目标频道
     """
-    # 模拟数据（实际应该从数据库获取Bot配置）
-    return [
-        {
-            'id': 'discord_ch_1',
-            'name': 'announcements',
-            'bot_id': bot_ids[0] if bot_ids else 1,
-            'bot_name': 'Discord Bot',
-            'platform': 'discord'
-        },
+    try:
+        channels = []
+        
+        # 从数据库获取已配置的Bot
+        for bot_id in bot_ids:
+            bot_configs = db.get_bot_configs()
+            bot = next((b for b in bot_configs if b['id'] == bot_id), None)
+            
+            if not bot:
+                continue
+            
+            platform = bot['platform']
+            config = bot.get('config', {})
+            
+            # 根据平台类型，从映射中获取目标频道
+            # 注意：实际的频道ID/名称来自用户配置的映射
+            mappings = db.get_channel_mappings()
+            
+            for mapping in mappings:
+                if mapping['target_bot_id'] == bot_id:
+                    channels.append({
+                        'id': mapping['target_channel_id'],
+                        'name': mapping.get('target_channel_name', mapping['target_channel_id']),
+                        'bot_id': bot_id,
+                        'bot_name': bot['name'],
+                        'platform': platform
+                    })
+        
+        if channels:
+            logger.info(f"从数据库获取到 {len(channels)} 个目标频道")
+            return channels
+        
+        # 如果没有映射数据，返回空列表
+        logger.warning("未找到目标频道数据，请先配置Bot和频道映射")
+        return []
+        
+    except Exception as e:
+        logger.error(f"获取目标频道失败: {str(e)}")
+        return []
         {
             'id': 'discord_ch_2',
             'name': 'events',

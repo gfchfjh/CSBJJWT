@@ -604,9 +604,8 @@ class KookScraper:
     
     def decrypt_password(self, encrypted: str) -> str:
         """解密密码"""
-        # TODO: 实现密码解密
-        from ..utils.crypto import decrypt
-        return decrypt(encrypted)
+        from ..utils.crypto import crypto_manager
+        return crypto_manager.decrypt(encrypted)
     
     def register_message_handler(self, handler: Callable):
         """注册消息处理器"""
