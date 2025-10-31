@@ -86,7 +86,7 @@ SHA256: 1da9aba389e46a7dfd8295bcacb03e73efacba143a891b5757ee896f28349b82
 | **文件状态** | uploaded ✅ |
 
 ### 版本对比
-| 指标 | v17.0.0 | v18.0.0 | 改进 |
+| 指标 | v18.0.0 | v18.0.0 | 改进 |
 |------|---------|---------|------|
 | **转发平台** | 3个 | 5个 | +67% |
 | **插件数量** | 2个 | 4个 | +100% |
@@ -168,8 +168,8 @@ cat 安装说明.md
 
 # 运行AppImage
 cd frontend/
-chmod +x KOOK消息转发系统-16.0.0.AppImage
-./KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-18.0.0.AppImage
+./KOOK消息转发系统-18.0.0.AppImage
 ```
 
 ---

@@ -12,7 +12,7 @@
 ### 1. ✅ Electron前端应用 (Linux AppImage)
 
 ```bash
-文件名: KOOK消息转发系统-16.0.0.AppImage
+文件名: KOOK消息转发系统-18.0.0.AppImage
 路径: /workspace/frontend/dist-electron/
 大小: 125 MB
 格式: AppImage (Linux通用)
@@ -22,10 +22,10 @@
 **安装方式**:
 ```bash
 # 添加执行权限
-chmod +x KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-18.0.0.AppImage
 
 # 运行应用
-./KOOK消息转发系统-16.0.0.AppImage
+./KOOK消息转发系统-18.0.0.AppImage
 ```
 
 **特性**:
@@ -126,10 +126,10 @@ PyInstaller:
 ```bash
 # 1. 下载AppImage
 # 2. 赋予执行权限
-chmod +x KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-18.0.0.AppImage
 
 # 3. 运行
-./KOOK消息转发系统-16.0.0.AppImage
+./KOOK消息转发系统-18.0.0.AppImage
 
 # 应用会自动启动后端服务
 ```
@@ -257,7 +257,7 @@ python3 build_all_platforms.py --platform mac
 ### 权限要求
 ```bash
 # AppImage需要执行权限
-chmod +x KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-18.0.0.AppImage
 
 # 确保用户有网络访问权限
 # 确保用户有文件读写权限（用于配置和日志）

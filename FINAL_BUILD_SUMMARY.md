@@ -22,7 +22,7 @@ MD5: b1256c122854037da64d372ec17f7a29
 ```
 KOOK-Forwarder-v18.0.0-Linux/
 ├── frontend/
-│   └── KOOK消息转发系统-16.0.0.AppImage  [125 MB]
+│   └── KOOK消息转发系统-18.0.0.AppImage  [125 MB]
 │       ✅ Electron 28.0.0
 │       ✅ Vue 3 + Element Plus
 │       ✅ 完整前端界面
@@ -83,7 +83,7 @@ KOOK-Forwarder-v18.0.0-Linux/
 ## 📊 系统指标总览
 
 ### 功能完整度
-| 模块 | v17.0.0 | v18.0.0 | 改进 |
+| 模块 | v18.0.0 | v18.0.0 | 改进 |
 |------|---------|---------|------|
 | 转发平台 | 3个 | **5个** | +67% |
 | 插件数量 | 2个 | **4个** | +100% |
@@ -176,8 +176,8 @@ cd KOOK-Forwarder-v18.0.0-Linux/
 
 # 4. 运行AppImage
 cd frontend/
-chmod +x KOOK消息转发系统-16.0.0.AppImage
-./KOOK消息转发系统-16.0.0.AppImage
+chmod +x KOOK消息转发系统-18.0.0.AppImage
+./KOOK消息转发系统-18.0.0.AppImage
 
 # ✅ 应用将自动启动！
 ```

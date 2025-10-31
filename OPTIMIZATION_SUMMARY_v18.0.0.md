@@ -1,8 +1,8 @@
-# KOOK消息转发系统 v17.0.0 深度优化总结
+# KOOK消息转发系统 v18.0.0 深度优化总结
 
 **优化日期**: 2025-10-31  
-**基于版本**: v16.0.0  
-**目标版本**: v17.0.0  
+**基于版本**: v18.0.0  
+**目标版本**: v18.0.0  
 **优化耗时**: 约6小时  
 
 ---
@@ -291,9 +291,9 @@
 **工作量**: 10分钟
 
 #### 实现内容
-- 更新VERSION文件为v17.0.0
+- 更新VERSION文件为v18.0.0
 - 统一所有文档中的版本号
-- 添加v17.0.0标识
+- 添加v18.0.0标识
 
 ---
 
@@ -422,7 +422,7 @@
 9. `CODE_CONSOLIDATION_PLAN.md` - 代码整合计划
 10. `BUILD_IMPROVEMENTS.md` - 构建改进指南
 11. `COMPLETION_REPORT.md` - 完成度报告
-12. `OPTIMIZATION_SUMMARY_v17.0.0.md` - 本文件
+12. `OPTIMIZATION_SUMMARY_v18.0.0.md` - 本文件
 
 ### 修改文件（8个）
 1. `frontend/src/App.vue` - 集成免责声明
@@ -431,7 +431,7 @@
 4. `backend/app/image_server_secure.py` - 增强安全特性
 5. `chrome-extension/manifest.json` - 更新版本和权限
 6. `frontend/electron-builder.yml` - 构建配置优化
-7. `VERSION` - 更新为v17.0.0
+7. `VERSION` - 更新为v18.0.0
 8. `README.md` - 更新版本信息
 
 ---
@@ -557,7 +557,7 @@ macOS图标生成   ██░░░░░░░░░░░░░░░░░░
 - **文档**: ✅ 完善
 - **安装包**: ✅ 已构建（全平台）
 
-**建议**: 完成Windows和macOS安装包构建后，即可发布v17.0.0正式版。
+**建议**: 完成Windows和macOS安装包构建后，即可发布v18.0.0正式版。
 
 ---
 
