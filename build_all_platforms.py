@@ -70,7 +70,13 @@ class PlatformBuilder:
         
         for cmd, error_msg in dependencies.items():
             try:
-                subprocess.run([cmd, '--version'], capture_output=True, check=True)
+                # Windows需要使用shell=True来执行.cmd文件
+                subprocess.run(
+                    f"{cmd} --version",
+                    capture_output=True,
+                    check=True,
+                    shell=True
+                )
                 print(f"  ✅ {cmd} 已安装")
             except (subprocess.CalledProcessError, FileNotFoundError):
                 print(f"  ❌ {error_msg}")
