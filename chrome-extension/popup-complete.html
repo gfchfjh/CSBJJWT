@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KOOK Cookie导出助手</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 400px;
+      min-height: 500px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      margin: 15px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .header .version {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .status-indicator.online {
+      background: #52c41a;
+      box-shadow: 0 0 10px rgba(82, 196, 26, 0.5);
+    }
+
+    .status-indicator.offline {
+      background: #ff4d4f;
+    }
+
+    .cookie-info {
+      background: #f0f7ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .cookie-info h3 {
+      font-size: 14px;
+      color: #667eea;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .cookie-info h3::before {
+      content: "🍪";
+      margin-right: 8px;
+    }
+
+    .cookie-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e3f0ff;
+      font-size: 13px;
+    }
+
+    .cookie-item:last-child {
+      border-bottom: none;
+    }
+
+    .cookie-key {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .cookie-value {
+      color: #999;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background: #f8f9ff;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-icon {
+      font-size: 16px;
+    }
+
+    .message {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+      animation: slideIn 0.3s;
+    }
+
+    .message.success {
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #52c41a;
+    }
+
+    .message.error {
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      color: #ff4d4f;
+    }
+
+    .message.info {
+      background: #e6f7ff;
+      border: 1px solid #91d5ff;
+      color: #1890ff;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .help-links {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .help-link {
+      font-size: 12px;
+      color: #667eea;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .help-link:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .history {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+
+    .history h4 {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .history-item {
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .history-time {
+      color: #999;
+    }
+
+    .history-badge {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .history-badge.success {
+      background: #f6ffed;
+      color: #52c41a;
+    }
+
+    .history-badge.failed {
+      background: #fff2f0;
+      color: #ff4d4f;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🍪 KOOK Cookie导出助手</h1>
+      <div class="version">v3.0.0 完整版</div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message" class="message"></div>
+
+    <!-- 状态显示 -->
+    <div class="status">
+      <div>
+        <span class="status-indicator" id="statusIndicator"></span>
+        <span id="statusText">检测中...</span>
+      </div>
+      <div id="cookieCount">0 个Cookie</div>
+    </div>
+
+    <!-- Cookie信息 -->
+    <div class="cookie-info" id="cookieInfo" style="display: none;">
+      <h3>检测到的Cookie</h3>
+      <div id="cookieList"></div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="actions">
+      <button class="btn btn-primary" id="autoExportBtn">
+        <span class="btn-icon">🚀</span>
+        <span>一键导出并自动导入</span>
+      </button>
+      
+      <button class="btn btn-secondary" id="copyBtn">
+        <span class="btn-icon">📋</span>
+        <span>复制到剪贴板</span>
+      </button>
+      
+      <button class="btn btn-secondary" id="downloadBtn">
+        <span class="btn-icon">💾</span>
+        <span>下载为JSON文件</span>
+      </button>
+    </div>
+
+    <!-- 导出历史 -->
+    <div class="history" id="history" style="display: none;">
+      <h4>📜 最近导出记录</h4>
+      <div id="historyList"></div>
+    </div>
+
+    <!-- 帮助链接 -->
+    <div class="help-links">
+      <a href="#" class="help-link" id="tutorialLink">
+        <span>📖</span>
+        <span>使用教程</span>
+      </a>
+      <a href="#" class="help-link" id="refreshBtn">
+        <span>🔄</span>
+        <span>刷新状态</span>
+      </a>
+      <a href="#" class="help-link" id="settingsLink">
+        <span>⚙️</span>
+        <span>设置</span>
+      </a>
+    </div>
+  </div>
+
+  <script src="popup-complete.js"></script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 """
 主密码管理器
 提供密码哈希、验证、Token生成等功能
+v17.0.0深度优化：集成增强密码验证器
 """
 import hashlib
 import secrets
@@ -8,6 +9,7 @@ import time
 from typing import Optional, Tuple
 from ..database import db
 from ..utils.logger import logger
+from ..utils.password_validator_enhanced import password_validator_enhanced
 
 
 class PasswordManager:
@@ -120,7 +122,10 @@ class PasswordManager:
             
             # 验证新密码强度
             if not self._validate_password_strength(new_password):
-                return False, "新密码强度不足（长度6-20位，建议包含字母和数字）"
+                # 获取详细的验证结果
+                result = password_validator_enhanced.validate(new_password)
+                error_msg = "密码强度不足: " + ", ".join(result.issues)
+                return False, error_msg
             
             # 检查新旧密码是否相同
             if old_password == new_password:
@@ -210,7 +215,7 @@ class PasswordManager:
     
     def _validate_password_strength(self, password: str) -> bool:
         """
-        验证密码强度
+        验证密码强度（v17.0.0深度优化：使用增强验证器）
         
         Args:
             password: 密码
@@ -218,16 +223,15 @@ class PasswordManager:
         Returns:
             是否满足强度要求
         """
-        # 长度检查（6-20位）
-        if len(password) < 6 or len(password) > 20:
-            logger.warning("密码长度必须在6-20位之间")
+        # 使用增强密码验证器
+        result = password_validator_enhanced.validate(password)
+        
+        if not result.is_valid:
+            # 记录具体问题
+            logger.warning(f"密码强度不足: {', '.join(result.issues)}")
             return False
         
-        # 可以添加更多规则，如：
-        # - 必须包含字母和数字
-        # - 必须包含特殊字符
-        # 这里采用较宽松的规则，只检查长度
-        
+        logger.info(f"密码强度验证通过: 等级={result.level}, 分数={result.score}")
         return True
     
     def reset_password_with_verification(self, verification_code: str, new_password: str) -> Tuple[bool, str]:
@@ -259,7 +263,10 @@ class PasswordManager:
             
             # 验证新密码强度
             if not self._validate_password_strength(new_password):
-                return False, "密码强度不足（长度6-20位）"
+                # 获取详细的验证结果
+                result = password_validator_enhanced.validate(new_password)
+                error_msg = "密码强度不足: " + ", ".join(result.issues)
+                return False, error_msg
             
             # 设置新密码
             if self.set_password(new_password):

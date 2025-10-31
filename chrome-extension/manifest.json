@@ -1,32 +1,35 @@
 {
   "manifest_version": 3,
   "name": "KOOK Cookie自动导入助手",
-  "version": "3.0.0",
-  "description": "一键导出KOOK Cookie到本地转发系统，零手动操作",
+  "version": "3.1.0",
+  "description": "一键导出KOOK Cookie到本地转发系统，支持自动导入、剪贴板、文件下载",
   "permissions": [
     "cookies",
     "storage",
-    "notifications"
+    "notifications",
+    "downloads"
   ],
   "host_permissions": [
     "*://*.kookapp.cn/*",
-    "*://www.kookapp.cn/*"
+    "*://www.kookapp.cn/*",
+    "http://localhost:9527/*"
   ],
   "background": {
     "service_worker": "background-optimized.js"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "popup-complete.html",
     "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "KOOK Cookie导出助手"
   },
   "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "commands": {
     "export-cookie": {
@@ -36,5 +39,8 @@
       },
       "description": "快速导出Cookie"
     }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

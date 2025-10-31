@@ -1,12 +1,14 @@
 """
 图床安全服务器 - 完整安全机制实现
 ✅ P0-4优化: Token验证 + IP白名单 + 路径遍历防护
+✅ v17.0.0深度优化: Token刷新 + 访问监控 + 速率限制
 """
 import secrets
 import time
 import asyncio
 from pathlib import Path
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, List
+from collections import defaultdict, deque
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
@@ -15,10 +17,10 @@ from .utils.logger import logger
 
 
 class SecureImageServer:
-    """安全的图床服务器"""
+    """安全的图床服务器（v17.0.0深度优化）"""
     
     def __init__(self):
-        # Token存储：{token: {'filename': str, 'expire_at': float}}
+        # Token存储：{token: {'filename': str, 'expire_at': float, 'access_count': int, 'last_access': float}}
         self.tokens: Dict[str, Dict] = {}
         
         # IP白名单（只允许本地访问）
@@ -32,12 +34,23 @@ class SecureImageServer:
         # 危险路径模式
         self.dangerous_patterns = ['..', '~', '/etc/', '/root/', 'C:\\', 'D:\\']
         
+        # ✅ v17.0.0新增: 访问监控
+        self.access_log: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))  # IP -> 最近100次访问
+        self.suspicious_ips: Set[str] = set()  # 可疑IP列表
+        
+        # ✅ v17.0.0新增: 速率限制（每IP每分钟最多60次请求）
+        self.rate_limit_requests = 60
+        self.rate_limit_window = 60  # 秒
+        
+        # ✅ v17.0.0新增: Token使用统计
+        self.token_stats: Dict[str, Dict] = {}  # token -> {'total_access': int, 'ips': Set[str]}
+        
         # 清理任务
         self.cleanup_task = None
         
     def generate_token(self, filename: str, ttl: int = 7200) -> str:
         """
-        生成安全Token
+        生成安全Token（v17.0.0深度优化：增加统计）
         
         Args:
             filename: 文件名（仅文件名，不含路径）
@@ -62,15 +75,65 @@ class SecureImageServer:
         token = secrets.token_urlsafe(32)
         
         # 4. 存储Token信息
+        current_time = time.time()
         self.tokens[token] = {
             'filename': filename,
-            'expire_at': time.time() + ttl,
-            'created_at': time.time()
+            'expire_at': current_time + ttl,
+            'created_at': current_time,
+            'access_count': 0,  # ✅ 访问计数
+            'last_access': None,  # ✅ 最后访问时间
+            'can_refresh': True  # ✅ 是否允许刷新
+        }
+        
+        # ✅ 初始化统计
+        self.token_stats[token] = {
+            'total_access': 0,
+            'ips': set(),
+            'first_access': None,
+            'suspicious_access': []
         }
         
         logger.debug(f"生成Token: {token[:10]}... -> {filename} (有效期{ttl}秒)")
         
         return token
+    
+    def refresh_token(self, token: str, extend_seconds: int = 3600) -> bool:
+        """
+        刷新Token有效期（v17.0.0新增）
+        
+        Args:
+            token: 要刷新的Token
+            extend_seconds: 延长时间（秒），默认1小时
+            
+        Returns:
+            是否刷新成功
+        """
+        if token not in self.tokens:
+            logger.warning(f"尝试刷新不存在的Token: {token[:10]}...")
+            return False
+        
+        token_info = self.tokens[token]
+        
+        # 检查是否允许刷新
+        if not token_info.get('can_refresh', True):
+            logger.warning(f"Token不允许刷新: {token[:10]}...")
+            return False
+        
+        # 检查是否已过期超过1小时（过期太久不允许刷新）
+        if time.time() > token_info['expire_at'] + 3600:
+            logger.warning(f"Token已过期太久，不允许刷新: {token[:10]}...")
+            return False
+        
+        # 延长有效期
+        old_expire = token_info['expire_at']
+        token_info['expire_at'] = time.time() + extend_seconds
+        
+        logger.info(
+            f"Token已刷新: {token[:10]}... "
+            f"(有效期延长 {extend_seconds}秒)"
+        )
+        
+        return True
     
     def _is_dangerous_path(self, path: str) -> bool:
         """检查路径是否包含危险模式"""
@@ -88,7 +151,7 @@ class SecureImageServer:
     
     async def serve_image(self, request: Request, token: str) -> FileResponse:
         """
-        提供图片服务（带完整安全检查）
+        提供图片服务（v17.0.0深度优化：增强安全检查）
         
         Args:
             request: FastAPI请求对象
@@ -100,11 +163,30 @@ class SecureImageServer:
         Raises:
             HTTPException: 各种安全检查失败
         """
-        # 1. IP白名单检查
+        # 0. 记录访问
         client_ip = request.client.host
+        current_time = time.time()
         
+        # ✅ v17.0.0新增: 速率限制检查
+        if not self._check_rate_limit(client_ip, current_time):
+            logger.warning(f"⚠️ 速率限制触发: {client_ip} (超过 {self.rate_limit_requests}/分钟)")
+            raise HTTPException(
+                status_code=429,
+                detail="Too Many Requests: 请求过于频繁"
+            )
+        
+        # ✅ v17.0.0新增: 可疑IP检查
+        if client_ip in self.suspicious_ips:
+            logger.warning(f"⚠️ 拒绝可疑IP访问: {client_ip}")
+            raise HTTPException(
+                status_code=403,
+                detail="Forbidden: IP已被标记为可疑"
+            )
+        
+        # 1. IP白名单检查
         if client_ip not in self.whitelist_ips:
             logger.warning(f"⚠️ 拒绝非白名单IP访问: {client_ip}")
+            self._record_suspicious_activity(client_ip, "非白名单访问")
             raise HTTPException(
                 status_code=403,
                 detail="Forbidden: 仅允许本地访问"
