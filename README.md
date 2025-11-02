@@ -760,6 +760,33 @@ Vue前端: 8,000 行
 
 ---
 
+## 🗑️ 完全卸载
+
+如需完全卸载 KOOK 系统：
+
+### 快速卸载（推荐）
+
+1. **下载卸载脚本**: [KOOK_完全卸载.bat](./KOOK_完全卸载.bat)
+2. **右键以管理员身份运行**
+3. **输入 YES 确认**
+4. **等待完成**（约 2-5 分钟）
+
+### 详细文档
+
+- 📄 [如何完全删除.txt](./如何完全删除.txt) - 简明指南（推荐新手）
+- 📄 [COMPLETE_UNINSTALL_GUIDE.md](./COMPLETE_UNINSTALL_GUIDE.md) - 完整卸载指南
+- 📄 [清理开发文件.bat](./清理开发文件.bat) - 仅清理开发文件（保留源码）
+- 📄 [UNINSTALL_INDEX.md](./UNINSTALL_INDEX.md) - 卸载文档索引
+
+### 释放空间
+
+- 已安装应用: ~100 MB
+- 用户数据: ~10 MB  
+- 开发文件: ~1.7 GB（如果有）
+- **总计**: 约 1.8 GB
+
+---
+
 ## 📞 技术支持
 
 - **GitHub**: [https://github.com/gfchfjh/CSBJJWT](https://github.com/gfchfjh/CSBJJWT)

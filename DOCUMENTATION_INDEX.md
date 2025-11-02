@@ -16,6 +16,16 @@
 | [docs/用户手册.md](./docs/用户手册.md) | 完整用户手册 | 普通用户 |
 | [docs/tutorials/01-quick-start.md](./docs/tutorials/01-quick-start.md) | 快速入门教程 | 新用户 |
 
+### 🗑️ 卸载清理
+
+| 文档 | 描述 | 适合人群 |
+|-----|------|---------|
+| [如何完全删除.txt](./如何完全删除.txt) | 简明卸载指南 | 所有用户 |
+| [KOOK_完全卸载.bat](./KOOK_完全卸载.bat) | 一键卸载脚本 | 所有用户 |
+| [COMPLETE_UNINSTALL_GUIDE.md](./COMPLETE_UNINSTALL_GUIDE.md) | 完整卸载指南 | 需要详细了解的用户 |
+| [清理开发文件.bat](./清理开发文件.bat) | 开发文件清理脚本 | 开发者 |
+| [UNINSTALL_INDEX.md](./UNINSTALL_INDEX.md) | 卸载文档索引 | 查找卸载文档 |
+
 ---
 
 ## 🔧 Windows 构建与修复
