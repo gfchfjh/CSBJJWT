@@ -80,6 +80,13 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "../backend/dist/KOOKForwarder",
+        "to": "backend/KOOKForwarder",
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
