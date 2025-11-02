@@ -253,9 +253,9 @@ async function startBackend() {
       } else {
         // 生产环境：运行打包后的可执行文件
         if (process.platform === 'win32') {
-          backendExecutable = path.join(appPath, 'backend', 'kook-forwarder-backend.exe');
+          backendExecutable = path.join(appPath, 'backend', 'KOOKForwarder', 'KOOKForwarder.exe');
         } else {
-          backendExecutable = path.join(appPath, 'backend', 'kook-forwarder-backend');
+          backendExecutable = path.join(appPath, 'backend', 'KOOKForwarder', 'KOOKForwarder');
         }
         
         backendCwd = path.join(appPath, 'backend');
