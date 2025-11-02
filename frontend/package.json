@@ -83,10 +83,7 @@
       },
       {
         "from": "../backend/dist/KOOKForwarder",
-        "to": "backend/KOOKForwarder",
-        "filter": [
-          "**/*"
-        ]
+        "to": "backend/KOOKForwarder"
       }
     ],
     "win": {
