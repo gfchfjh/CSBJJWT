@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-18.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.2--dev-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
@@ -14,6 +14,38 @@
 [快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0)
 
 </div>
+
+---
+
+## 🔧 v18.0.2-dev - Windows 打包修复 (2025-11-03)
+
+> **重要更新**: 修复了 40+ 处代码问题，大幅提升 Windows 打包稳定性！
+
+### ✨ 修复亮点
+
+- ✅ **40+ 代码修复** - 相对导入、类型注解、async/await 语法等
+- ✅ **25+ 依赖补充** - 修复 PyInstaller 打包缺失模块
+- ✅ **启动脚本优化** - 创建 `backend/run.py` 解决包结构问题
+- ✅ **打包配置完善** - 优化 `pyinstaller.spec` 和 `package.json`
+- ✅ **3 个新文档** - 1500+ 行完整的故障排查和修复指南
+
+### 📚 新增文档
+
+- 📄 [WINDOWS_PACKAGING_FIXES.md](./WINDOWS_PACKAGING_FIXES.md) - 完整修复记录
+- 📄 [TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md) - 故障排查指南
+- 📄 [QUICK_START_WINDOWS.md](./QUICK_START_WINDOWS.md) - 快速开始指南
+
+### 🧪 测试状态
+
+| 测试项 | 状态 | 说明 |
+|-------|------|------|
+| 后端独立运行 | ✅ 成功 | 35+ 模块正常初始化 |
+| Electron 打包 | ✅ 成功 | ~94 MB，包含完整后端 |
+| Electron 启动 | ⚠️ 修复中 | "fetch failed" 问题待解决 |
+
+### 📖 详细信息
+
+查看 [CHANGELOG.md](./CHANGELOG.md#180-2-dev---2025-11-03) 获取完整更新日志。
 
 ---
 
