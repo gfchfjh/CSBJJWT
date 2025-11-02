@@ -258,7 +258,7 @@ async function startBackend() {
           backendExecutable = path.join(appPath, 'backend', 'KOOKForwarder', 'KOOKForwarder');
         }
         
-        backendCwd = path.join(appPath, 'backend');
+        backendCwd = path.join(appPath, 'backend', 'KOOKForwarder');
 
         // 检查后端文件是否存在
         if (!fs.existsSync(backendExecutable)) {
