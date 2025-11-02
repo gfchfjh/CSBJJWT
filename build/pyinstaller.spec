@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; c['../backend/app/main.py'],oding: utf-8 -*-
 """
 PyInstaller打包配置
 ✅ P2-2: Python后端打包为可执行文件
@@ -8,7 +8,7 @@ block_cipher = None
 
 # 后端主文件
 backend_main = Analysis(
-    ['../backend/app/main.py'],
+    ['../backend/run.py'],
     pathex=['../backend'],
     binaries=[],
     datas=[
@@ -33,9 +33,19 @@ backend_main = Analysis(
     hiddenimports=[
         'fastapi',
         'uvicorn',
+        'uvicorn.lifespan',
+        'uvicorn.lifespan.on',
+        'uvicorn.protocols',
+        'uvicorn.protocols.http',
+        'uvicorn.protocols.websockets',
+        'uvicorn.loops',
+        'uvicorn.loops.auto',
         'playwright',
+        'playwright._impl',
+        'playwright.sync_api',
         'aiohttp',
         'redis',
+        'redis.asyncio',
         'pydantic',
         'pydantic_settings',
         'sqlalchemy',
@@ -45,6 +55,12 @@ backend_main = Analysis(
         'cryptography',
         'aiosmtplib',
         'psutil',
+        'loguru',
+        'aiosqlite',
+        'httpx',
+        'starlette',
+        'pydantic_core',
+        'email_validator',
     ],
     hookspath=[],
     hooksconfig={},
@@ -63,7 +79,7 @@ exe = EXE(
     backend_main.scripts,
     [],
     exclude_binaries=True,
-    name='kook-forwarder-backend',
+    name='KOOKForwarder',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -85,5 +101,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='kook-forwarder-backend',
+    name='KOOKForwarder',
 )

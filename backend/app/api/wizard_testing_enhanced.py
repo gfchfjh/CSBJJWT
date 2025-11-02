@@ -14,11 +14,11 @@ from typing import Dict, Any, List, Optional
 import asyncio
 import time
 from datetime import datetime
-from ...database import db
-from ...utils.logger import logger
-from ...forwarders.discord import discord_forwarder
-from ...forwarders.telegram import telegram_forwarder
-from ...forwarders.feishu import feishu_forwarder
+from ..database import db
+from ..utils.logger import logger
+from ..forwarders.discord import discord_forwarder
+from ..forwarders.telegram import telegram_forwarder
+from ..forwarders.feishu import feishu_forwarder
 
 router = APIRouter(prefix="/api/wizard-testing-enhanced", tags=["wizard-testing-enhanced"])
 
@@ -77,7 +77,7 @@ class WizardTester:
             # 1. Redis检查
             self.log("  检查Redis...")
             try:
-                from ...queue.redis_client import redis_queue
+                from ..queue.redis_client import redis_queue
                 await redis_queue.ping()
                 details['redis'] = {'status': 'ok', 'message': 'Redis连接正常'}
                 self.log("  ✅ Redis连接正常")
@@ -226,7 +226,7 @@ class WizardTester:
             
             # 获取服务器列表
             self.log(f"  获取服务器列表（账号ID: {account_id}）...")
-            from ...api.accounts import get_servers
+            from ..api.accounts import get_servers
             servers_response = await get_servers(account_id)
             
             if hasattr(servers_response, 'servers'):
@@ -839,7 +839,7 @@ async def auto_fix_issue(issue_name: str):
     try:
         if issue_name == 'redis':
             # 自动启动Redis
-            from ...utils.redis_manager_enhanced import redis_manager
+            from ..utils.redis_manager_enhanced import redis_manager
             success, message = await redis_manager.start()
             
             return {

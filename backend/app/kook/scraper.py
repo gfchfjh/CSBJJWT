@@ -323,7 +323,7 @@ class KookScraper:
             
             if msg_type == 'MESSAGE_CREATE':
                 # 新消息
-                message = self.parse_message(data)
+                message = await self.parse_message(data)
                 
                 if message:
                     # 记录日志
@@ -361,7 +361,7 @@ class KookScraper:
         except Exception as e:
             logger.error(f"[Scraper-{self.account_id}] 处理WebSocket消息异常: {str(e)}")
     
-    def parse_message(self, data: Dict) -> Optional[Dict]:
+    async def parse_message(self, data: Dict) -> Optional[Dict]:
         """解析消息数据"""
         try:
             d = data.get('d', {})

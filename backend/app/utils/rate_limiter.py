@@ -61,3 +61,16 @@ class RateLimiter:
         # 记录时间戳
         self.timestamps.append(now)
         return True
+
+
+
+class RateLimiterManager:
+    def __init__(self):
+        self.limiters = {}
+    
+    def get_limiter(self, name: str, calls: int, period: int):
+        if name not in self.limiters:
+            self.limiters[name] = RateLimiter(calls, period)
+        return self.limiters[name]
+
+rate_limiter_manager = RateLimiterManager()

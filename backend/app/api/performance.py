@@ -9,7 +9,7 @@ from typing import Dict, List, Any
 from fastapi import APIRouter, Query
 from ..utils.logger import logger
 from ..database import db
-from ..queue.redis_client import redis_client
+from ..queue.redis_client import redis_queue
 
 router = APIRouter(prefix="/api/performance", tags=["performance"])
 
@@ -148,7 +148,7 @@ async def get_queue_size() -> int:
     """获取当前队列大小"""
     try:
         if redis_client:
-            return await redis_client.llen("message_queue")
+            return await redis_queue.llen("message_queue")
         return 0
     except Exception as e:
         logger.error(f"获取队列大小失败: {str(e)}")

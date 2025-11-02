@@ -1,3 +1,4 @@
+from typing import Optional, Dict, Any
 """
 API认证中间件（✅ P2-5优化：全局API认证）
 """

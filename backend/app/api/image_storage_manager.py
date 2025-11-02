@@ -14,8 +14,8 @@ import shutil
 import time
 from pathlib import Path
 from datetime import datetime, timedelta
-from ...config import settings
-from ...utils.logger import logger
+from ..config import settings
+from ..utils.logger import logger
 
 router = APIRouter(prefix="/api/image-storage", tags=["image-storage"])
 

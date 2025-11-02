@@ -10,8 +10,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
-from ...database import db
-from ...utils.logger import logger
+from ..database import db
+from ..utils.logger import logger
 
 router = APIRouter(prefix="/api/message-search", tags=["message-search"])
 

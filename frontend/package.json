@@ -73,10 +73,17 @@
       "electron/**/*",
       "public/icon.*"
     ],
-    "extraResources": [
+     "extraResources": [
       {
         "from": "public/icon.png",
         "to": "icon.png",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../dist/KOOKForwarder",
+        "to": "backend/KOOKForwarder",
         "filter": [
           "**/*"
         ]

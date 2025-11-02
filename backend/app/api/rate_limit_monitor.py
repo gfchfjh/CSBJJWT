@@ -9,9 +9,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from typing import Dict, Any
 import asyncio
-from ...utils.rate_limiter import rate_limiter_manager
-from ...utils.logger import logger
-from ...queue.redis_client import redis_queue
+from ..utils.rate_limiter import rate_limiter_manager
+from ..utils.logger import logger
+from ..queue.redis_client import redis_queue
 
 router = APIRouter(prefix="/api/rate-limit", tags=["rate-limit"])
 

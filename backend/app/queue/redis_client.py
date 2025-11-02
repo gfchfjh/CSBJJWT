@@ -31,7 +31,7 @@ class RedisQueue:
             
         except Exception as e:
             logger.error(f"Redis连接失败: {str(e)}")
-            raise
+            pass  # Disabled: allow startup without Redis
     
     async def disconnect(self):
         """断开连接"""

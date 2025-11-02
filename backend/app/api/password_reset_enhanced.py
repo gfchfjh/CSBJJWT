@@ -1,6 +1,7 @@
 """
 主密码重置API - ✅ P0-14优化完成: 邮箱验证码重置功能
 """
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional

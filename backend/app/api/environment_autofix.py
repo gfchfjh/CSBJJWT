@@ -11,7 +11,7 @@ import sys
 import os
 from pathlib import Path
 from ..utils.logger import logger
-from ..utils.redis_manager_ultimate import redis_manager
+from ..utils.redis_manager import redis_manager
 from ..config import settings
 
 router = APIRouter(prefix="/api/environment", tags=["environment"])

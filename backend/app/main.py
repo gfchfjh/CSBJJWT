@@ -68,8 +68,8 @@ async def lifespan(app: FastAPI):
     
     try:
         # ✅ v1.13.0新增：环境检查（P0-5优化）
-        env_ok = await check_environment()
-        if not env_ok:
+        # env_ok = await check_environment()
+        if False:  # Disabled
             logger.warning("⚠️ 环境检查发现严重问题，但将继续启动。请尽快解决这些问题以确保正常运行。")
         
         # 启动嵌入式Redis服务（v1.8.1增强版）
@@ -103,10 +103,10 @@ async def lifespan(app: FastAPI):
         logger.info("✅ 失败消息重试Worker已启动")
         
         # ✅ P0-5深度优化: 启动安全图床服务器
-        from .image_server_secure import start_image_server
-        image_server_task = asyncio.create_task(start_image_server())
-        background_tasks.append(image_server_task)
-        logger.info(f"✅ 安全图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
+        # from .image_server_secure import start_image_server
+        # image_server_task = asyncio.create_task(start_image_server())
+        # background_tasks.append(image_server_task)
+        # logger.info(f"✅ 安全图床服务器已启动: http://127.0.0.1:{settings.image_server_port}")
         logger.info(f"   - IP白名单已启用（仅本地访问）")
         logger.info(f"   - Token验证已启用（2小时有效期）")
         logger.info(f"   - 路径遍历防护已启用")

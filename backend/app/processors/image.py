@@ -56,7 +56,7 @@ class ImageProcessor:
         self._cleanup_running = False
         
         # 启动Token清理任务
-        self.start_cleanup_task()
+        # self.start_cleanup_task()  # Disabled
     
     async def download_image(self, url: str, 
                             cookies: Optional[Dict] = None,

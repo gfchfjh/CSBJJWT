@@ -586,3 +586,7 @@ async def check_environment_with_progress():
         'message': '环境检测完成',
         'results': final_results
     }
+
+
+# Global instance
+ultimate_env_checker = EnvironmentChecker()

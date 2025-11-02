@@ -468,3 +468,22 @@ App ID或App Secret不正确。
 
 # 全局实例
 error_translator = UserFriendlyErrorTranslator()
+
+
+# Helper functions
+def translate_error(error):
+    return error_translator.translate_error(error)
+
+def get_fix_action(error_type, error_key):
+    if error_type in error_translator.ERROR_TEMPLATES:
+        if error_key in error_translator.ERROR_TEMPLATES[error_type]:
+            return error_translator.ERROR_TEMPLATES[error_type][error_key].get("actions", [])
+    return None
+
+def get_all_error_types():
+    return error_translator.ERROR_TEMPLATES
+
+def get_errors_by_category(category):
+    return error_translator.ERROR_TEMPLATES.get(category)
+
+ERROR_TRANSLATIONS = error_translator.ERROR_TEMPLATES
