@@ -83,11 +83,6 @@
             <el-button :icon="Bell" circle @click="showNotifications" />
           </el-badge>
           
-          <!-- Theme Toggle -->
-          <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
-            <el-button :icon="isDark ? Sunny : Moon" circle @click="handleToggleTheme" />
-          </el-tooltip>
-          
           <!-- 用户菜单 -->
           <el-dropdown>
             <el-avatar :size="32">
@@ -140,20 +135,13 @@ import {
   InfoFilled,
   SwitchButton,
   Expand,
-  Fold,
-  Moon,
-  Sunny
+  Fold
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
-import { useTheme } from '../composables/useTheme'
 const router = useRouter()
 const route = useRoute()
 
-
-// Theme toggle
-const { activeTheme, toggleTheme } = useTheme()
-const isDark = computed(() => activeTheme.value === 'dark')
 // 侧边栏状态
 const sidebarCollapsed = ref(false)
 
@@ -221,11 +209,6 @@ const logout = () => {
     localStorage.clear()
     router.push('/login')
   }
-}
-
-// Method: Toggle theme
-const handleToggleTheme = () => {
-  toggleTheme()
 }
 
 // 方法：获取系统状态
@@ -417,6 +400,7 @@ onUnmounted(() => {
 .content-wrapper::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
 /* ========== 深色主题适配 ========== */
 html.dark .layout-container {
   background: #0a0a0a;
@@ -449,4 +433,95 @@ html.dark .sidebar-footer {
 html.dark .logo {
   border-bottom: 1px solid #414243;
 }
+
+/* Element Plus 组件深色主题 */
+html.dark .el-card {
+  background: #1a1a1a;
+  border-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .el-card__header {
+  background: #2b2b2c;
+  border-bottom-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .el-card__body {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+html.dark .settings-section .el-card {
+  background: #1a1a1a !important;
+}
+
+html.dark .settings-view .el-card {
+  background: #1a1a1a !important;
+}
+html.dark .el-table {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+html.dark .el-table th.el-table__cell {
+  background: #2b2b2c !important;
+  color: #e5e5e5;
+  border-color: #414243;
+}
+
+html.dark .el-table tr {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+html.dark .el-table__row {
+  background: #1a1a1a;
+  color: #e5e5e5;
+}
+
+html.dark .el-table__row:hover {
+  background: #2b2b2c;
+}
+
+html.dark .el-table td.el-table__cell {
+  border-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .el-table--striped .el-table__row--striped {
+  background: #252525;
+}
+
+html.dark .el-form-item__label {
+  color: #e5e5e5;
+}
+
+html.dark .el-input__wrapper {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+}
+
+html.dark .el-select__wrapper {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+}
+
+html.dark .el-radio__label {
+  color: #e5e5e5;
+}
+
+html.dark .el-tabs__item {
+  color: #909399;
+}
+
+html.dark .el-tabs__item.is-active {
+  color: #409eff;
+}
+
+html.dark .el-alert {
+  background: #2b2b2c;
+  border-color: #414243;
+}
+
 </style>
