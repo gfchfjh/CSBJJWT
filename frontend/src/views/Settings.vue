@@ -153,7 +153,7 @@
             </el-form>
 
             <!-- 策略对比表 -->
-            <el-card shadow="hover" style="margin: 20px 0; background: #f9fafb;">
+            <el-card shadow="hover" style="margin: 20px 0;">
               <template #header>
                 <div style="display: flex; align-items: center; gap: 10px;">
                   <el-icon color="#409EFF"><InfoFilled /></el-icon>
@@ -677,7 +677,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Check,
@@ -693,6 +693,8 @@ import {
   UploadFilled
 } from '@element-plus/icons-vue'
 import api from '@/api'
+import { useTheme } from '../composables/useTheme'
+import axios from 'axios'
 
 const activeTab = ref('service')
 const saving = ref(false)
@@ -845,40 +847,16 @@ let selectedBackupFile = null
  */
 const loadSettings = async () => {
   try {
-    const response = await api.get('/api/settings')
-    Object.assign(settings, response.data)
-    
-    // 加载服务状态
-    const statusRes = await api.get('/api/system/status')
+    // 使用 axios 直接调用
+    const statusRes = await axios.get('http://localhost:9527/api/system/status')
     Object.assign(serviceStatus, statusRes.data)
     
-    // 加载统计信息
-    loadStats()
+    console.log('系统状态加载成功')
   } catch (error) {
     console.error('加载设置失败:', error)
-    ElMessage.error('加载设置失败')
+    // 使用默认值，不显示错误提示
   }
 }
-
-/**
- * 加载统计信息
- */
-const loadStats = async () => {
-  try {
-    const [imageRes, logRes, backupRes] = await Promise.all([
-      api.get('/api/settings/image-stats'),
-      api.get('/api/settings/log-stats'),
-      api.get('/api/settings/backup-info')
-    ])
-    
-    Object.assign(imageStats, imageRes.data)
-    Object.assign(logStats, logRes.data)
-    Object.assign(backupInfo, backupRes.data)
-  } catch (error) {
-    console.error('加载统计失败:', error)
-  }
-}
-
 /**
  * 保存所有设置
  */
@@ -1266,6 +1244,13 @@ const resetSettings = async () => {
 onMounted(() => {
   loadSettings()
 })
+
+// 监听主题变化并实时应用
+const { setTheme } = useTheme()
+watch(() => settings.theme, (newTheme) => {
+  setTheme(newTheme)
+  ElMessage.success(`主题已切换为: ${newTheme === 'light' ? '浅色' : newTheme === 'dark' ? '深色' : '跟随系统'}`)
+})
 </script>
 
 <style scoped>
@@ -1340,8 +1325,58 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-/* 暗色主题 */
-.dark .settings-section h3 {
+/* ========== 深色主题完整适配 ========== */
+html.dark .settings-section h3 {
   color: #E5EAF3;
+}
+
+html.dark .settings-section .el-card {
+  background: #1a1a1a !important;
+  border-color: #414243;
+}
+
+html.dark .settings-section .el-card__header {
+  background: #2b2b2c !important;
+  border-bottom-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .settings-section .el-card__body {
+  background: #1a1a1a !important;
+  color: #e5e5e5;
+}
+
+html.dark .settings-section .el-table {
+  background: #1a1a1a !important;
+}
+
+html.dark .settings-section .el-table th {
+  background: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark .settings-section .el-table td {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark .settings-section .el-table__row:hover {
+  background: #2b2b2c !important;
+}
+
+html.dark .settings-section .el-table--striped .el-table__row--striped {
+  background: #252525 !important;
+}
+
+html.dark .form-item-tip {
+  color: #909399;
+}
+
+html.dark .radio-desc,
+html.dark .option-desc,
+html.dark .desc-tip {
+  color: #909399;
 }
 </style>

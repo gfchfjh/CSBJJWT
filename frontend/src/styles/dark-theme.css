@@ -228,3 +228,26 @@ html.dark a {
 html.dark a:hover {
   color: #66b1ff;
 }
+
+/* 表格表头强制深色 */
+html.dark .el-table__header-wrapper th {
+  background-color: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark .el-table__header th.el-table__cell {
+  background-color: #2b2b2c !important;
+  color: #e5e5e5 !important;
+}
+
+html.dark .el-table .el-table__header th {
+  background: #2b2b2c !important;
+  color: #e5e5e5 !important;
+}
+
+html.dark .settings-section .el-table th.el-table__cell {
+  background-color: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  font-weight: bold;
+}
