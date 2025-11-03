@@ -11,8 +11,8 @@ export const ThemeType = {
   AUTO: 'auto'
 }
 
-// 当前主题
-const currentTheme = ref(localStorage.getItem('theme') || ThemeType.AUTO)
+// 当前主题 - 默认强制使用浅色主题
+const currentTheme = ref(localStorage.getItem('theme') || ThemeType.LIGHT)
 
 // 系统主题
 const systemTheme = ref(
@@ -126,8 +126,14 @@ export function useTheme() {
  * 初始化主题（仅在应用启动时调用一次）
  */
 export function initThemeOnce() {
+  // 如果没有设置过主题，强制设置为浅色
+  if (!localStorage.getItem('theme')) {
+    localStorage.setItem('theme', ThemeType.LIGHT)
+    currentTheme.value = ThemeType.LIGHT
+  }
+  
   // 应用初始主题
-  applyTheme(activeTheme.value)
+  applyTheme(getActiveTheme())
 }
 
 // 主题颜色配置
