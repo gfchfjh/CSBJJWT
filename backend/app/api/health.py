@@ -9,6 +9,18 @@ from ..utils.auth import verify_api_token
 router = APIRouter(prefix="/api/health", tags=["健康检查"])
 
 
+@router.get("/")
+async def health_check_root() -> Dict[str, Any]:
+    """
+    简单健康检查（无需认证）
+    """
+    return {
+        "status": "healthy",
+        "service": "KOOK Forwarder",
+        "version": "v18.0.2"
+    }
+
+
 @router.get("/check", dependencies=[Depends(verify_api_token)])
 async def perform_health_check() -> Dict[str, Any]:
     """
@@ -19,7 +31,6 @@ async def perform_health_check() -> Dict[str, Any]:
         "success": True,
         "data": result
     }
-
 
 @router.get("/status", dependencies=[Depends(verify_api_token)])
 async def get_health_status() -> Dict[str, Any]:
