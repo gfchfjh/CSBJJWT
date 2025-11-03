@@ -8,7 +8,7 @@ import time
 import psutil
 from ..utils.logger import logger
 
-router = APIRouter(prefix="/system", tags=["system"])
+router = APIRouter(prefix="/api/system", tags=["system"])
 
 # 全局服务状态
 service_status = {
