@@ -348,3 +348,58 @@ html.dark .el-table__row:hover td {
 html.dark .el-table__empty-block {
   background: #1a1a1a !important;
 }
+
+/* ========== 映射页面深色主题完整适配 ========== */
+html.dark .mapping-table-view-container,
+html.dark .mapping-table-container,
+html.dark .mapping-unified-container {
+  background: #0a0a0a !important;
+}
+
+html.dark .table-toolbar,
+html.dark .view-switcher-toolbar {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+}
+
+html.dark .table-toolbar h2,
+html.dark .view-switcher-toolbar h2 {
+  color: #e5e5e5 !important;
+}
+
+html.dark .filter-bar {
+  background: #2b2b2c !important;
+  border-color: #414243 !important;
+}
+
+html.dark .batch-actions {
+  background: #2b2b2c !important;
+  border-color: #414243 !important;
+}
+
+html.dark .el-table,
+html.dark .el-table__body-wrapper,
+html.dark .el-table__header-wrapper {
+  background: #1a1a1a !important;
+}
+
+html.dark .el-table th,
+html.dark .el-table thead {
+  background: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark .el-table td {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark .el-table__row:hover td {
+  background: #2b2b2c !important;
+}
+
+html.dark .el-table__empty-block {
+  background: #1a1a1a !important;
+}
