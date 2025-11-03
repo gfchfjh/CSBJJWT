@@ -27,10 +27,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useSystemStore } from './store/system'
 import ErrorDialog from './components/ErrorDialog.vue'
 import DisclaimerDialog from './views/DisclaimerDialog.vue'
-import { globalErrorHandler } from './composables/useErrorHandler'
+import { useGlobalErrorHandler } from './composables/useErrorHandler'
 import FirstRunDetector from './components/FirstRunDetector.vue'
 
 const systemStore = useSystemStore()
+const globalErrorHandler = useGlobalErrorHandler()
 
 // ✅ P0-5优化：全局错误对话框状态
 const errorDialog = reactive({
@@ -39,9 +40,9 @@ const errorDialog = reactive({
 })
 
 // 监听全局错误处理器
-watch(() => globalErrorHandler.showErrorDialog.value, (show) => {
-  errorDialog.visible = show
+watch(() => globalErrorHandler?.showErrorDialog?.value, (show) => {
   if (show) {
+    errorDialog.visible = show
     errorDialog.data = globalErrorHandler.currentError.value || {}
   }
 })
