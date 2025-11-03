@@ -429,6 +429,13 @@ import {
   Connection, Clock, View, Edit, Delete
 } from '@element-plus/icons-vue'
 import api from '@/api'
+import axios from 'axios'
+
+// 创建 API 客户端
+const apiClient = axios.create({
+  baseURL: 'http://localhost:9527',
+  timeout: 30000
+})
 
 // 数据
 const loading = ref(false)
@@ -525,7 +532,7 @@ const availableBots = computed(() => {
 const loadMappings = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/mappings')
+    const response = await apiClient.get('/api/mappings')
     if (response.data.success) {
       mappings.value = response.data.mappings
     }
@@ -538,7 +545,7 @@ const loadMappings = async () => {
 
 const loadServers = async () => {
   try {
-    const response = await api.get('/api/servers/discover')
+    const response = await apiClient.get('/api/servers/discover')
     if (response.data.success) {
       kookServers.value = response.data.servers
     }
@@ -549,7 +556,7 @@ const loadServers = async () => {
 
 const loadBots = async () => {
   try {
-    const response = await api.get('/api/bots')
+    const response = await apiClient.get('/api/bots')
     if (response.data.success) {
       bots.value = response.data.bots
     }
@@ -601,7 +608,7 @@ const deleteMapping = async (mapping) => {
       { type: 'warning' }
     )
     
-    const response = await api.delete(`/api/mappings/${mapping.id}`)
+    const response = await apiClient.delete(`/api/mappings/${mapping.id}`)
     
     if (response.data.success) {
       ElMessage.success('删除成功')
@@ -642,7 +649,7 @@ const submitMapping = async () => {
 const saveMappings = async () => {
   saving.value = true
   try {
-    const response = await api.post('/api/mappings/batch', {
+    const response = await apiClient.post('/api/mappings/batch', {
       mappings: mappings.value
     })
     
@@ -691,7 +698,7 @@ const batchDelete = async () => {
     )
     
     const ids = selectedMappings.value.map(m => m.id)
-    const response = await api.post('/api/mappings/batch-delete', { ids })
+    const response = await apiClient.post('/api/mappings/batch-delete', { ids })
     
     if (response.data.success) {
       ElMessage.success('删除成功')
@@ -862,5 +869,93 @@ onMounted(() => {
   color: #909399;
   margin-top: 5px;
   line-height: 1.6;
+}
+
+/* ========== 深色主题适配 ========== */
+html.dark .mapping-table-container {
+  background: #0a0a0a;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-card) {
+  background: #1a1a1a !important;
+  border-color: #414243;
+}
+
+html.dark :deep(.el-card__header) {
+  background: #2b2b2c !important;
+  border-bottom-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-card__body) {
+  background: #1a1a1a !important;
+}
+
+html.dark :deep(.el-table) {
+  background: #1a1a1a !important;
+}
+
+html.dark :deep(.el-table th) {
+  background: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark :deep(.el-table td) {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark :deep(.el-table__row:hover) {
+  background: #2b2b2c !important;
+}
+
+html.dark :deep(.el-table__empty-block) {
+  background: #1a1a1a !important;
+}
+
+html.dark :deep(.el-table__empty-text) {
+  color: #909399;
+}
+html.dark :deep(.el-table__empty-text) {
+  color: #909399;
+}
+
+html.dark .filter-bar {
+  background: #2b2b2c !important;
+  border-color: #414243;
+}
+
+html.dark .batch-actions {
+  background: #2b2b2c !important;
+  border-color: #414243;
+}
+
+html.dark :deep(.el-input__wrapper) {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-select__wrapper) {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-button--default) {
+  background: #2b2b2c;
+  border-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-form-item__label) {
+  color: #e5e5e5;
+}
+
+html.dark .form-hint {
+  color: #909399;
 }
 </style>

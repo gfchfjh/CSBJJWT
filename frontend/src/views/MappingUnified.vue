@@ -197,4 +197,96 @@ watch(currentView, (newView) => {
     width: 100%;
   }
 }
+
+/* ========== 深色主题适配 ========== */
+html.dark .mapping-unified-container {
+  background: #0a0a0a;
+  color: #e5e5e5;
+}
+
+html.dark .view-switcher-toolbar {
+  background: #1a1a1a;
+  border-bottom-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .view-switcher-toolbar h2 {
+  color: #e5e5e5;
+}
+
+html.dark .view-hint {
+  background: #2b2b2c;
+  border-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark .view-content {
+  background: #0a0a0a;
+}
+
+/* 表格深色主题 */
+html.dark :deep(.el-table) {
+  background: #1a1a1a !important;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-table__header) {
+  background: #2b2b2c !important;
+}
+
+html.dark :deep(.el-table th) {
+  background: #2b2b2c !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark :deep(.el-table td) {
+  background: #1a1a1a !important;
+  color: #e5e5e5 !important;
+  border-color: #414243 !important;
+}
+
+html.dark :deep(.el-table__row) {
+  background: #1a1a1a !important;
+}
+
+html.dark :deep(.el-table__row:hover) {
+  background: #2b2b2c !important;
+}
+
+html.dark :deep(.el-table--striped .el-table__row--striped) {
+  background: #252525 !important;
+}
+
+html.dark :deep(.el-card) {
+  background: #1a1a1a !important;
+  border-color: #414243;
+}
+
+html.dark :deep(.el-card__header) {
+  background: #2b2b2c !important;
+  border-bottom-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-card__body) {
+  background: #1a1a1a !important;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-button--default) {
+  background: #2b2b2c;
+  border-color: #414243;
+  color: #e5e5e5;
+}
+
+html.dark :deep(.el-input__wrapper) {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+}
+
+html.dark :deep(.el-select__wrapper) {
+  background: #2b2b2c;
+  box-shadow: 0 0 0 1px #414243 inset;
+}
 </style>
