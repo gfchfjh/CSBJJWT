@@ -1,12 +1,52 @@
-# 🎉 KOOK消息转发系统 v16.0.0 - 构建成功！
+# KOOK消息转发系统 v18.0.2 - 构建说明
 
-## 📦 已生成安装包
+**版本**: v18.0.2  
+**更新日期**: 2025-11-03  
+**状态**: 推荐从源码运行
 
-### ✅ Linux完整版 (125 MB)
+---
+
+## 🚀 推荐运行方式
+
+**v18.0.2 推荐从源码运行**（最稳定、最灵活）：
+
+### 快速启动步骤
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
+
+# 2. 安装后端依赖
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r backend\requirements.txt
+
+# 3. 安装前端依赖
+cd frontend
+npm install
+
+# 4. 启动后端（新窗口）
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 9527 --reload
+
+# 5. 启动前端（新窗口）
+cd frontend
+npm run dev
+
+# 6. 访问 http://localhost:5173/home
 ```
-文件: KOOK消息转发系统-16.0.0.AppImage
-路径: /workspace/frontend/dist-electron/
-MD5:  4f5d14f8ee3790567d3877c261ad7361
+
+详细步骤参考：[QUICK_START_WINDOWS.md](./QUICK_START_WINDOWS.md)
+
+---
+
+## 📦 Electron 打包（高级用户）
+
+### ✅ Linux完整版
+```
+构建命令: npm run electron:build:linux
+输出文件: KOOK消息转发系统.AppImage
 ```
 
 **使用方法**:

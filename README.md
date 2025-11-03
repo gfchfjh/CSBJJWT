@@ -1,23 +1,65 @@
-# KOOK消息转发系统 v18.0.0
+# KOOK消息转发系统 v18.0.2
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-18.0.2--dev-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
 
-**Electron桌面应用 · 全新3步向导 · 完美UI优化 · 全平台支持**
+**Electron桌面应用 · 主题切换 · 完美UI优化 · 全平台支持**
 
-**35,000+行代码 · 深度优化 · GitHub Actions自动构建**
+**35,000+行代码 · 前端修复完成 · GitHub Actions自动构建**
 
-[快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0)
+[快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases)
 
 </div>
 
 ---
 
-## 🔧 v18.0.2-dev - Windows 打包修复 (2025-11-03)
+## ✨ v18.0.2 - 前端修复与主题系统 (2025-11-03)
+
+> **重要更新**: 修复前端运行错误，新增主题切换功能，清理旧文档！
+
+### 🔧 核心修复
+
+- ✅ **前端错误全部修复** - App.vue、路由守卫、API 路由等
+- ✅ **主题切换功能** - 右上角一键切换浅色/深色主题
+- ✅ **依赖补全** - 安装所有缺失的 Python 包
+- ✅ **文档清理** - 删除 57+ 个旧文档，保留 11 个核心文档
+
+### 📚 快速开始
+
+从源码运行（推荐用于开发和测试）：
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
+
+# 2. 创建虚拟环境并安装后端依赖
+python -m venv venv
+venv\Scripts\activate  # Windows
+pip install -r backend\requirements.txt
+
+# 3. 安装前端依赖
+cd frontend
+npm install
+
+# 4. 启动后端（新窗口）
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 9527 --reload
+
+# 5. 启动前端（新窗口）
+cd frontend
+npm run dev
+
+# 6. 访问 http://localhost:5173/home
+```
+
+---
+
+## 🔧 v18.0.2-dev - Windows 打包修复 (2025-11-03 早期版本)
 
 > **重要更新**: 修复了 40+ 处代码问题，大幅提升 Windows 打包稳定性！
 

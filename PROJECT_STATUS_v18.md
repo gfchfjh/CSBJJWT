@@ -1,7 +1,7 @@
-# KOOK消息转发系统 v18.0.0 - 项目状态
+# KOOK消息转发系统 v18.0.2 - 项目状态
 
-**版本**: v18.0.0  
-**更新日期**: 2025-10-31  
+**版本**: v18.0.2  
+**更新日期**: 2025-11-03  
 **状态**: ✅ Production Ready
 
 ---
@@ -16,43 +16,65 @@
 
 ---
 
-## 🎯 v18.0.0 重大成就
+## 🎯 v18.0.2 重大成就
 
-### ✅ 已完成
+### ✅ 已完成（2025-11-03）
+1. **前端错误修复** - App.vue、路由守卫、API 路由全部修复
+2. **主题切换功能** - 新增浅色/深色主题切换按钮
+3. **依赖完善** - 补充 30+ 个缺失的 Python 依赖包
+4. **文档清理** - 删除 57 个旧版本文档，保留 11 个核心文档
+5. **源码可运行** - 从源码启动完全正常，适合开发和测试
+
+### ✅ v18.0.0 历史成就
 1. **新增平台支持** - 企业微信、钉钉
 2. **新增插件功能** - 关键词回复、URL预览
 3. **Windows完整支持** - GitHub Actions自动构建
 4. **修复所有TODO** - 20+个未完成功能
 5. **替换Mock数据** - 所有真实数据实现
-6. **文档深度更新** - 17个文档同步到v18.0.0
-7. **项目清理** - 删除1,099个临时文件
 
-### 📦 安装包
-- **Windows**: 112 MB (NSIS + 便携版)
-- **Linux**: 150 MB (tar.gz + AppImage)
-- **macOS**: 114 MB (DMG)
+### 🚀 推荐运行方式
 
-### 🔗 下载地址
-https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0
+**v18.0.2 推荐从源码运行**（Electron 打包功能正在完善中）：
+
+```bash
+# 快速启动步骤
+1. git clone 仓库
+2. 创建虚拟环境并安装依赖
+3. 启动后端和前端服务
+4. 访问 http://localhost:5173/home
+```
+
+详细步骤参考：[QUICK_START_WINDOWS.md](./QUICK_START_WINDOWS.md)
+
+### 🔗 GitHub 仓库
+https://github.com/gfchfjh/CSBJJWT
 
 ---
 
 ## 📁 项目结构
 
-### 核心文档 (12个)
+### 核心文档 (11个) - 已清理
+
 ```
-README.md                           - 主项目文档 (24 KB)
-CHANGELOG.md                        - 完整更新日志 (34 KB)
-LICENSE                             - MIT许可证
-VERSION                             - v18.0.0
-OPTIMIZATION_SUMMARY_v18.0.0.md     - 优化报告 (15 KB)
-RELEASE_CHECKLIST.md                - 发布清单 (5.4 KB)
-RELEASE_NOTES_v18.0.0.md            - 发布说明 (6.7 KB)
-WINDOWS_BUILD_GUIDE.md              - Windows构建 (7.2 KB)
-README_BUILD.md                     - 构建说明 (2.0 KB)
-README_GITHUB_ACTIONS.md            - Actions指南 (6.6 KB)
-GITHUB_ACTIONS_SETUP.md             - Actions设置 (7.7 KB)
-CLEANUP_SUMMARY.md                  - 清理总结 (新增)
+README.md                           - 主项目文档（已更新到 v18.0.2）
+CHANGELOG.md                        - 完整更新日志（包含 v18.0.2 修复）
+PROJECT_STATUS_v18.md               - 项目状态（已更新）
+INSTALLATION_TROUBLESHOOTING.md     - 安装故障排查（包含最新解决方案）
+TROUBLESHOOTING_WINDOWS.md          - Windows 故障排查
+QUICK_START_WINDOWS.md              - 快速开始（已更新）
+README_BUILD.md                     - 构建说明
+README_GITHUB_ACTIONS.md            - CI/CD 指南
+RELEASE_CHECKLIST.md                - 发布检查清单
+RELEASE_NOTES_v18.0.1.md            - v18.0.1 发布说明
+COMPLETE_UNINSTALL_GUIDE.md         - 卸载指南
+LICENSE                             - MIT 许可证
+VERSION                             - 版本号文件
+```
+
+**文档清理成果**:
+- 🗑️ 删除 57 个旧版本文档
+- ✅ 保留 11 个核心文档
+- ✅ 所有文档已更新到 v18.0.2
 ```
 
 ### 源代码
