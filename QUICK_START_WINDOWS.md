@@ -1,7 +1,8 @@
 # Windows 快速开始指南
 
-**适用版本**: v18.0.1+  
-**预计时间**: 15-30 分钟  
+**适用版本**: v18.0.2+  
+**更新日期**: 2025-11-03  
+**预计时间**: 10-15 分钟  
 **难度级别**: ⭐⭐☆☆☆ (中等)  
 
 ---
@@ -25,54 +26,67 @@
 
 ---
 
-## 🚀 方式1: 一键安装（推荐）
+## 🚀 方式1: 从源码运行（推荐）
 
-### 步骤1: 检查环境
+**适用场景**: 开发、测试、快速体验
 
-1. 下载环境检查脚本: `检查环境.bat`
-2. 双击运行
-3. 确认所有检查都通过
+### 步骤1: 克隆代码
 
-**预期输出**:
-```
-[检查1] Python 3.11+
-[OK] Python 3.13.7
+```cmd
+# 打开 CMD（Win + R → 输入 cmd → 回车）
 
-[检查2] Node.js 18+
-[OK] Node.js v24.11.0
+# 进入桌面
+cd %USERPROFILE%\Desktop
 
-[检查3] npm
-[OK] npm 11.6.1
-
-[检查4] Git
-[OK] Git 2.51.0
+# 克隆仓库
+git clone https://github.com/gfchfjh/CSBJJWT.git
+cd CSBJJWT
 ```
 
-### 步骤2: 运行一键安装
+### 步骤2: 安装后端依赖
 
-1. 下载安装脚本: `KOOK_Installer_Safe.bat`
-2. **右键以管理员身份运行**
-3. 按提示操作
+```cmd
+# 创建虚拟环境
+python -m venv venv
 
-**注意事项**:
-- 首次运行选择选项 `1` (清理并重新开始)
-- 构建过程需要 15-30 分钟
-- 保持网络连接稳定
-- 不要关闭命令行窗口
+# 激活虚拟环境
+venv\Scripts\activate
 
-### 步骤3: 获取安装包
+# 安装依赖
+pip install -r backend\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-构建完成后，安装包位置：
-```
-C:\Users\你的用户名\KOOK-Build\CSBJJWT\frontend\dist-electron\KOOK消息转发系统 Setup 18.0.1.exe
+# 补充可能缺失的依赖
+pip install discord-webhook python-telegram-bot loguru apscheduler psutil prometheus-client -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-### 步骤4: 安装应用
+### 步骤3: 安装前端依赖
 
-1. 双击 `.exe` 安装包
-2. 按照安装向导操作
-3. 完成后在桌面找到快捷方式
-4. 双击启动应用
+```cmd
+# 打开新的 CMD 窗口
+cd %USERPROFILE%\Desktop\CSBJJWT\frontend
+
+# 安装依赖
+npm install
+```
+
+### 步骤4: 启动服务
+
+**后端窗口（第一个 CMD）：**
+```cmd
+cd backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 9527 --reload
+```
+
+**前端窗口（第二个 CMD）：**
+```cmd
+npm run dev
+```
+
+### 步骤5: 访问应用
+
+1. 等待两个服务都启动完成
+2. 浏览器访问：`http://localhost:5173/home`
+3. 开始使用！
 
 ---
 
@@ -265,18 +279,20 @@ netstat -ano | findstr :8000
 taskkill /F /PID <PID>
 ```
 
-### 问题5: Electron 启动失败
+### 问题5: 前端空白页
 
-**错误**: "无法启动应用:fetch failed"
+**错误**: 浏览器显示空白页
 
-**临时解决**:
+**解决**:
 ```bash
-# 方法1: 独立运行后端
-cd dist\KOOKForwarder
-start KOOKForwarder.exe
+# 1. 确认访问正确的URL
+http://localhost:5173/home
 
-# 方法2: 等待修复
-# 参考 [明天继续方案.md](./明天继续方案.md)
+# 2. 强制刷新浏览器
+按 Ctrl + Shift + R
+
+# 3. 查看控制台错误
+按 F12 查看 Console 标签
 ```
 
 ---
@@ -321,32 +337,27 @@ start KOOKForwarder.exe
 
 1. **查看故障排查指南**
    - [TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md)
+   - [INSTALLATION_TROUBLESHOOTING.md](./INSTALLATION_TROUBLESHOOTING.md)
 
-2. **查看修复记录**
-   - [WINDOWS_PACKAGING_FIXES.md](./WINDOWS_PACKAGING_FIXES.md)
-
-3. **待修复问题**
-   - [明天继续方案.md](./明天继续方案.md)
-
-4. **提交 Issue**
+2. **提交 Issue**
    - https://github.com/gfchfjh/CSBJJWT/issues
 
 ---
 
 ## 📚 相关文档
 
-### 构建相关
-- [WINDOWS_BUILD_GUIDE.md](./WINDOWS_BUILD_GUIDE.md) - 完整构建指南
-- [WINDOWS_PACKAGING_FIXES.md](./WINDOWS_PACKAGING_FIXES.md) - 打包修复记录
-
-### 使用相关
+### 核心文档
 - [README.md](./README.md) - 项目主文档
-- [docs/用户手册.md](./docs/用户手册.md) - 用户手册
-- [docs/tutorials/01-quick-start.md](./docs/tutorials/01-quick-start.md) - 快速入门教程
+- [CHANGELOG.md](./CHANGELOG.md) - 完整更新日志
+- [PROJECT_STATUS_v18.md](./PROJECT_STATUS_v18.md) - 项目当前状态
 
 ### 故障排查
-- [TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md) - 故障排查指南
-- [明天继续方案.md](./明天继续方案.md) - 已知问题和修复计划
+- [TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md) - Windows 故障排查指南
+- [INSTALLATION_TROUBLESHOOTING.md](./INSTALLATION_TROUBLESHOOTING.md) - 安装问题解决
+
+### 使用文档
+- [docs/用户手册.md](./docs/用户手册.md) - 用户手册
+- [docs/tutorials/](./docs/tutorials/) - 教程文档
 
 ---
 
