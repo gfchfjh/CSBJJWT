@@ -83,6 +83,11 @@
             <el-button :icon="Bell" circle @click="showNotifications" />
           </el-badge>
           
+          <!-- Theme Toggle -->
+          <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
+            <el-button :icon="isDark ? Sunny : Moon" circle @click="handleToggleTheme" />
+          </el-tooltip>
+          
           <!-- 用户菜单 -->
           <el-dropdown>
             <el-avatar :size="32">
@@ -135,13 +140,20 @@ import {
   InfoFilled,
   SwitchButton,
   Expand,
-  Fold
+  Fold,
+  Moon,
+  Sunny
 } from '@element-plus/icons-vue'
 import axios from 'axios'
 
+import { useTheme } from '../composables/useTheme'
 const router = useRouter()
 const route = useRoute()
 
+
+// Theme toggle
+const { activeTheme, toggleTheme } = useTheme()
+const isDark = computed(() => activeTheme.value === 'dark')
 // 侧边栏状态
 const sidebarCollapsed = ref(false)
 
@@ -209,6 +221,11 @@ const logout = () => {
     localStorage.clear()
     router.push('/login')
   }
+}
+
+// Method: Toggle theme
+const handleToggleTheme = () => {
+  toggleTheme()
 }
 
 // 方法：获取系统状态
@@ -399,5 +416,37 @@ onUnmounted(() => {
 
 .content-wrapper::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
+}
+/* ========== 深色主题适配 ========== */
+html.dark .layout-container {
+  background: #0a0a0a;
+}
+
+html.dark .sidebar {
+  background: #1a1a1a;
+  border-right: 1px solid #414243;
+}
+
+html.dark .header {
+  background: #1a1a1a;
+  border-bottom: 1px solid #414243;
+  color: #e5e5e5;
+}
+
+html.dark .content-wrapper {
+  background: #0a0a0a;
+}
+
+html.dark .status-indicator {
+  background: #2b2b2c;
+  color: #e5e5e5;
+}
+
+html.dark .sidebar-footer {
+  border-top: 1px solid #414243;
+}
+
+html.dark .logo {
+  border-bottom: 1px solid #414243;
 }
 </style>

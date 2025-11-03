@@ -1,6 +1,6 @@
 /**
  * 主题切换系统
- * ✅ P1-6: 亮色/暗色主题切换
+ * �?P1-6: 亮色/暗色主题切换
  */
 import { ref, watch } from 'vue'
 
@@ -12,7 +12,7 @@ export const ThemeType = {
 }
 
 // 当前主题
-const currentTheme = ref(localStorage.getItem('theme') || ThemeType.AUTO)
+const currentTheme = ref(localStorage.getItem('theme') || ThemeType.LIGHT)
 
 // 系统主题
 const systemTheme = ref(
@@ -21,11 +21,11 @@ const systemTheme = ref(
     : ThemeType.LIGHT
 )
 
-// 实际使用的主题
+// 实际使用的主�?
 const activeTheme = ref(getActiveTheme())
 
 /**
- * 获取实际使用的主题
+ * 获取实际使用的主�?
  */
 function getActiveTheme() {
   if (currentTheme.value === ThemeType.AUTO) {
@@ -38,28 +38,22 @@ function getActiveTheme() {
  * 应用主题
  */
 function applyTheme(theme) {
-  // 移除所有主题类
-  document.documentElement.classList.remove('light-theme', 'dark-theme')
+  // �Ƴ�����������
+  document.documentElement.classList.remove('light', 'dark', 'light-theme', 'dark-theme')
   
-  // 添加对应主题类
+  // ���Ӷ�Ӧ�����ࣨƥ�� CSS ѡ������
   if (theme === ThemeType.DARK) {
-    document.documentElement.classList.add('dark-theme')
-  } else {
-    document.documentElement.classList.add('light-theme')
-  }
-  
-  // 设置Element Plus主题
-  if (theme === ThemeType.DARK) {
+    document.documentElement.classList.add('dark')  // CSS �õ��� html.dark
     document.documentElement.setAttribute('data-theme', 'dark')
   } else {
+    document.documentElement.classList.add('light')
     document.documentElement.setAttribute('data-theme', 'light')
   }
   
   activeTheme.value = theme
 }
-
 /**
- * 主题切换组合式函数
+ * 主题切换组合式函�?
  */
 export function useTheme() {
   /**
