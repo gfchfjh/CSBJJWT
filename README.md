@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-18.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.2--dev-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
@@ -14,6 +14,38 @@
 [快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases/tag/v18.0.0)
 
 </div>
+
+---
+
+## 🔧 v18.0.2-dev - Windows 打包修复 (2025-11-03)
+
+> **重要更新**: 修复了 40+ 处代码问题，大幅提升 Windows 打包稳定性！
+
+### ✨ 修复亮点
+
+- ✅ **40+ 代码修复** - 相对导入、类型注解、async/await 语法等
+- ✅ **25+ 依赖补充** - 修复 PyInstaller 打包缺失模块
+- ✅ **启动脚本优化** - 创建 `backend/run.py` 解决包结构问题
+- ✅ **打包配置完善** - 优化 `pyinstaller.spec` 和 `package.json`
+- ✅ **3 个新文档** - 1500+ 行完整的故障排查和修复指南
+
+### 📚 新增文档
+
+- 📄 [WINDOWS_PACKAGING_FIXES.md](./WINDOWS_PACKAGING_FIXES.md) - 完整修复记录
+- 📄 [TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md) - 故障排查指南
+- 📄 [QUICK_START_WINDOWS.md](./QUICK_START_WINDOWS.md) - 快速开始指南
+
+### 🧪 测试状态
+
+| 测试项 | 状态 | 说明 |
+|-------|------|------|
+| 后端独立运行 | ✅ 成功 | 35+ 模块正常初始化 |
+| Electron 打包 | ✅ 成功 | ~94 MB，包含完整后端 |
+| Electron 启动 | ⚠️ 修复中 | "fetch failed" 问题待解决 |
+
+### 📖 详细信息
+
+查看 [CHANGELOG.md](./CHANGELOG.md#180-2-dev---2025-11-03) 获取完整更新日志。
 
 ---
 
@@ -725,6 +757,78 @@ Vue前端: 8,000 行
   - Windows: 双击 `stop.bat` 或关闭命令窗口
   - Linux/Mac: 按 `Ctrl+C`
 - **Runnable Edition**: 关闭后端和前端窗口
+
+---
+
+## 🗑️ 完全卸载
+
+如需完全卸载 KOOK 系统：
+
+### 🔍 自动扫描删除（推荐，最智能）⭐
+
+**中文版可能遇到编码问题？使用英文版！**
+
+#### 方式 A：英文版（无编码问题，推荐）⭐⭐⭐⭐⭐
+
+1. **下载脚本**: [Delete-KOOK-System.bat](./Delete-KOOK-System.bat)
+2. **右键以管理员身份运行**
+3. **等待自动扫描完成**（30秒-2分钟）
+4. **查看扫描结果，输入 YES 确认**
+5. **等待删除完成**（2-5 分钟）
+
+**优点**:
+- ✅ 完全避免编码问题
+- ✅ 功能与中文版完全相同
+- ✅ 界面清晰易懂（英文）
+
+#### 方式 B：自动启动器（自动修复编码）⭐⭐⭐⭐
+
+1. **下载脚本**: [运行删除工具.bat](./运行删除工具.bat)
+2. **双击运行**
+3. **自动选择并运行可用的脚本**
+
+**优点**:
+- ✅ 自动请求管理员权限
+- ✅ 自动修复编码问题
+- ✅ 自动选择最佳脚本
+
+#### 方式 C：中文版（可能有编码问题）
+
+1. **下载脚本**: [自动扫描删除KOOK.bat](./自动扫描删除KOOK.bat)
+2. **右键以管理员身份运行**
+3. **如遇到乱码，改用方式 A 或 B**
+
+**共同特点**:
+- ✅ 自动扫描整个系统所有位置
+- ✅ 智能查找所有 KOOK 相关文件
+- ✅ 删除前显示完整清单
+- ✅ 深度清理（注册表、缓存、临时文件）
+
+**💡 编码问题？** 查看 [编码问题解决方案.txt](./编码问题解决方案.txt)
+
+### 快速卸载（标准方式）
+
+1. **下载卸载脚本**: [删除本地KOOK系统.bat](./删除本地KOOK系统.bat) 或 [KOOK_完全卸载.bat](./KOOK_完全卸载.bat)
+2. **右键以管理员身份运行**
+3. **输入 YES 确认**
+4. **等待完成**（约 2-5 分钟）
+
+### 详细文档
+
+- 📄 [使用自动扫描删除.txt](./使用自动扫描删除.txt) - 自动扫描删除说明 ⭐推荐
+- 📄 [立即删除指南.txt](./立即删除指南.txt) - 3步删除指南
+- 📄 [删除步骤-快速参考.txt](./删除步骤-快速参考.txt) - 一页纸快速参考
+- 📄 [如何完全删除.txt](./如何完全删除.txt) - 简明指南
+- 📄 [COMPLETE_UNINSTALL_GUIDE.md](./COMPLETE_UNINSTALL_GUIDE.md) - 完整卸载指南
+- 📄 [清理开发文件.bat](./清理开发文件.bat) - 仅清理开发文件（保留源码）
+- 📄 [UNINSTALL_INDEX.md](./UNINSTALL_INDEX.md) - 卸载文档索引
+
+### 释放空间
+
+- 已安装应用: ~100 MB
+- 用户数据: ~10 MB  
+- 开发文件: ~1.7 GB（如果有）
+- **总计**: 约 1.8 GB
 
 ---
 

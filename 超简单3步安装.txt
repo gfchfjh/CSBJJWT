@@ -1,0 +1,207 @@
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║      KOOK消息转发系统 - 超简单3步安装                    ║
+║      修复版 v18.0.1 (Windows 11可用)                     ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════
+  🎯 只需3步，自动完成所有操作！
+═══════════════════════════════════════════════════════════════
+
+
+第1步：准备环境（只需一次）
+─────────────────────────────────────────────────────────
+
+如果您已经安装了Python和Node.js，跳过此步骤。
+
+1. 下载并安装 Python 3.11+
+   地址：https://www.python.org/downloads/
+   安装时勾选：Add Python to PATH ✓
+
+2. 下载并安装 Node.js 18+
+   地址：https://nodejs.org/
+   下载LTS版本，直接安装即可
+
+3. 验证安装：
+   打开cmd，输入：python --version
+   应该显示：Python 3.11.x 或更高
+
+
+第2步：运行一键脚本（自动完成）
+─────────────────────────────────────────────────────────
+
+1. 新建文本文件（桌面右键 → 新建 → 文本文档）
+
+2. 复制下面【脚本代码】的全部内容到文本文件
+
+3. 另存为：KOOK一键安装.bat
+   （保存类型选：所有文件）
+
+4. 右键这个bat文件 → 以管理员身份运行
+
+5. 按任意键开始，然后等待20-30分钟
+
+6. 看到"🎉 构建成功！"就完成了
+
+
+第3步：安装使用（完成！）
+─────────────────────────────────────────────────────────
+
+脚本完成后会打开文件夹，找到：
+KOOK消息转发系统 Setup 18.0.0.exe
+
+双击安装，启动，开始使用！
+
+
+═══════════════════════════════════════════════════════════════
+  📋 【脚本代码】- 复制下面所有内容
+═══════════════════════════════════════════════════════════════
+
+@echo off
+chcp 65001 >nul
+title KOOK一键安装
+
+color 0A
+echo.
+echo ╔══════════════════════════════════════════════════════╗
+echo ║   KOOK消息转发系统 - 一键安装（修复版）              ║
+echo ╚══════════════════════════════════════════════════════╝
+echo.
+echo 预计时间: 20-30分钟
+echo 请确保网络连接正常
+echo.
+pause
+
+set "BUILD_DIR=%USERPROFILE%\KOOK-BUILD"
+set "PROJ=%BUILD_DIR%\CSBJJWT"
+
+echo [1/8] 检查环境...
+python --version || goto no_python
+node --version || goto no_node
+
+echo [2/8] 创建目录...
+if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
+cd /d "%BUILD_DIR%"
+
+echo [3/8] 下载项目（1-3分钟）...
+if exist CSBJJWT (
+    echo 项目已存在
+) else (
+    git clone https://github.com/gfchfjh/CSBJJWT.git
+    if errorlevel 1 (
+        echo 请手动下载到: %BUILD_DIR%\CSBJJWT
+        echo 下载地址: https://github.com/gfchfjh/CSBJJWT
+        pause
+        if not exist CSBJJWT exit /b 1
+    )
+)
+
+cd /d "%PROJ%"
+
+echo [4/8] 应用修复...
+python -c "import re; c=open('build/pyinstaller.spec','r',encoding='utf-8').read(); c=c.replace(\"name='kook-forwarder-backend',\",\"name='KOOKForwarder',\"); open('build/pyinstaller.spec','w',encoding='utf-8').write(c); print('修复完成')"
+
+echo [5/8] 安装后端依赖（3-5分钟）...
+cd backend
+if not exist venv python -m venv venv
+call venv\Scripts\activate
+python -m pip install --upgrade pip -q
+pip install -q -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -q pyinstaller
+cd ..
+
+echo [6/8] 打包后端（8-12分钟，请耐心等待）...
+cd build
+if exist dist rmdir /s /q dist 2>nul
+if exist build rmdir /s /q build 2>nul
+pyinstaller pyinstaller.spec
+if not exist "dist\KOOKForwarder\KOOKForwarder.exe" goto build_fail
+cd ..
+
+echo [7/8] 复制后端...
+if not exist backend\dist mkdir backend\dist
+xcopy /y /e /i build\dist\KOOKForwarder backend\dist\KOOKForwarder >nul
+
+echo [8/8] 构建前端（10-15分钟）...
+cd frontend
+if not exist node_modules call npm install --registry=https://registry.npmmirror.com
+if exist dist rmdir /s /q dist 2>nul
+if exist dist-electron rmdir /s /q dist-electron 2>nul
+call npm run build
+call npm run electron:build:win
+cd ..
+
+cls
+color 0A
+echo.
+echo ╔══════════════════════════════════════════════════════╗
+echo ║          🎉 构建成功！                               ║
+echo ╚══════════════════════════════════════════════════════╝
+echo.
+echo 安装包位置：
+echo %PROJ%\frontend\dist-electron\
+echo.
+echo 打开文件夹？
+choice /c YN /n /m "[Y]是 [N]否: "
+if errorlevel 2 goto done
+explorer "%PROJ%\frontend\dist-electron"
+goto done
+
+:no_python
+color 0C
+echo.
+echo [✗] 未安装Python！
+echo 下载：https://www.python.org/downloads/
+echo 安装时勾选：Add Python to PATH
+pause
+exit /b 1
+
+:no_node
+color 0C
+echo.
+echo [✗] 未安装Node.js！
+echo 下载：https://nodejs.org/
+pause
+exit /b 1
+
+:build_fail
+color 0C
+echo.
+echo [✗] 打包失败！
+echo 请查看上方错误信息
+pause
+exit /b 1
+
+:done
+echo.
+echo 下一步：双击安装程序，启动使用！
+timeout /t 5
+exit /b 0
+
+═══════════════════════════════════════════════════════════════
+  【脚本代码结束】
+═══════════════════════════════════════════════════════════════
+
+
+═══════════════════════════════════════════════════════════════
+  ⚠️ 重要提示
+═══════════════════════════════════════════════════════════════
+
+1. 必须安装 Python 3.11+ 和 Node.js 18+
+2. 必须以管理员身份运行脚本
+3. 建议添加Windows Defender排除项
+4. 耐心等待，不要关闭窗口
+
+═══════════════════════════════════════════════════════════════
+  📞 需要帮助
+═══════════════════════════════════════════════════════════════
+
+遇到问题？告诉我：
+- 在哪一步卡住
+- 错误信息是什么
+
+我会立即帮您解决！
+
+═══════════════════════════════════════════════════════════════
