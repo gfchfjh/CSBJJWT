@@ -3,6 +3,7 @@
 ✅ 新增：今日统计、时间线统计、最近消息
 """
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
@@ -54,7 +55,7 @@ class RecentMessage(BaseModel):
     latency: Optional[float] = None
 
 
-@router.get("/today", response_model=TodayStats, response_model_by_alias=True)
+@router.get("/today")
 async def get_today_stats():
     """获取今日统计数据"""
     try:
@@ -100,25 +101,46 @@ async def get_today_stats():
             active_bots = len([b for b in all_bots if b.get('enabled', True)])
             active_mappings = len([m for m in all_mappings if m.get('enabled', True)])
             
-            return TodayStats(
-                messages_total=messages_total,
-                messages_success=messages_success,
-                messages_failed=messages_failed,
-                messages_pending=messages_pending,
-                success_rate=success_rate,
-                avg_latency=round(avg_latency, 1),
-                active_accounts=active_accounts,
-                active_bots=active_bots,
-                active_mappings=active_mappings
-            )
+            # 直接返回 camelCase JSON
+            return {
+                "messagesTotal": messages_total,
+                "messagesSuccess": messages_success,
+                "messagesFailed": messages_failed,
+                "messagesPending": messages_pending,
+                "successRate": success_rate,
+                "avgLatency": round(avg_latency, 1),
+                "activeAccounts": active_accounts,
+                "activeBots": active_bots,
+                "activeMappings": active_mappings
+            }
             
         except Exception as e:
             logger.warning(f"获取今日统计失败，返回空数据: {str(e)}")
-            return TodayStats()
+            return {
+                "messagesTotal": 0,
+                "messagesSuccess": 0,
+                "messagesFailed": 0,
+                "messagesPending": 0,
+                "successRate": 0.0,
+                "avgLatency": 0.0,
+                "activeAccounts": 0,
+                "activeBots": 0,
+                "activeMappings": 0
+            }
         
     except Exception as e:
         logger.error(f"获取今日统计失败: {str(e)}")
-        return TodayStats()
+        return {
+            "messagesTotal": 0,
+            "messagesSuccess": 0,
+            "messagesFailed": 0,
+            "messagesPending": 0,
+            "successRate": 0.0,
+            "avgLatency": 0.0,
+            "activeAccounts": 0,
+            "activeBots": 0,
+            "activeMappings": 0
+        }
 
 
 @router.get("/timeline", response_model=TimelineStats)
