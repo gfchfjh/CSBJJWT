@@ -83,6 +83,11 @@
             <el-button :icon="Bell" circle @click="showNotifications" />
           </el-badge>
           
+          <!-- 主题切换 -->
+          <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
+            <el-button :icon="isDark ? Sunny : Moon" circle @click="handleToggleTheme" />
+          </el-tooltip>
+          
           <!-- 用户菜单 -->
           <el-dropdown>
             <el-avatar :size="32">
@@ -126,6 +131,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   HomeFilled,
   User,
+  Robot,
   Tools,
   Connection,
   Document,
@@ -135,12 +141,23 @@ import {
   InfoFilled,
   SwitchButton,
   Expand,
-  Fold
+  Fold,
+  Moon,
+  Sunny
 } from '@element-plus/icons-vue'
 import axios from 'axios'
+import { useTheme } from '../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
+
+// 主题功能
+const { activeTheme, toggleTheme } = useTheme()
+const isDark = computed(() => activeTheme.value === 'dark')
+
+const handleToggleTheme = () => {
+  toggleTheme()
+}
 
 // 侧边栏状态
 const sidebarCollapsed = ref(false)

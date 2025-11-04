@@ -112,7 +112,13 @@ import {
 const props = defineProps({
   error: {
     type: Object,
-    required: true
+    required: false,
+    default: () => ({})
+  },
+  errorData: {
+    type: Object,
+    required: false,
+    default: () => ({})
   },
   retryable: {
     type: Boolean,
@@ -125,7 +131,7 @@ const emit = defineEmits(['close', 'retry'])
 const visible = ref(true)
 const showTechnical = ref([])
 
-const errorData = computed(() => props.error || {})
+const errorData = computed(() => props.error || props.errorData || {})
 
 const severity = computed(() => {
   return errorData.value.severity || 'error'

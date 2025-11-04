@@ -4,7 +4,7 @@ FastAPI主应用（✅ P2-5优化：全局API认证）
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix, auth_master_password, first_run, smart_mapping_ultimate
+from .api import accounts, bots, mappings, logs, system, websocket, backup, smart_mapping, smart_mapping_enhanced, auth, health, updates, selectors, password_reset, telegram_helper, cookie_import, environment, environment_autofix, auth_master_password, first_run, smart_mapping_ultimate, settings
 # ✅ P0-P1优化新增: 增强版API
 from .api import password_reset_enhanced, environment_autofix_enhanced, help_system
 # ✅ P0-1新增: 视频管理API
@@ -235,6 +235,7 @@ app.include_router(logs.router)
 app.include_router(system.router)
 app.include_router(websocket.router)
 app.include_router(backup.router)
+app.include_router(settings.router)  # 设置管理API
 app.include_router(smart_mapping.router)
 app.include_router(smart_mapping_enhanced.router)  # ✅ 增强版智能映射（真实API）
 app.include_router(smart_mapping_ultimate.router)  # ✅ P0-4优化：终极版智能映射
