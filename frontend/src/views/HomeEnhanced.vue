@@ -28,7 +28,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-label">成功率</div>
-              <div class="stat-value">{{ stats.successRate.toFixed(1) }}%</div>
+              <div class="stat-value">{{ (stats.successRate || 0).toFixed(1) }}%</div>
               <el-progress
                 :percentage="stats.successRate"
                 :show-text="false"
@@ -48,7 +48,7 @@
             </div>
             <div class="stat-info">
               <div class="stat-label">平均延迟</div>
-              <div class="stat-value">{{ stats.avgLatency.toFixed(1) }}s</div>
+              <div class="stat-value">{{ (stats.avgLatency || 0).toFixed(1) }}s</div>
               <div class="stat-hint">
                 {{ getLatencyLevel(stats.avgLatency) }}
               </div>
@@ -179,7 +179,7 @@
             </el-table-column>
             <el-table-column prop="latency" label="延迟" width="100">
               <template #default="{ row }">
-                {{ row.latency.toFixed(2) }}s
+                {{ (row.latency || 0).toFixed(2) }}s
               </template>
             </el-table-column>
           </el-table>
