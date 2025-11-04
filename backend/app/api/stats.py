@@ -3,7 +3,7 @@
 ✅ 新增：今日统计、时间线统计、最近消息
 """
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from ..database import db
@@ -15,15 +15,17 @@ router = APIRouter(prefix="/api/stats", tags=["statistics"])
 
 class TodayStats(BaseModel):
     """今日统计"""
-    messages_total: int = 0
-    messages_success: int = 0
-    messages_failed: int = 0
-    messages_pending: int = 0
-    success_rate: float = 0.0
-    avg_latency: float = 0.0
-    active_accounts: int = 0
-    active_bots: int = 0
-    active_mappings: int = 0
+    model_config = ConfigDict(populate_by_name=True)
+    
+    messages_total: int = Field(default=0, alias="messagesTotal")
+    messages_success: int = Field(default=0, alias="messagesSuccess")
+    messages_failed: int = Field(default=0, alias="messagesFailed")
+    messages_pending: int = Field(default=0, alias="messagesPending")
+    success_rate: float = Field(default=0.0, alias="successRate")
+    avg_latency: float = Field(default=0.0, alias="avgLatency")
+    active_accounts: int = Field(default=0, alias="activeAccounts")
+    active_bots: int = Field(default=0, alias="activeBots")
+    active_mappings: int = Field(default=0, alias="activeMappings")
 
 
 class TimelinePoint(BaseModel):
