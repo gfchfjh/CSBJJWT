@@ -76,7 +76,7 @@ async def get_system_stats():
         
         # 3. 获取队列大小
         try:
-            queue_size = await redis_queue.get_queue_size('message_queue')
+            queue_size = await redis_queue.get_queue_size()
         except Exception as e:
             logger.error(f"获取队列大小失败: {e}")
             queue_size = 0
@@ -222,7 +222,15 @@ async def check_system_status() -> str:
     """
     try:
         # 检查Redis连接
-        redis_ok = await redis_queue.ping()
+        try:
+            if redis_queue.redis:
+                await redis_queue.redis.ping()
+                redis_ok = True
+            else:
+                redis_ok = False
+        except:
+            redis_ok = False
+        
         if not redis_ok:
             return "error"
         
