@@ -240,6 +240,54 @@ class HealthChecker:
                 "message": f"存储检查失败: {str(e)}"
             }
     
+    async def check_all(self) -> Dict[str, Any]:
+        """
+        执行所有健康检查（调度器接口）
+        
+        Returns:
+            {
+                "healthy": bool,
+                "checks": {
+                    "component_name": {"healthy": bool, "message": str}
+                }
+            }
+        """
+        try:
+            # 调用完整检查
+            full_results = await self.perform_health_check()
+            
+            # 转换为调度器期望的格式
+            checks = {}
+            for component, status in full_results["components"].items():
+                if component == "bots":
+                    # 合并所有bot的状态
+                    all_healthy = all(bot.get("status") == "healthy" for bot in status)
+                    checks["bots"] = {
+                        "healthy": all_healthy,
+                        "message": f"{len(status)} bots checked"
+                    }
+                else:
+                    checks[component] = {
+                        "healthy": status.get("status") == "healthy",
+                        "message": status.get("message", "")
+                    }
+            
+            return {
+                "healthy": full_results["overall_status"] == "healthy",
+                "checks": checks
+            }
+        except Exception as e:
+            logger.error(f"check_all失败: {str(e)}")
+            return {
+                "healthy": False,
+                "checks": {
+                    "error": {
+                        "healthy": False,
+                        "message": str(e)
+                    }
+                }
+            }
+    
     async def perform_health_check(self) -> Dict[str, Any]:
         """执行完整健康检查"""
         logger.info("开始健康检查...")
