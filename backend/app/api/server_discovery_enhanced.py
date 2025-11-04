@@ -46,10 +46,27 @@ class DiscoveryResponse(BaseModel):
     cached: bool = False
 
 
-@router.post("/discover", response_model=DiscoveryResponse)
-async def discover_servers_and_channels(request: DiscoveryRequest):
+@router.get("/discover", response_model=DiscoveryResponse)
+async def discover_servers_and_channels_get(account_id: Optional[int] = None):
     """
-    自动发现账号的所有服务器和频道
+    GET方法：自动发现服务器和频道（兼容前端GET调用）
+    如果不指定account_id，则使用第一个可用账号
+    """
+    if account_id is None:
+        # 获取第一个账号
+        accounts = db.get_all_accounts()
+        if not accounts:
+            return DiscoveryResponse(servers=[], total_servers=0, total_channels=0)
+        account_id = accounts[0]['id']
+    
+    # 调用POST方法的实现
+    return await discover_servers_and_channels_post(DiscoveryRequest(account_id=account_id))
+
+
+@router.post("/discover", response_model=DiscoveryResponse)
+async def discover_servers_and_channels_post(request: DiscoveryRequest):
+    """
+    POST方法：自动发现账号的所有服务器和频道
     
     工作流程：
     1. 检查账号是否存在且有有效Cookie
