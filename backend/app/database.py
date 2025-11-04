@@ -31,6 +31,51 @@ class Database:
         finally:
             conn.close()
     
+    def execute(self, query: str, params: tuple = ()):
+        """
+        执行SQL查询（快捷方法）
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            Cursor对象，可以调用fetchone()、fetchall()等方法
+        """
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        conn.commit()
+        # 注意：不要立即关闭连接，因为调用者可能需要fetch结果
+        # 但这会导致连接泄漏，所以我们需要包装一下
+        
+        class CursorWrapper:
+            """Cursor包装器，自动关闭连接"""
+            def __init__(self, cursor, conn):
+                self._cursor = cursor
+                self._conn = conn
+            
+            def fetchone(self):
+                try:
+                    return self._cursor.fetchone()
+                finally:
+                    self._conn.close()
+            
+            def fetchall(self):
+                try:
+                    return self._cursor.fetchall()
+                finally:
+                    self._conn.close()
+            
+            def fetchmany(self, size=None):
+                try:
+                    return self._cursor.fetchmany(size)
+                finally:
+                    self._conn.close()
+        
+        return CursorWrapper(cursor, conn)
+    
     def init_database(self):
         """初始化数据库表"""
         with self.get_connection() as conn:
