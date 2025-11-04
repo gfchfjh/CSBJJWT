@@ -15,17 +15,17 @@ router = APIRouter(prefix="/api/stats", tags=["statistics"])
 
 class TodayStats(BaseModel):
     """今日统计"""
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, by_alias=True)
     
-    messages_total: int = Field(default=0, alias="messagesTotal")
-    messages_success: int = Field(default=0, alias="messagesSuccess")
-    messages_failed: int = Field(default=0, alias="messagesFailed")
-    messages_pending: int = Field(default=0, alias="messagesPending")
-    success_rate: float = Field(default=0.0, alias="successRate")
-    avg_latency: float = Field(default=0.0, alias="avgLatency")
-    active_accounts: int = Field(default=0, alias="activeAccounts")
-    active_bots: int = Field(default=0, alias="activeBots")
-    active_mappings: int = Field(default=0, alias="activeMappings")
+    messages_total: int = Field(default=0, serialization_alias="messagesTotal")
+    messages_success: int = Field(default=0, serialization_alias="messagesSuccess")
+    messages_failed: int = Field(default=0, serialization_alias="messagesFailed")
+    messages_pending: int = Field(default=0, serialization_alias="messagesPending")
+    success_rate: float = Field(default=0.0, serialization_alias="successRate")
+    avg_latency: float = Field(default=0.0, serialization_alias="avgLatency")
+    active_accounts: int = Field(default=0, serialization_alias="activeAccounts")
+    active_bots: int = Field(default=0, serialization_alias="activeBots")
+    active_mappings: int = Field(default=0, serialization_alias="activeMappings")
 
 
 class TimelinePoint(BaseModel):
@@ -54,7 +54,7 @@ class RecentMessage(BaseModel):
     latency: Optional[float] = None
 
 
-@router.get("/today", response_model=TodayStats)
+@router.get("/today", response_model=TodayStats, response_model_by_alias=True)
 async def get_today_stats():
     """获取今日统计数据"""
     try:
