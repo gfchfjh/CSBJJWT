@@ -4,6 +4,39 @@
 
 ---
 
+## [18.0.3] - 2025-11-04
+
+### 🎉 系统完全就绪 - 所有已知问题修复完成
+
+本次更新修复了 v18.0.2 中所有已知的前后端问题，系统现已完全可用。
+
+#### ✅ 前端修复（4项）
+- ✅ Robot 图标缺失 - 改用 Tools 图标
+- ✅ 主题切换按钮缺失 - 添加月亮/太阳图标
+- ✅ ErrorDialog prop 警告 - error prop 改为可选
+- ✅ 设置保存功能异常 - localStorage 持久化
+
+#### ✅ 后端修复（7项）
+- ✅ Settings API (404) - 已注册路由
+- ✅ 服务器发现 API (405) - 已添加 GET 支持
+- ✅ 统计数据 API (404) - 新增 stats.py
+- ✅ 消息查询 API (404) - 新增 messages.py
+- ✅ Database.execute 缺失 - 已添加方法
+- ✅ RedisQueue 调用错误 - 已修复
+- ✅ HealthChecker.check_all 缺失 - 已添加
+
+#### 📦 文件变更
+**新增：** backend/app/api/stats.py, backend/app/api/messages.py  
+**修改：** 7个核心文件  
+**总计：** 12 files changed, 2418 insertions(+), 165 deletions(-)
+
+#### ✨ 系统状态
+- ✅ 前端：无错误，所有功能正常
+- ✅ 后端：所有 API 正常，健康检查正常
+- ✅ 测试：前后端完全正常，0个已知错误
+
+---
+
 ## [18.0.2] - 2025-11-03
 
 ### 🎨 前端错误修复与主题系统

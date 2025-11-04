@@ -1,19 +1,46 @@
-# KOOK消息转发系统 v18.0.2
+# KOOK消息转发系统 v18.0.3
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-18.0.2-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
 
 **Electron桌面应用 · 主题切换 · 完美UI优化 · 全平台支持**
 
-**35,000+行代码 · 前端修复完成 · GitHub Actions自动构建**
+**35,000+行代码 · 所有问题已修复 · GitHub Actions自动构建**
 
 [快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases)
 
 </div>
+
+---
+
+## 🎉 v18.0.3 - 系统完全就绪 (2025-11-04)
+
+> **重大更新**: 修复所有已知问题，前后端100%正常运行！
+
+### ✅ 11个问题全部修复
+
+**前端修复：**
+- ✅ Robot图标警告 - 改用Tools图标
+- ✅ 主题切换按钮 - 右上角月亮/太阳图标
+- ✅ ErrorDialog prop警告 - error prop改为可选
+- ✅ 设置保存功能 - localStorage持久化
+
+**后端修复：**
+- ✅ Settings API (404) - 已注册路由
+- ✅ 服务器发现API (405) - 已添加GET支持
+- ✅ 统计数据API (404) - 新增stats.py
+- ✅ 消息查询API (404) - 新增messages.py
+- ✅ Database.execute缺失 - 已添加方法
+- ✅ RedisQueue调用错误 - 已修复
+- ✅ HealthChecker.check_all缺失 - 已添加
+
+**测试结果：** ✅ 前后端完全正常，0个已知错误
+
+详见：[RELEASE_NOTES_v18.0.3.md](./RELEASE_NOTES_v18.0.3.md)
 
 ---
 
