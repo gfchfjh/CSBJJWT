@@ -46,10 +46,34 @@ class DiscoveryResponse(BaseModel):
     cached: bool = False
 
 
-@router.post("/discover", response_model=DiscoveryResponse)
-async def discover_servers_and_channels(request: DiscoveryRequest):
+@router.get("/discover", response_model=DiscoveryResponse)
+async def discover_servers_and_channels_get(account_id: int = None, force_refresh: bool = False):
     """
-    自动发现账号的所有服务器和频道
+    自动发现账号的所有服务器和频道 (GET版本)
+    
+    工作流程：
+    1. 检查账号是否存在且有有效Cookie
+    2. 启动Playwright抓取器
+    3. 通过JS获取页面中的服务器和频道数据
+    4. 缓存到数据库
+    5. 返回结构化数据
+    """
+    # 如果没有指定account_id，尝试获取第一个账号
+    if account_id is None:
+        first_account = db.execute("SELECT id FROM accounts LIMIT 1").fetchone()
+        if not first_account:
+            raise HTTPException(404, "没有可用的账号")
+        account_id = first_account['id']
+    
+    # 构造请求对象并调用POST版本的逻辑
+    request = DiscoveryRequest(account_id=account_id, force_refresh=force_refresh)
+    return await discover_servers_and_channels_post(request)
+
+
+@router.post("/discover", response_model=DiscoveryResponse)
+async def discover_servers_and_channels_post(request: DiscoveryRequest):
+    """
+    自动发现账号的所有服务器和频道 (POST版本)
     
     工作流程：
     1. 检查账号是否存在且有有效Cookie
