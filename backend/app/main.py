@@ -30,6 +30,8 @@ from .api import message_search
 from .api import metrics_api
 # ✅ v11.0.0终极优化新增: 终极版API 🆕
 from .api import environment_ultimate_api, mapping_learning_ultimate_api, database_optimizer_api, notification_api
+# ✅ v18.0.3新增: 统计和消息API 🆕
+from .api import stats, messages, settings
 from .middleware.auth_middleware import APIAuthMiddleware  # ✅ P2-5优化
 from .queue.redis_client import redis_queue
 from .queue.worker import message_worker
@@ -361,6 +363,11 @@ app.include_router(email_config.router)  # 邮件告警系统 🆕 P0深度优�
 # ✅ P1深度优化: 插件管理API
 from .api import plugins_manager
 app.include_router(plugins_manager.router)  # 插件管理系统 🆕 P1深度优化
+
+# ✅ v18.0.3新增: 统计、消息和设置API
+app.include_router(stats.router)  # 统计数据API 🆕 v18.0.3
+app.include_router(messages.router)  # 消息查询API 🆕 v18.0.3
+app.include_router(settings.router)  # 设置管理API 🆕 v18.0.3
 
 
 @app.get("/")
