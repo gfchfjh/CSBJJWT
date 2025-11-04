@@ -271,7 +271,15 @@ const getPlatformTagType = (platform) => {
 const loadStats = async () => {
   try {
     const response = await axios.get('http://localhost:9527/api/stats/today');
-    stats.value = response.data;
+    const data = response.data;
+    // 转换后端的 snake_case 为前端的 camelCase
+    stats.value = {
+      total: data.messages_total || data.messagesTotal || 0,
+      successRate: data.success_rate !== undefined ? data.success_rate : (data.successRate || 0),
+      avgLatency: data.avg_latency !== undefined ? data.avg_latency : (data.avgLatency || 0),
+      failed: data.messages_failed || data.messagesFailed || 0,
+      totalTrend: 0
+    };
   } catch (error) {
     console.error('加载统计失败:', error);
   }
