@@ -24,7 +24,7 @@
         </el-menu-item>
         
         <el-menu-item index="/bots">
-          <el-icon><Tools /></el-icon>
+          <el-icon><Robot /></el-icon>
           <template #title>Bot配置</template>
         </el-menu-item>
         
@@ -83,11 +83,6 @@
             <el-button :icon="Bell" circle @click="showNotifications" />
           </el-badge>
           
-          <!-- 主题切换 -->
-          <el-tooltip :content="isDark ? '切换到浅色' : '切换到深色'" placement="bottom">
-            <el-button :icon="isDark ? Sunny : Moon" circle @click="handleToggleTheme" />
-          </el-tooltip>
-          
           <!-- 用户菜单 -->
           <el-dropdown>
             <el-avatar :size="32">
@@ -140,23 +135,12 @@ import {
   InfoFilled,
   SwitchButton,
   Expand,
-  Fold,
-  Moon,
-  Sunny
+  Fold
 } from '@element-plus/icons-vue'
 import axios from 'axios'
-import { useTheme } from '../composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
-
-// 主题功能
-const { activeTheme, toggleTheme } = useTheme()
-const isDark = computed(() => activeTheme.value === 'dark')
-
-const handleToggleTheme = () => {
-  toggleTheme()
-}
 
 // 侧边栏状态
 const sidebarCollapsed = ref(false)
@@ -539,4 +523,5 @@ html.dark .el-alert {
   background: #2b2b2c;
   border-color: #414243;
 }
+
 </style>

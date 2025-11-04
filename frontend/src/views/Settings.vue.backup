@@ -847,13 +847,6 @@ let selectedBackupFile = null
  */
 const loadSettings = async () => {
   try {
-    // 首先从本地存储加载设置
-    const saved = localStorage.getItem('kook_settings')
-    if (saved) {
-      const savedSettings = JSON.parse(saved)
-      Object.assign(settings, savedSettings)
-      console.log('✅ 已从本地加载设置')
-    }
     // 使用 axios 直接调用
     const statusRes = await axios.get('http://localhost:9527/api/system/status')
     Object.assign(serviceStatus, statusRes.data)
@@ -870,23 +863,17 @@ const loadSettings = async () => {
 const saveAllSettings = async () => {
   try {
     saving.value = true
-    
-    // 保存所有设置到本地存储
-    const settingsToSave = JSON.parse(JSON.stringify(settings))
-    
-    // 🔍 调试：查看要保存的内容
-    console.log('准备保存的设置:', settingsToSave)
-    
-    localStorage.setItem('kook_settings', JSON.stringify(settingsToSave))
-    
+    await api.post('/api/settings', settings)
     ElMessage.success('设置已保存')
   } catch (error) {
     console.error('保存设置失败:', error)
-    ElMessage.error('保存设置失败，请重试')
+    ElMessage.error('保存设置失败')
   } finally {
     saving.value = false
   }
-}/**
+}
+
+/**
  * 格式化运行时长
  */
 const formatUptime = (seconds) => {
