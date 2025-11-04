@@ -2,27 +2,27 @@
 
 **发布日期**: 2025-11-04  
 **版本号**: v18.0.3  
-**状态**: ✅ Production Ready  
+**状态**: ✅ Active Development  
 **类型**: Bug Fix Release
 
 ---
 
 ## 🎉 版本亮点
 
-**系统完全就绪！** 本次更新修复了 v18.0.2 中所有已知的前后端问题，系统现已100%可用。
+**系统核心功能修复完成！** 本次更新修复了 v18.0.2 中所有已知的前后端问题，解决了API通信和数据交互问题。
 
 ### 核心成果
-- ✅ 修复 **11个** 关键问题
+- ✅ 修复 **13个** 关键问题
 - ✅ 新增 **2个** API 模块
-- ✅ 修改 **7个** 核心文件
-- ✅ 总计 **2418行** 代码新增/修改
-- ✅ **0** 已知错误
+- ✅ 修改 **10+** 核心文件
+- ✅ 解决前后端数据格式兼容问题
+- ✅ 总计 **2500+行** 代码新增/修改
 
 ---
 
 ## 🔧 修复详情
 
-### 前端修复（4项）
+### 前端修复（6项）
 
 1. **Robot 图标缺失** ✅
    - 修复控制台警告：`Failed to resolve component: Robot`
@@ -41,34 +41,58 @@
    - 修复设置刷新后丢失问题
    - 使用 localStorage 持久化
 
-### 后端修复（7项）
+5. **HomeEnhanced toFixed 错误** ✅
+   - 修复：`Cannot read properties of undefined (reading 'toFixed')`
+   - 添加空值检查：`(stats.successRate || 0).toFixed(1)`
+   - 所有数字字段添加默认值
+
+6. **数据适配层** ✅
+   - loadStats 转换后端 snake_case 为前端 camelCase
+   - 兼容 `success_rate` 和 `successRate` 两种格式
+   - 确保数据正确映射到 Vue 响应式对象
+
+### 后端修复（9项）
 
 1. **Settings API 未注册** ✅
    - 注册 `settings.router` 到 main.py
 
-2. **服务器发现 API 405错误** ✅
-   - 添加 GET 端点支持
-   - 保留 POST 向后兼容
+2. **Settings 命名冲突** ✅
+   - `from .api import settings` 与 `from .config import settings` 冲突
+   - 改用 `settings_api` 别名
+   - 修复 `'Settings' object has no attribute 'router'` 错误
 
-3. **统计数据 API 缺失** ✅
+3. **服务器发现 API 405错误** ✅
+   - 添加 GET 端点 `discover_servers_and_channels_get`
+   - 自动使用第一个账号（无需指定 account_id）
+   - 保留 POST 端点向后兼容
+
+4. **统计数据 API 缺失** ✅
    - 新增 `backend/app/api/stats.py`
    - 实现今日统计和时间线统计
+   - 直接返回字典格式数据
 
-4. **消息查询 API 缺失** ✅
+5. **消息查询 API 缺失** ✅
    - 新增 `backend/app/api/messages.py`
    - 实现最近消息列表查询
 
-5. **Database.execute 缺失** ✅
+6. **Database.execute 缺失** ✅
    - 添加 `execute()` 快捷方法
    - 实现 CursorWrapper 自动管理连接
 
-6. **RedisQueue 调用错误** ✅
+7. **RedisQueue 调用错误** ✅
    - 修复 `get_queue_size()` 参数错误
    - 修复 `ping()` 方法调用
+   - 添加异常处理
 
-7. **HealthChecker.check_all 缺失** ✅
+8. **HealthChecker.check_all 缺失** ✅
    - 添加调度器接口方法
    - 健康检查任务正常运行
+
+9. **统计API字段序列化** ✅（多次迭代）
+   - 尝试 Pydantic Field alias
+   - 尝试 serialization_alias
+   - 尝试 model_config by_alias
+   - 最终采用直接返回字典方案
 
 ---
 
