@@ -5,6 +5,7 @@ KOOK消息抓取器 - 完整实现版
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext
 import asyncio
 import json
+import random
 from typing import Dict, List, Optional, Callable
 from pathlib import Path
 from ..config import settings
@@ -33,22 +34,103 @@ class KookScraper:
             logger.info(f"[Scraper-{self.account_id}] 正在启动...")
             
             async with async_playwright() as p:
-                # 启动浏览器
+                # ✅ 反检测增强1: 启动浏览器（有界面模式 + 完整参数）
                 self.browser = await p.chromium.launch(
-                    headless=True,
+                    headless=False,  # 使用有界面模式，更难被检测
                     args=[
                         '--no-sandbox',
                         '--disable-setuid-sandbox',
                         '--disable-dev-shm-usage',
-                        '--disable-blink-features=AutomationControlled'
-                    ]
+                        '--disable-blink-features=AutomationControlled',  # 关键：隐藏自动化特征
+                        '--disable-automation',  # 禁用自动化扩展
+                        '--disable-infobars',  # 隐藏信息栏
+                        '--no-first-run',
+                        '--no-default-browser-check',
+                        '--disable-background-timer-throttling',
+                        '--disable-backgrounding-occluded-windows',
+                        '--disable-renderer-backgrounding',
+                        '--disable-features=IsolateOrigins,site-per-process',
+                        '--window-size=1920,1080',
+                        '--start-maximized',
+                    ],
+                    # 添加额外的启动选项
+                    slow_mo=random.randint(50, 150)  # 随机延迟，模拟真实用户
                 )
                 
-                # 创建浏览器上下文
+                # ✅ 反检测增强2: 创建浏览器上下文（完整配置 + 随机User-Agent）
+                user_agents = [
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                ]
+                
                 self.context = await self.browser.new_context(
                     viewport={'width': 1920, 'height': 1080},
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    user_agent=random.choice(user_agents),  # 随机User-Agent
+                    locale='zh-CN',
+                    timezone_id='Asia/Shanghai',
+                    permissions=['geolocation', 'notifications'],
+                    device_scale_factor=1,
+                    has_touch=False,
+                    color_scheme='light',
+                    # 额外的指纹伪装
+                    extra_http_headers={
+                        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                        'DNT': '1',
+                    }
                 )
+                
+                # ✅ 反检测增强3: 注入JavaScript反检测脚本
+                await self.context.add_init_script("""
+                    // 删除webdriver标记
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => false
+                    });
+                    
+                    // 伪装chrome对象
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: function() {},
+                        csi: function() {},
+                        app: {}
+                    };
+                    
+                    // 伪装权限API
+                    const originalQuery = window.navigator.permissions.query;
+                    window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                            Promise.resolve({ state: Notification.permission }) :
+                            originalQuery(parameters)
+                    );
+                    
+                    // 伪装语言
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['zh-CN', 'zh', 'en-US', 'en']
+                    });
+                    
+                    // 伪装插件数量（模拟真实浏览器）
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5]
+                    });
+                    
+                    // 伪装平台
+                    Object.defineProperty(navigator, 'platform', {
+                        get: () => 'Win32'
+                    });
+                    
+                    // 伪装硬件并发数
+                    Object.defineProperty(navigator, 'hardwareConcurrency', {
+                        get: () => 8
+                    });
+                    
+                    // 伪装设备内存
+                    Object.defineProperty(navigator, 'deviceMemory', {
+                        get: () => 8
+                    });
+                """)
                 
                 # 加载Cookie（如果有）
                 cookies = self.load_cookies()
@@ -67,12 +149,21 @@ class KookScraper:
                     logger.debug(f"[Browser Console] {msg.text}")
                 )
                 
-                # 访问KOOK
+                # ✅ 反检测增强4: 分步访问，模拟真实用户行为
                 logger.info(f"[Scraper-{self.account_id}] 正在访问KOOK...")
+                
+                # 先访问首页（模拟真实用户）
+                await self.page.goto('https://www.kookapp.cn', wait_until='networkidle')
+                await asyncio.sleep(random.uniform(1.5, 3.5))  # 随机延迟
+                
+                # ✅ 反检测增强5: 模拟人类行为（鼠标移动和滚动）
+                await self.simulate_human_behavior()
+                
+                # 再访问app页面
                 await self.page.goto('https://www.kookapp.cn/app', wait_until='networkidle')
                 
-                # 等待页面加载
-                await asyncio.sleep(2)
+                # ✅ 反检测增强6: 随机等待时间
+                await asyncio.sleep(random.uniform(2, 4))
                 
                 # 检查登录状态
                 is_logged_in = await self.check_login_status()
@@ -114,8 +205,15 @@ class KookScraper:
                 
                 # 保持运行
                 self.is_running = True
+                activity_counter = 0
                 while self.is_running:
                     await asyncio.sleep(1)
+                    activity_counter += 1
+                    
+                    # ✅ 反检测增强7: 定期模拟用户活动（每30-60秒）
+                    if activity_counter >= random.randint(30, 60):
+                        await self.simulate_activity()
+                        activity_counter = 0
                     
                     # 心跳检测
                     if not await self.check_connection():
@@ -133,6 +231,57 @@ class KookScraper:
             raise
         finally:
             await self.stop()
+    
+    async def simulate_human_behavior(self):
+        """✅ 反检测增强: 模拟人类行为（鼠标移动和滚动）"""
+        try:
+            # 随机移动鼠标
+            for _ in range(random.randint(2, 5)):
+                await self.page.mouse.move(
+                    random.randint(100, 1800),
+                    random.randint(100, 1000),
+                    steps=random.randint(10, 30)  # 分步移动，更自然
+                )
+                await asyncio.sleep(random.uniform(0.1, 0.3))
+            
+            # 随机滚动
+            for _ in range(random.randint(1, 3)):
+                await self.page.evaluate(
+                    f'window.scrollBy(0, {random.randint(-200, 200)})'
+                )
+                await asyncio.sleep(random.uniform(0.2, 0.5))
+            
+            logger.debug(f"[Scraper-{self.account_id}] 完成人类行为模拟")
+            
+        except Exception as e:
+            logger.debug(f"[Scraper-{self.account_id}] 模拟行为失败: {e}")
+    
+    async def simulate_activity(self):
+        """✅ 反检测增强: 定期模拟用户活动"""
+        try:
+            actions = [
+                # 随机鼠标移动
+                lambda: self.page.mouse.move(
+                    random.randint(100, 1800),
+                    random.randint(100, 1000)
+                ),
+                # 随机滚动
+                lambda: self.page.evaluate(
+                    f'window.scrollBy(0, {random.randint(-100, 100)})'
+                ),
+                # 随机停顿
+                lambda: asyncio.sleep(random.uniform(0.5, 2)),
+            ]
+            
+            # 随机执行1-2个动作
+            for _ in range(random.randint(1, 2)):
+                action = random.choice(actions)
+                await action()
+            
+            logger.debug(f"[Scraper-{self.account_id}] 执行活动模拟")
+            
+        except Exception as e:
+            logger.debug(f"[Scraper-{self.account_id}] 活动模拟失败: {e}")
     
     async def check_login_status(self) -> bool:
         """检查登录状态"""
