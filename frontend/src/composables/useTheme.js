@@ -39,13 +39,13 @@ function getActiveTheme() {
  */
 function applyTheme(theme) {
   // 移除所有主题类
-  document.documentElement.classList.remove('light-theme', 'dark-theme')
+  document.documentElement.classList.remove('light', 'dark', 'light-theme', 'dark-theme')
   
   // 添加对应主题类
   if (theme === ThemeType.DARK) {
-    document.documentElement.classList.add('dark-theme')
+    document.documentElement.classList.add('dark')
   } else {
-    document.documentElement.classList.add('light-theme')
+    document.documentElement.classList.add('light')
   }
   
   // 设置Element Plus主题

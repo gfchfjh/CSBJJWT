@@ -132,7 +132,105 @@ class KookScraper:
                     });
                 """)
                 
+                # ✅ 反检测增强3: 注入JavaScript反检测脚本
+                await self.context.add_init_script("""
+                    // 删除webdriver标记
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => false
+                    });
+                    
+                    // 伪装chrome对象
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: function() {},
+                        csi: function() {},
+                        app: {}
+                    };
+                    
+                    // 伪装权限API
+                    const originalQuery = window.navigator.permissions.query;
+                    window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                            Promise.resolve({ state: Notification.permission }) :
+                            originalQuery(parameters)
+                    );
+                    
+                    // 伪装语言
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['zh-CN', 'zh', 'en-US', 'en']
+                    });
+                    
+                    // 伪装插件数量（模拟真实浏览器）
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5]
+                    });
+                    
+                    // 伪装平台
+                    Object.defineProperty(navigator, 'platform', {
+                        get: () => 'Win32'
+                    });
+                    
+                    // 伪装硬件并发数
+                    Object.defineProperty(navigator, 'hardwareConcurrency', {
+                        get: () => 8
+                    });
+                    
+                    // 伪装设备内存
+                    Object.defineProperty(navigator, 'deviceMemory', {
+                        get: () => 8
+                    });
+                """)
+
                 # 加载Cookie（如果有）
+
+                # ✅ 反检测增强: 注入JavaScript反检测脚本
+                await self.context.add_init_script("""
+                    // 删除webdriver标记
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => false
+                    });
+                    
+                    // 伪装chrome对象
+                    window.chrome = {
+                        runtime: {},
+                        loadTimes: function() {},
+                        csi: function() {},
+                        app: {}
+                    };
+                    
+                    // 伪装权限API
+                    const originalQuery = window.navigator.permissions.query;
+                    window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                            Promise.resolve({ state: Notification.permission }) :
+                            originalQuery(parameters)
+                    );
+                    
+                    // 伪装语言
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['zh-CN', 'zh', 'en-US', 'en']
+                    });
+                    
+                    // 伪装插件
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5]
+                    });
+                    
+                    // 伪装平台
+                    Object.defineProperty(navigator, 'platform', {
+                        get: () => 'Win32'
+                    });
+                    
+                    // 伪装硬件信息
+                    Object.defineProperty(navigator, 'hardwareConcurrency', {
+                        get: () => 8
+                    });
+                    
+                    Object.defineProperty(navigator, 'deviceMemory', {
+                        get: () => 8
+                    });
+                """)
+
                 cookies = self.load_cookies()
                 if cookies:
                     await self.context.add_cookies(cookies)
