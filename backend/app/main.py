@@ -1,3 +1,11 @@
+import sys
+import asyncio
+
+# Python 3.13 Windows 兼容性修复
+if sys.platform == "win32" and sys.version_info >= (3, 13):
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    print("✅ 已设置 Windows 兼容事件循环策略 (Python 3.13)")
+
 """
 FastAPI主应用（✅ P2-5优化：全局API认证）
 """

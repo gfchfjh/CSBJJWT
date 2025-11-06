@@ -881,12 +881,36 @@ class KookScraper:
             account = db.execute("SELECT cookie FROM accounts WHERE id = ?", (self.account_id,)).fetchone()
             if account:
                 context = browser.new_context()
-                context.add_cookies(json.loads(account['cookie']))
+                # 解密Cookie
+                from ..utils.crypto import crypto_manager
+                decrypted = crypto_manager.decrypt(account[0])
+                cookie_data = json.loads(decrypted)
+                logger.info(f"[Scraper-{self.account_id}] Cookie解密成功")
+                # 修复sameSite字段
+                for cookie in cookie_data:
+                    if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
+                        cookie["sameSite"] = "None"
+                    if cookie.get("sameSite") == "None":
+                        cookie["secure"] = True
+                logger.info(f"[Scraper-{self.account_id}] Cookie已修复sameSite字段")
+                
+                # 创建上下文并添加Cookie
+                context = browser.new_context()
+                context.add_cookies(cookie_data)
+                logger.info(f"[Scraper-{self.account_id}] Cookie已加载")
+                
+                # 打开页面
                 page = context.new_page()
-                page.goto("https://www.kookapp.cn/app/")
-                print(f"[Scraper-{self.account_id}] Browser started")
+                logger.info(f"[Scraper-{self.account_id}] 正在访问KOOK...")
+                page.goto("https://www.kookapp.cn/app/", wait_until="domcontentloaded", timeout=60000)
+                
+                logger.info(f"[Scraper-{self.account_id}] ✅ 浏览器已启动并访问KOOK（同步模式）")
+                
+                # 保持运行
                 self.is_running = True
-                while self.is_running: __import__('time').sleep(1)
+                while self.is_running:
+                    import time
+                    time.sleep(1)
 
     def register_message_handler(self, handler: Callable):
         """注册消息处理器"""

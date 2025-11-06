@@ -1,23 +1,15 @@
-"""
-KOOK Forwarder Backend Launcher
-PyInstaller entry point
-"""
-import sys
+﻿import sys
 import os
+import asyncio
 
-# Add current directory to Python path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.insert(0, current_dir)
+# Windows Playwright 兼容性修复 - 全局设置
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    print("✅ 已全局设置 WindowsSelectorEventLoopPolicy")
 
-# Import and run main
+# 添加当前目录到Python路径
+sys.path.insert(0, os.path.dirname(__file__))
+
 if __name__ == "__main__":
-    from app.main import app
     import uvicorn
-    
-    uvicorn.run(
-        app,
-        host="127.0.0.1",
-        port=8000,
-        log_level="info"
-    )
+    uvicorn.run("app.main:app", host="0.0.0.0", port=9527, reload=True)
