@@ -1,8 +1,8 @@
-# KOOK消息转发系统 v18.0.3
+# KOOK消息转发系统 v18.0.4
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-18.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-18.0.4-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Status](https://img.shields.io/badge/status-Production%20Ready-brightgreen.svg)
@@ -14,6 +14,54 @@
 [快速开始](#快速开始) · [下载安装](#下载安装) · [功能特性](#功能特性) · [技术文档](#技术文档) · [Release](https://github.com/gfchfjh/CSBJJWT/releases)
 
 </div>
+
+---
+
+## 🎉 v18.0.4 - KOOK浏览器启动修复 (2025-11-06)
+
+> **关键修复**: 修复KOOK浏览器启动失败和Cookie处理问题，Chrome成功启动！
+
+### ✅ 核心修复
+
+**浏览器启动问题：**
+- ✅ **Cookie sameSite字段修复** - 兼容Chromium最新要求
+  * 将 `no_restriction`/`unspecified` 转换为 `None`
+  * 添加 `secure=true` 标志确保安全性
+- ✅ **页面加载超时修复** - 60秒超时 + 宽松等待策略
+  * 从 `networkidle` 改为 `domcontentloaded`
+  * 超时从30秒增加到60秒
+- ✅ **同步模式逻辑完善** - 补全缺失的关键代码
+  * 添加Cookie解密流程
+  * 补充页面创建和访问逻辑
+  * 完善日志输出
+
+**兼容性改进：**
+- ✅ **Python 3.13 Windows兼容** - 异步事件循环策略修复
+- ✅ **Playwright Windows支持** - 全局设置事件循环策略
+
+### 🧪 测试结果
+
+| 测试项 | 状态 | 说明 |
+|-------|------|------|
+| Chrome启动 | ✅ 成功 | 浏览器正常弹出 |
+| Cookie加载 | ✅ 成功 | sameSite字段正确修复 |
+| KOOK访问 | ✅ 成功 | 页面正常加载（60秒内） |
+| 扫码登录 | ✅ 正常 | Cookie过期时可扫码重登 |
+
+### 📝 技术细节
+
+**修改文件：**
+- `backend/app/kook/scraper.py` - Cookie修复 + 超时优化
+- `backend/app/main.py` - Python 3.13兼容性
+- `backend/run.py` - Playwright事件循环修复
+
+**解决的问题：**
+1. Cookie sameSite字段导致的Chromium报错
+2. Page.goto超时（30秒不够）
+3. 同步模式下代码逻辑缺失
+4. Python 3.13在Windows上的asyncio问题
+
+详见：[CHANGELOG.md](./CHANGELOG.md)
 
 ---
 

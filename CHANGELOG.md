@@ -4,6 +4,123 @@
 
 ---
 
+## [18.0.4] - 2025-11-06
+
+### 🎉 KOOK浏览器启动修复 - Chrome成功启动
+
+本次更新修复了KOOK浏览器启动失败的关键问题，解决了Cookie处理、页面加载超时和同步模式逻辑缺陷。
+
+#### ✅ 浏览器启动修复（3项）
+
+**1. Cookie sameSite字段兼容性修复**
+- ✅ 将 `no_restriction`/`unspecified` 转换为 `None`
+- ✅ 添加 `secure=true` 标志确保Cookie安全性
+- ✅ 兼容Chromium最新的SameSite策略要求
+- **影响**: 修复浏览器启动时Cookie报错问题
+
+**2. 页面加载超时优化**
+- ✅ 超时时间从30秒增加到60秒
+- ✅ 等待策略从 `networkidle` 改为 `domcontentloaded`
+- ✅ 使用更宽松的等待策略，提升加载成功率
+- **影响**: 修复 "Page.goto: Timeout 30000ms exceeded" 错误
+
+**3. 同步模式逻辑完善**
+- ✅ 补充Cookie解密流程
+- ✅ 添加页面创建和访问代码
+- ✅ 完善日志输出，便于调试
+- ✅ 修复 `while self.is_running` 死循环前缺少关键代码的问题
+- **影响**: 浏览器能够正常启动并访问KOOK页面
+
+#### ✅ 兼容性改进（2项）
+
+**1. Python 3.13 Windows兼容性**
+- ✅ 在 `backend/app/main.py` 添加事件循环策略修复
+- ✅ 检测Python 3.13版本并设置 `WindowsSelectorEventLoopPolicy`
+- **影响**: 解决Python 3.13在Windows上的asyncio问题
+
+**2. Playwright Windows兼容性**
+- ✅ 在 `backend/run.py` 全局设置事件循环策略
+- ✅ 确保Playwright在Windows上正常工作
+- **影响**: 修复Windows平台下的Playwright兼容性问题
+
+#### 📦 文件变更
+
+**修改文件：**
+- `backend/app/kook/scraper.py` - Cookie修复 + 超时优化 + 逻辑完善
+- `backend/app/main.py` - Python 3.13兼容性修复
+- `backend/run.py` - Playwright Windows兼容性修复
+- `.gitignore` - 添加 venv/ 忽略规则
+
+**代码变更统计：**
+- 4 files changed
+- 48 insertions(+)
+- 22 deletions(-)
+
+#### 🧪 测试结果
+
+| 测试项 | 状态 | 说明 |
+|-------|------|------|
+| Chrome启动 | ✅ 成功 | 浏览器正常弹出 |
+| Cookie加载 | ✅ 成功 | sameSite字段正确修复 |
+| KOOK页面访问 | ✅ 成功 | 页面在60秒内加载完成 |
+| 扫码登录 | ✅ 正常 | Cookie过期时可重新扫码登录 |
+| Windows运行 | ✅ 正常 | Python 3.13兼容性良好 |
+
+#### 📝 技术详解
+
+**问题1: Cookie sameSite字段不兼容**
+```python
+# 修复前：直接使用Chrome导出的Cookie
+context.add_cookies(cookie_data)
+
+# 修复后：转换sameSite字段
+for cookie in cookie_data:
+    if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
+        cookie["sameSite"] = "None"
+    if cookie.get("sameSite") == "None":
+        cookie["secure"] = True
+```
+
+**问题2: 页面加载超时**
+```python
+# 修复前：30秒超时，等待所有网络请求完成
+page.goto("https://www.kookapp.cn/app/", wait_until="networkidle")
+
+# 修复后：60秒超时，只等待DOM加载完成
+page.goto("https://www.kookapp.cn/app/", wait_until="domcontentloaded", timeout=60000)
+```
+
+**问题3: 同步模式逻辑缺失**
+```python
+# 修复前：缺少页面创建和访问代码
+context.add_cookies(cookie_data)
+self.is_running = True
+while self.is_running: time.sleep(1)
+
+# 修复后：完整的启动流程
+context.add_cookies(cookie_data)
+logger.info(f"[Scraper-{self.account_id}] Cookie已加载")
+page = context.new_page()
+logger.info(f"[Scraper-{self.account_id}] 正在访问KOOK...")
+page.goto("https://www.kookapp.cn/app/", wait_until="domcontentloaded", timeout=60000)
+logger.info(f"[Scraper-{self.account_id}] ✅ 浏览器已启动并访问KOOK")
+self.is_running = True
+while self.is_running: time.sleep(1)
+```
+
+#### 🎯 影响范围
+
+- ✅ 所有使用KOOK账号监听消息的用户
+- ✅ Windows平台Python 3.13用户
+- ✅ 使用Playwright浏览器自动化的功能
+
+#### 🔗 相关链接
+
+- Commit: [85d63e4](https://github.com/gfchfjh/CSBJJWT/commit/85d63e4)
+- Issue: Cookie sameSite字段导致浏览器启动失败
+
+---
+
 ## [18.0.3] - 2025-11-04
 
 ### 🎉 系统完全就绪 - 所有已知问题修复完成

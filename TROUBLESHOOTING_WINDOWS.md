@@ -1,9 +1,9 @@
 # Windows 故障排查指南
 
-**版本**: 2.0  
+**版本**: 2.1  
 **适用系统**: Windows 10/11  
-**更新日期**: 2025-11-03  
-**适用版本**: v18.0.2+  
+**更新日期**: 2025-11-06  
+**适用版本**: v18.0.4+  
 
 ---
 
@@ -13,6 +13,8 @@
 - [构建问题](#构建问题)
 - [启动问题](#启动问题)
 - [运行时问题](#运行时问题)
+  - [浏览器启动问题](#浏览器启动问题)
+  - [Cookie处理问题](#cookie处理问题)
 - [常见错误代码](#常见错误代码)
 - [日志收集](#日志收集)
 
@@ -367,6 +369,190 @@ taskkill /F /PID <PID>
 ---
 
 ## ⚠️ 运行时问题
+
+### 🌐 浏览器启动问题
+
+#### 问题: Chrome/Edge浏览器启动失败
+
+**现象**:
+```
+[Scraper-2] 正在启动...
+[Scraper-2] Cookie已加载
+[Scraper-2] 正在访问KOOK...
+# 然后没有任何反应，浏览器没有弹出
+```
+
+**常见原因及解决方案**:
+
+**原因1: Cookie sameSite字段不兼容** (v18.0.4已修复)
+```
+错误信息：Cookie has "sameSite" set to "no_restriction"
+```
+
+**解决方案**:
+- ✅ 已在v18.0.4自动修复
+- 系统会自动将 `no_restriction`/`unspecified` 转换为 `None`
+- 如果使用旧版本，请更新到v18.0.4+
+
+**原因2: 页面加载超时**
+```
+错误信息：Page.goto: Timeout 30000ms exceeded
+```
+
+**解决方案**:
+- ✅ 已在v18.0.4自动修复（60秒超时）
+- 如果仍然超时，检查网络连接
+- 尝试访问 https://www.kookapp.cn 确认可访问
+
+**原因3: Playwright未正确安装**
+```
+错误信息：executable doesn't exist at C:\Users\...\chromium-...\chrome.exe
+```
+
+**解决方案**:
+```powershell
+# 重新安装Playwright浏览器
+cd backend
+python -m playwright install chromium
+
+# 如果失败，手动安装
+python -m playwright install --force chromium
+```
+
+**原因4: Python 3.13 Windows兼容性问题**
+```
+错误信息：NotImplementedError: Cannot add child handler, you need to use WindowsProactorEventLoopPolicy
+```
+
+**解决方案**:
+- ✅ 已在v18.0.4自动修复
+- 系统会自动设置 `WindowsSelectorEventLoopPolicy`
+
+**诊断步骤**:
+```powershell
+# 1. 检查后端日志
+# 查看是否有错误信息
+
+# 2. 手动测试Playwright
+cd backend
+python -c "from playwright.sync_api import sync_playwright; p = sync_playwright().start(); browser = p.chromium.launch(headless=False); print('成功！'); browser.close(); p.stop()"
+
+# 3. 检查Chrome进程
+tasklist | findstr chrome
+
+# 4. 强制停止所有Chrome进程
+taskkill /F /IM chrome.exe /T
+```
+
+---
+
+### 🍪 Cookie处理问题
+
+#### 问题1: Cookie已过期，需要重新登录
+
+**现象**:
+- 浏览器成功启动并弹出
+- 显示KOOK登录页面（二维码或手机扫码）
+- 无法自动登录
+
+**原因**:
+- Cookie有效期已过
+- KOOK账号在其他地方登录（顶号）
+- Cookie格式不正确
+
+**解决方案**:
+
+**方法1: 扫码重新登录**
+```
+1. 在弹出的Chrome浏览器中扫码登录
+2. 登录成功后，Cookie会自动保存
+3. 停止并重新启动账号
+4. 应该能自动登录了
+```
+
+**方法2: 手动导出Cookie**
+```
+1. 在浏览器中按F12打开开发者工具
+2. 点击"Console"（控制台）标签
+3. 粘贴以下代码并按回车：
+
+copy(JSON.stringify(document.cookie.split("; ").map(c => {
+  let [name, ...v] = c.split("=");
+  return {name, value: v.join("="), domain: ".kookapp.cn", path: "/", secure: true, sameSite: "None"};
+})))
+
+4. Cookie已复制到剪贴板
+5. 通过前端界面的"更新Cookie"功能粘贴保存
+```
+
+**方法3: 使用Chrome扩展**
+```
+1. 安装"EditThisCookie"扩展
+2. 在KOOK页面点击扩展图标
+3. 点击"导出"(Export)
+4. 复制JSON
+5. 通过前端界面保存
+```
+
+#### 问题2: Cookie更新失败
+
+**现象**:
+```
+❌ Cookie保存失败
+❌ API返回405错误
+```
+
+**解决方案**:
+```
+方法1: 检查API端点
+- 确认使用的API地址正确
+- v18.0.4+使用: GET /api/accounts/{id}
+
+方法2: 通过后端日志确认
+- 查看后端日志中的Cookie相关信息
+- 确认Cookie格式正确（JSON数组）
+
+方法3: 重启后端
+- 停止后端（Ctrl+C）
+- 重新启动：python -m uvicorn app.main:app --host 0.0.0.0 --port 9527 --reload
+```
+
+#### 问题3: Cookie格式错误
+
+**现象**:
+```
+错误信息：JSONDecodeError: Expecting value
+错误信息：Cookie解析失败
+```
+
+**原因**:
+- Cookie不是有效的JSON格式
+- Cookie被加密但无法解密
+- Cookie字段缺失
+
+**解决方案**:
+```
+1. 确认Cookie是JSON数组格式：[{...}, {...}]
+2. 检查每个Cookie对象包含必需字段：
+   - name (字符串)
+   - value (字符串)
+   - domain (字符串)
+   - path (字符串)
+   
+3. 示例正确格式：
+[
+  {
+    "name": "SERVERID",
+    "value": "xxx",
+    "domain": ".kookapp.cn",
+    "path": "/",
+    "secure": true,
+    "sameSite": "None"
+  }
+]
+```
+
+---
 
 ### 问题1: Redis 连接失败
 

@@ -1,7 +1,7 @@
 # Windows 快速开始指南
 
-**适用版本**: v18.0.2+  
-**更新日期**: 2025-11-03  
+**适用版本**: v18.0.4+  
+**更新日期**: 2025-11-06  
 **预计时间**: 10-15 分钟  
 **难度级别**: ⭐⭐☆☆☆ (中等)  
 
@@ -87,6 +87,58 @@ npm run dev
 1. 等待两个服务都启动完成
 2. 浏览器访问：`http://localhost:5173/home`
 3. 开始使用！
+
+### 步骤6: 配置KOOK账号
+
+**添加KOOK账号：**
+1. 在前端界面点击"添加账号"
+2. 填写账号信息
+3. 获取Cookie（参考下方说明）
+4. 点击"启动"按钮
+
+**获取Cookie方法：**
+
+**方法1: Chrome扩展（推荐）**
+```
+1. 安装"EditThisCookie"扩展
+2. 在KOOK网页版登录
+3. 点击扩展图标 → 导出(Export)
+4. 复制JSON并保存到系统
+```
+
+**方法2: 开发者工具**
+```
+1. 在KOOK网页版登录
+2. 按F12打开开发者工具
+3. 切换到Console标签
+4. 粘贴以下代码并按回车：
+
+copy(JSON.stringify(document.cookie.split("; ").map(c => {
+  let [name, ...v] = c.split("=");
+  return {name, value: v.join("="), domain: ".kookapp.cn", path: "/", secure: true, sameSite: "None"};
+})))
+
+5. Cookie已自动复制到剪贴板，直接粘贴保存即可
+```
+
+**⚠️ 浏览器启动注意事项：**
+
+1. **Chrome弹出但需要扫码** - 正常，Cookie已过期
+   - 解决方案：扫码登录后，停止并重新启动账号
+   
+2. **浏览器未弹出** - 检查以下几点：
+   - 后端日志是否有错误
+   - 是否已安装Playwright: `python -m playwright install chromium`
+   - 是否有多个Chrome进程占用：`taskkill /F /IM chrome.exe /T`
+
+3. **页面加载超时** - v18.0.4已优化到60秒
+   - 如仍超时，检查网络连接
+   - 确认可以访问 https://www.kookapp.cn
+
+4. **Python 3.13用户** - v18.0.4已自动修复兼容性
+   - 无需额外配置
+
+详细故障排查请参考：[TROUBLESHOOTING_WINDOWS.md](./TROUBLESHOOTING_WINDOWS.md)
 
 ---
 
