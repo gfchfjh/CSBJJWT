@@ -33,6 +33,15 @@ class KookScraper:
         try:
             logger.info(f"[Scraper-{self.account_id}] 正在启动...")
             
+            # Windows兼容性修复：强制使用SelectorEventLoop
+            import sys
+            if sys.platform == "win32":
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.__class__.__name__ == "ProactorEventLoop":
+                    logger.info(f"[Scraper-{self.account_id}] 切换到SelectorEventLoop以支持子进程")
+                    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+            
             async with async_playwright() as p:
                 # ✅ 反检测增强1: 启动浏览器（有界面模式 + 完整参数）
                 self.browser = await p.chromium.launch(
