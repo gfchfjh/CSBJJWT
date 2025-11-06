@@ -3,6 +3,8 @@ KOOK消息抓取器 - 完整实现版
 使用Playwright监听KOOK WebSocket消息
 """
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext
+from playwright.sync_api import sync_playwright
+import concurrent.futures
 import asyncio
 import json
 import random
@@ -33,14 +35,17 @@ class KookScraper:
         try:
             logger.info(f"[Scraper-{self.account_id}] 正在启动...")
             
-            # Windows兼容性修复：强制使用SelectorEventLoop
+            # Windows兼容性：使用同步Playwright避免asyncio子进程问题
             import sys
-            if sys.platform == "win32":
-                import asyncio
+            use_sync = sys.platform == "win32"
+            
+            if use_sync:
+                logger.info(f"[Scraper-{self.account_id}] 使用同步Playwright（Windows兼容模式）")
+                # 在线程池中运行同步版本
                 loop = asyncio.get_event_loop()
-                if loop.__class__.__name__ == "ProactorEventLoop":
-                    logger.info(f"[Scraper-{self.account_id}] 切换到SelectorEventLoop以支持子进程")
-                    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    await loop.run_in_executor(executor, self._run_sync_playwright)
+                return
             
             async with async_playwright() as p:
                 # ✅ 反检测增强1: 启动浏览器（有界面模式 + 完整参数）
@@ -866,6 +871,64 @@ class KookScraper:
     def register_message_handler(self, handler: Callable):
         """注册消息处理器"""
         self.message_handlers.append(handler)
+    
+    def _run_sync_playwright(self):
+        """同步版本的Playwright运行（Windows兼容模式）"""
+        try:
+            with sync_playwright() as p:
+                # 启动浏览器
+                browser = p.chromium.launch(
+                    headless=False,
+                    args=[
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-blink-features=AutomationControlled',
+                        '--disable-automation',
+                        '--disable-infobars',
+                        '--no-first-run',
+                        '--no-default-browser-check',
+                    ]
+                )
+                
+                # 获取账号信息
+                account = db.execute(
+                    "SELECT email, cookie FROM accounts WHERE id = ?",
+                    (self.account_id,)
+                ).fetchone()
+                
+                if not account:
+                    logger.error(f"[Scraper-{self.account_id}] 账号不存在")
+                    return
+                
+                # 解析Cookie
+                cookie_data = json.loads(account['cookie'])
+                
+                # 创建上下文并添加Cookie
+                context = browser.new_context()
+                context.add_cookies(cookie_data)
+                
+                # 打开页面
+                page = context.new_page()
+                page.goto("https://www.kookapp.cn/app/", wait_until="networkidle")
+                
+                logger.info(f"[Scraper-{self.account_id}] ✅ 浏览器已启动并访问KOOK（同步模式）")
+                
+                # 保持运行，监听WebSocket消息
+                self.is_running = True
+                while self.is_running:
+                    import time
+                    time.sleep(1)
+                
+                # 清理
+                page.close()
+                context.close()
+                browser.close()
+                
+        except Exception as e:
+            logger.error(f"[Scraper-{self.account_id}] 同步模式启动失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
     
     async def stop(self):
         """停止抓取器"""
