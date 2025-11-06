@@ -838,6 +838,15 @@ class KookScraper:
             
             if result and result['cookie']:
                 cookies = json.loads(result['cookie'])
+                
+                # 🔧 修复sameSite字段（防止Chromium报错）
+                for cookie in cookies:
+                    if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
+                        cookie["sameSite"] = "None"
+                    # 确保secure标志
+                    if cookie.get("sameSite") == "None":
+                        cookie["secure"] = True
+                
                 return cookies
             
             return []
@@ -922,6 +931,15 @@ class KookScraper:
                     logger.error(f"[Scraper-{self.account_id}] Cookie JSON解析失败: {e}")
                     browser.close()
                     return
+                
+                # 🔧 修复sameSite字段（防止Chromium报错）
+                for cookie in cookie_data:
+                    if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
+                        cookie["sameSite"] = "None"
+                    # 确保secure标志
+                    if cookie.get("sameSite") == "None":
+                        cookie["secure"] = True
+                logger.info(f"[Scraper-{self.account_id}] Cookie已修复sameSite字段")
                 
                 # 创建上下文并添加Cookie
                 context = browser.new_context()
