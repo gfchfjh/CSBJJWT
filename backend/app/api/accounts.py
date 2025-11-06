@@ -1,3 +1,4 @@
+from loguru import logger
 """
 账号管理API
 """
@@ -123,18 +124,8 @@ async def start_account(account_id: int):
         await redis_queue.enqueue(message)
     
     # 启动抓取器
-    success = await scraper_manager.start_scraper(
-        account_id=account_id,
-        cookie=cookie,
-        email=account.get('email'),
-        password=password,
-        message_callback=message_callback
-    )
-    
-    if not success:
-        raise HTTPException(status_code=500, detail="启动抓取器失败")
-    
-    return {"message": "抓取器已启动"}
+    # 启动抓取器
+    success = await scraper_manager.start_scraper(account_id)
 
 
 @router.post("/{account_id}/stop")

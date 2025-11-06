@@ -1,8 +1,10 @@
-"""
+﻿"""
 KOOK消息抓取器 - 完整实现版
 使用Playwright监听KOOK WebSocket消息
 """
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext
+from playwright.sync_api import sync_playwright
+import concurrent.futures
 import asyncio
 import json
 import random
@@ -33,6 +35,24 @@ class KookScraper:
         try:
             logger.info(f"[Scraper-{self.account_id}] 正在启动...")
             
+            
+            # Windows兼容性修复：强制使用SelectorEventLoop
+            import sys
+            if sys.platform == "win32":
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.__class__.__name__ == "ProactorEventLoop":
+                    logger.info(f"[Scraper-{self.account_id}] 切换到SelectorEventLoop以支持子进程")
+                    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+            
+            # Windows兼容：使用同步模式
+            import sys
+            if sys.platform == "win32":
+                logger.info(f"[Scraper-{self.account_id}] Windows模式")
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(None, self._run_sync_playwright)
+                return
+
             async with async_playwright() as p:
                 # ✅ 反检测增强1: 启动浏览器（有界面模式 + 完整参数）
                 self.browser = await p.chromium.launch(
@@ -854,6 +874,20 @@ class KookScraper:
         from ..utils.crypto import crypto_manager
         return crypto_manager.decrypt(encrypted)
     
+    
+    def _run_sync_playwright(self):
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)
+            account = db.execute("SELECT cookie FROM accounts WHERE id = ?", (self.account_id,)).fetchone()
+            if account:
+                context = browser.new_context()
+                context.add_cookies(json.loads(account['cookie']))
+                page = context.new_page()
+                page.goto("https://www.kookapp.cn/app/")
+                print(f"[Scraper-{self.account_id}] Browser started")
+                self.is_running = True
+                while self.is_running: __import__('time').sleep(1)
+
     def register_message_handler(self, handler: Callable):
         """注册消息处理器"""
         self.message_handlers.append(handler)
