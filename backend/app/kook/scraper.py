@@ -949,7 +949,8 @@ class KookScraper:
                 # 打开页面
                 page = context.new_page()
                 logger.info(f"[Scraper-{self.account_id}] 正在访问KOOK...")
-                page.goto("https://www.kookapp.cn/app/", wait_until="networkidle")
+                # 使用更宽松的等待策略，增加超时时间
+                page.goto("https://www.kookapp.cn/app/", wait_until="domcontentloaded", timeout=60000)
                 
                 logger.info(f"[Scraper-{self.account_id}] ✅ 浏览器已启动并访问KOOK（同步模式）")
                 
