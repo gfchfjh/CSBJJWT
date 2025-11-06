@@ -891,25 +891,46 @@ class KookScraper:
                     ]
                 )
                 
-                # 获取账号信息
-                account = db.execute(
-                    "SELECT email, cookie FROM accounts WHERE id = ?",
-                    (self.account_id,)
-                ).fetchone()
+                logger.info(f"[Scraper-{self.account_id}] 浏览器已启动")
                 
-                if not account:
+                # 获取账号信息 - 使用正确的数据库查询
+                with db.get_connection() as conn:
+                    cursor = conn.execute(
+                        "SELECT cookie FROM accounts WHERE id = ?",
+                        (self.account_id,)
+                    )
+                    row = cursor.fetchone()
+                
+                if not row:
                     logger.error(f"[Scraper-{self.account_id}] 账号不存在")
+                    browser.close()
                     return
                 
-                # 解析Cookie
-                cookie_data = json.loads(account['cookie'])
+                # 处理Cookie - 兼容dict和tuple两种返回类型
+                cookie_str = row['cookie'] if isinstance(row, dict) else row[0]
+                
+                if not cookie_str or cookie_str.strip() == '':
+                    logger.error(f"[Scraper-{self.account_id}] Cookie为空")
+                    browser.close()
+                    return
+                
+                # 解析Cookie JSON
+                try:
+                    cookie_data = json.loads(cookie_str)
+                    logger.info(f"[Scraper-{self.account_id}] Cookie解析成功，共{len(cookie_data)}个")
+                except json.JSONDecodeError as e:
+                    logger.error(f"[Scraper-{self.account_id}] Cookie JSON解析失败: {e}")
+                    browser.close()
+                    return
                 
                 # 创建上下文并添加Cookie
                 context = browser.new_context()
                 context.add_cookies(cookie_data)
+                logger.info(f"[Scraper-{self.account_id}] Cookie已加载")
                 
                 # 打开页面
                 page = context.new_page()
+                logger.info(f"[Scraper-{self.account_id}] 正在访问KOOK...")
                 page.goto("https://www.kookapp.cn/app/", wait_until="networkidle")
                 
                 logger.info(f"[Scraper-{self.account_id}] ✅ 浏览器已启动并访问KOOK（同步模式）")
