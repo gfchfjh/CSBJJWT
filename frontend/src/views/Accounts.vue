@@ -74,6 +74,14 @@
                   <el-icon><VideoPlay /></el-icon>
                   启动
                 </el-button>
+          <el-button
+            v-if="account.status === 'offline'"
+            type="warning"
+            size="small"
+            @click="showUpdateCookieDialog(account)"
+          >
+            更新Cookie
+          </el-button>
                 
                 <el-button
                   v-else
@@ -273,9 +281,53 @@ session	xyz789	.kookapp.cn	/'
       </template>
     </el-dialog>
   </div>
+
+  <!-- 更新Cookie对话框 -->
+  <el-dialog
+    v-model="updateCookieDialogVisible"
+    title="更新Cookie"
+    width="600px"
+  >
+    <el-form :model="updateCookieForm" label-width="100px">
+      <el-form-item label="账号">
+        <el-input v-model="updateCookieForm.email" disabled />
+      </el-form-item>
+      <el-form-item label="Cookie">
+        <el-input
+          v-model="updateCookieForm.cookie"
+          type="textarea"
+          :rows="6"
+          placeholder="请粘贴从浏览器导出的Cookie（JSON格式）"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-alert
+          title="提示：在KOOK网页登录后，在浏览器Console执行以下代码获取Cookie"
+          type="info"
+          :closable="false"
+        >
+          <template #default>
+            <pre style="font-size: 12px; margin: 10px 0;">copy(JSON.stringify(document.cookie.split("; ").map(c => {
+  let [name, ...v] = c.split("=");
+  return {name, value: v.join("="), domain: ".kookapp.cn", 
+          path: "/", secure: true, sameSite: "None"};
+})))</pre>
+          </template>
+        </el-alert>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="updateCookieDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="updateCookie" :loading="updating">
+        更新Cookie
+      </el-button>
+    </template>
+  </el-dialog>
+
 </template>
 
 <script setup>
+import axios from 'axios'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAccountsStore } from '../store/accounts'
@@ -723,6 +775,37 @@ onUnmounted(() => {
     clearInterval(captchaCheckInterval)
   }
 })
+
+const updateCookieDialogVisible = ref(false)
+const updateCookieForm = ref({ accountId: null, email: '', cookie: '' })
+const updating = ref(false)
+
+const showUpdateCookieDialog = (account) => {
+  console.log('Update Cookie clicked', account)
+  updateCookieForm.value = { accountId: account.id, email: account.email, cookie: '' }
+  updateCookieDialogVisible.value = true
+}
+
+const updateCookie = async () => {
+  if (!updateCookieForm.value.cookie) { ElMessage.warning('请输入Cookie'); return }
+  try {
+    updating.value = true
+    await axios.put('http://localhost:9527/api/accounts/' + updateCookieForm.value.accountId + '/cookie', { 
+      email: updateCookieForm.value.email,
+      cookie: updateCookieForm.value.cookie 
+    })
+    ElMessage.success('Cookie更新成功')
+    updateCookieDialogVisible.value = false
+    // 刷新页面以显示更新
+    setTimeout(() => window.location.reload(), 500)
+  } catch (error) {
+    console.error(error)
+    ElMessage.error(error.response?.data?.detail || '更新失败')
+  } finally {
+    updating.value = false
+  }
+}
+
 </script>
 
 <style scoped>

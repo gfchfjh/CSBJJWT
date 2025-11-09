@@ -205,3 +205,44 @@ async def get_channels(account_id: int, server_id: str):
     channels = await scraper.get_channels(server_id)
     
     return {"channels": channels}
+
+
+@router.put("/{account_id}/cookie")
+async def update_cookie(account_id: int, cookie_data: AccountCreate):
+    """
+    更新账号Cookie
+    用于扫码登录后自动保存Cookie
+    """
+    if not cookie_data.cookie:
+        raise HTTPException(status_code=400, detail="Cookie不能为空")
+    
+    # 加密Cookie
+    cookie_encrypted = crypto_manager.encrypt(cookie_data.cookie)
+    
+    # 更新到数据库
+    db.update_account_cookie(account_id, cookie_encrypted)
+    
+    logger.info(f"✅ 账号 {account_id} Cookie已更新")
+    
+    return {"message": "Cookie更新成功", "account_id": account_id}
+
+
+@router.get("/{account_id}/cookie-status")
+async def check_cookie_status(account_id: int):
+    """
+    检查Cookie状态
+    返回Cookie是否存在、是否过期等信息
+    """
+    account = db.get_account(account_id)
+    
+    if not account:
+        raise HTTPException(status_code=404, detail="账号不存在")
+    
+    has_cookie = bool(account.get('cookie'))
+    
+    return {
+        "account_id": account_id,
+        "has_cookie": has_cookie,
+        "status": account.get('status', 'unknown'),
+        "last_active": account.get('last_active')
+    }
