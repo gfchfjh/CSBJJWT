@@ -1,4 +1,4 @@
-﻿"""
+"""
 KOOK消息抓取器 - 完整实现版
 使用Playwright监听KOOK WebSocket消息
 """
@@ -960,17 +960,20 @@ class ScraperManager:
         ✅ P2-10优化: 启动指定账号的抓取器（带并发限制）
         
         如果超过最大并行数，会等待其他账号释放资源
+        
+        Returns:
+            bool: 启动成功返回True，失败返回False
         """
         if account_id in self.scrapers:
             logger.warning(f"账号{account_id}的抓取器已在运行")
-            return
+            return False
         
         # ✅ P2-10优化: 获取执行许可
         acquired = await self.limiter.acquire(account_id)
         
         if not acquired:
             logger.warning(f"账号{account_id}未能获取执行许可")
-            return
+            return False
         
         try:
             scraper = KookScraper(account_id)
@@ -981,12 +984,13 @@ class ScraperManager:
             self.tasks[account_id] = task
             
             logger.info(f"账号{account_id}的抓取器已启动")
+            return True
             
         except Exception as e:
             logger.error(f"启动账号{account_id}的抓取器失败: {e}")
             # 释放许可
             self.limiter.release(account_id)
-            raise
+            return False
     
     async def _run_scraper_with_cleanup(self, account_id: int, scraper: KookScraper):
         """

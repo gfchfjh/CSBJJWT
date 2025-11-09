@@ -124,8 +124,12 @@ async def start_account(account_id: int):
         await redis_queue.enqueue(message)
     
     # 启动抓取器
-    # 启动抓取器
     success = await scraper_manager.start_scraper(account_id)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="启动抓取器失败")
+    
+    return {"message": "抓取器已启动", "account_id": account_id}
 
 
 @router.post("/{account_id}/stop")
