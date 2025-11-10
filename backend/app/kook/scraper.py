@@ -1,4 +1,4 @@
-﻿"""
+"""
 KOOK消息抓取器 - 完整实现版
 使用Playwright监听KOOK WebSocket消息
 """
@@ -886,13 +886,26 @@ class KookScraper:
                 decrypted = crypto_manager.decrypt(account[0])
                 cookie_data = json.loads(decrypted)
                 logger.info(f"[Scraper-{self.account_id}] Cookie解密成功")
-                # 修复sameSite字段
+                # 修复Cookie格式
                 for cookie in cookie_data:
+                    # 修复sameSite字段
                     if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
                         cookie["sameSite"] = "None"
                     if cookie.get("sameSite") == "None":
                         cookie["secure"] = True
-                logger.info(f"[Scraper-{self.account_id}] Cookie已修复sameSite字段")
+                    
+                    # ✅ 修复：确保Cookie有domain字段（Playwright要求）
+                    if "domain" not in cookie or not cookie["domain"]:
+                        cookie["domain"] = ".kookapp.cn"
+                    
+                    # ✅ 修复：确保Cookie有path字段（Playwright要求）
+                    if "path" not in cookie or not cookie["path"]:
+                        cookie["path"] = "/"
+                    
+                    # ✅ 修复：移除不支持的字段
+                    cookie.pop("sameSite", None) if cookie.get("sameSite") not in ["Strict", "Lax", "None"] else None
+                    
+                logger.info(f"[Scraper-{self.account_id}] Cookie格式已修复")
                 
                 # 创建上下文并添加Cookie
                 context = browser.new_context()
@@ -960,17 +973,20 @@ class ScraperManager:
         ✅ P2-10优化: 启动指定账号的抓取器（带并发限制）
         
         如果超过最大并行数，会等待其他账号释放资源
+        
+        Returns:
+            bool: 启动成功返回True，失败返回False
         """
         if account_id in self.scrapers:
             logger.warning(f"账号{account_id}的抓取器已在运行")
-            return
+            return False
         
         # ✅ P2-10优化: 获取执行许可
         acquired = await self.limiter.acquire(account_id)
         
         if not acquired:
             logger.warning(f"账号{account_id}未能获取执行许可")
-            return
+            return False
         
         try:
             scraper = KookScraper(account_id)
@@ -981,12 +997,13 @@ class ScraperManager:
             self.tasks[account_id] = task
             
             logger.info(f"账号{account_id}的抓取器已启动")
+            return True
             
         except Exception as e:
             logger.error(f"启动账号{account_id}的抓取器失败: {e}")
             # 释放许可
             self.limiter.release(account_id)
-            raise
+            return False
     
     async def _run_scraper_with_cleanup(self, account_id: int, scraper: KookScraper):
         """
