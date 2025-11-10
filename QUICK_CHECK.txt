@@ -1,0 +1,33 @@
+========================================
+快速检查步骤（复制到CMD执行）
+========================================
+
+步骤1: 检查后端服务
+--------------------
+curl http://localhost:9527/api/system/status
+
+如果显示错误，说明后端未运行，请执行：
+cd C:\Users\tanzu\Desktop\CSBJJWT\backend
+..\venv\Scripts\activate
+python -m uvicorn app.main:app --host 0.0.0.0 --port 9527 --reload
+
+
+步骤2: 检查前端服务
+--------------------
+curl http://localhost:5173
+
+如果显示错误，说明前端未运行，请执行：
+cd C:\Users\tanzu\Desktop\CSBJJWT\frontend
+npm run dev
+
+
+步骤3: 检查账号列表
+--------------------
+curl http://localhost:9527/api/accounts/
+
+
+步骤4: 测试启动API（假设账号ID是2）
+------------------------------------
+curl -X POST http://localhost:9527/api/accounts/2/start -H "Content-Type: application/json"
+
+========================================
