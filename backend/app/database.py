@@ -64,6 +64,10 @@ class Database:
                     self._conn.close()
         
         return CursorWrapper(cursor, conn)
+
+    def commit(self):
+        """兼容性方法"""
+        pass
     
     def init_database(self):
         """初始化数据库表"""

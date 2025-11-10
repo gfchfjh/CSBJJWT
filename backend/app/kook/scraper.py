@@ -339,7 +339,7 @@ class KookScraper:
                         await self.reconnect()
                         
         except Exception as e:
-            logger.error(f"[Scraper-{self.account_id}] 启动失败: {str(e)}")
+            logger.exception(f"[Scraper-{self.account_id}] 启动失败:")
             # 更新账号状态为离线
             db.execute(
                 "UPDATE accounts SET status = 'offline' WHERE id = ?",
