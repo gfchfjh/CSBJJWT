@@ -886,13 +886,23 @@ class KookScraper:
                 decrypted = crypto_manager.decrypt(account[0])
                 cookie_data = json.loads(decrypted)
                 logger.info(f"[Scraper-{self.account_id}] Cookie解密成功")
-                # 修复sameSite字段
+                # 修复Cookie格式
                 for cookie in cookie_data:
+                    # 修复sameSite字段
                     if cookie.get("sameSite") in ["no_restriction", "unspecified"]:
                         cookie["sameSite"] = "None"
                     if cookie.get("sameSite") == "None":
                         cookie["secure"] = True
-                logger.info(f"[Scraper-{self.account_id}] Cookie已修复sameSite字段")
+                    
+                    # 修复：确保Cookie有domain字段（Playwright要求）
+                    if "domain" not in cookie or not cookie["domain"]:
+                        cookie["domain"] = ".kookapp.cn"
+                    
+                    # 修复：确保Cookie有path字段（Playwright要求）
+                    if "path" not in cookie or not cookie["path"]:
+                        cookie["path"] = "/"
+                    
+                logger.info(f"[Scraper-{self.account_id}] Cookie格式已修复")
                 
                 # 创建上下文并添加Cookie
                 context = browser.new_context()
