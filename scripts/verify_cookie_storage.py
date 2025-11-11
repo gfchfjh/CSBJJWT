@@ -24,8 +24,8 @@ def verify_cookies():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # 查询所有账号
-        cursor.execute("SELECT id, email, cookies, status FROM accounts")
+        # 查询所有账号（注意：数据库列名是cookie，不是cookies）
+        cursor.execute("SELECT id, email, cookie, status FROM accounts")
         accounts = cursor.fetchall()
         
         if not accounts:
@@ -36,30 +36,37 @@ def verify_cookies():
         print(f"\n📋 账号列表 (共 {len(accounts)} 个账号):")
         print("-" * 60)
         
-        for i, (account_id, email, cookies, status) in enumerate(accounts, 1):
+        for i, (account_id, email, cookie, status) in enumerate(accounts, 1):
             print(f"\n[{i}] 账号ID: {account_id}")
             print(f"    邮箱: {email}")
             print(f"    状态: {status}")
             
             # 解析Cookie
-            if cookies:
+            if cookie:
+                # 尝试解密Cookie（如果已加密）
                 try:
-                    cookie_data = json.loads(cookies)
-                    print(f"    ✅ Cookie已存储 ({len(cookie_data)} 个字段)")
-                    
-                    # 检查关键Cookie字段
-                    key_fields = ['auth', 'session', 'token']
-                    found_fields = [field for field in key_fields if field in cookie_data]
-                    if found_fields:
-                        print(f"    ✅ 包含关键字段: {', '.join(found_fields)}")
+                    from backend.app.utils.crypto import crypto_manager
+                    decrypted_cookie = crypto_manager.decrypt(cookie)
+                    cookie_to_parse = decrypted_cookie
+                    print(f"    🔐 Cookie已解密")
+                except:
+                    # 如果解密失败，可能是未加密的Cookie
+                    cookie_to_parse = cookie
+                
+                try:
+                    cookie_data = json.loads(cookie_to_parse)
+                    if isinstance(cookie_data, list):
+                        print(f"    ✅ Cookie已存储 ({len(cookie_data)} 个Cookie)")
+                    else:
+                        print(f"    ✅ Cookie已存储")
                     
                     # 显示Cookie大小
-                    cookie_size = len(cookies)
-                    print(f"    📊 Cookie大小: {cookie_size} 字节")
+                    cookie_size = len(cookie)
+                    print(f"    📊 Cookie大小: {cookie_size} 字符")
                     
                 except json.JSONDecodeError:
                     print(f"    ⚠️  Cookie格式可能不是JSON")
-                    print(f"    📊 Cookie大小: {len(cookies)} 字节")
+                    print(f"    📊 Cookie大小: {len(cookie)} 字符")
             else:
                 print(f"    ⚠️  Cookie为空")
         
